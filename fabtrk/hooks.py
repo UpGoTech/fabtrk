@@ -1,7 +1,7 @@
 app_name = "fabtrk"
 app_title = "Fabtrk"
 app_publisher = "UpGo Technologies"
-app_description = "Fabrication Tracking"
+app_description = "Fabrication Tracking Software simplifies end-to-end fabrication management. It streamlines processes from material planning to dispatch, ensuring efficient tracking and control for both company workers and contractors."
 app_email = "info@upgotech.in"
 app_license = "mit"
 
