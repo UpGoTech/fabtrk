@@ -74,6 +74,37 @@ def remove_roles():
     removed = []
     for role_name in roles:
         if frappe.db.exists("Role", role_name):
+            # Unassign this role from all users that have it.
+            try:
+                users = frappe.get_all(
+                    "Has Role", filters={"role": role_name}, pluck="parent"
+                )
+            except Exception:
+                users = []
+
+            for user in users:
+                try:
+                    user_doc = frappe.get_doc("User", user)
+                    if hasattr(user_doc, "remove_roles"):
+                        try:
+                            user_doc.remove_roles(role_name)
+                            user_doc.save(ignore_permissions=True)
+                        except Exception:
+                            # Fallback: delete Has Role entry
+                            frappe.db.delete(
+                                "Has Role", {"role": role_name, "parent": user}
+                            )
+                    else:
+                        frappe.db.delete(
+                            "Has Role", {"role": role_name, "parent": user}
+                        )
+                except Exception:
+                    frappe.log_error(
+                        f"Failed unassigning Role {role_name} from user {user}",
+                        "fabtrk.remove_roles",
+                    )
+
+            # Now attempt to delete the Role itself
             try:
                 role = frappe.get_doc("Role", role_name)
                 role.delete(ignore_permissions=True)
