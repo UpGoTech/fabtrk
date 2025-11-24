@@ -85,11 +85,18 @@ app_license = "mit"
 # before_install = "fabtrk.install.before_install"
 # after_install = "fabtrk.install.after_install"
 
+# Create FabTrk roles after app install or after migrate
+after_install = "fabtrk.install.create_roles"
+after_migrate = "fabtrk.install.create_roles"
+
 # Uninstallation
 # ------------
 
 # before_uninstall = "fabtrk.uninstall.before_uninstall"
 # after_uninstall = "fabtrk.uninstall.after_uninstall"
+
+# Remove FabTrk roles before app uninstall
+before_uninstall = "fabtrk.install.remove_roles"
 
 # Integration Setup
 # ------------------
@@ -241,4 +248,3 @@ app_license = "mit"
 # default_log_clearing_doctypes = {
 # 	"Logging DocType Name": 30  # days to retain logs
 # }
-
