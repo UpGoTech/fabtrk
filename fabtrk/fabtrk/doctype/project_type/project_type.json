@@ -5,7 +5,8 @@
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
-  "project_type_name"
+  "project_type_name",
+  "name1"
  ],
  "fields": [
   {
@@ -13,11 +14,16 @@
    "fieldtype": "Select",
    "label": "Project Type Name",
    "options": "Internal\nExternal"
+  },
+  {
+   "fieldname": "name1",
+   "fieldtype": "Data",
+   "label": "Name"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-01-02 14:18:17.848352",
+ "modified": "2026-01-02 15:33:43.685383",
  "modified_by": "Administrator",
  "module": "Fabtrk",
  "name": "Project Type",
