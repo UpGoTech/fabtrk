@@ -1,0 +1,83 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2026-01-03 13:23:11.743548",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "project_name",
+  "project_description",
+  "priority",
+  "percentage_complete",
+  "section_break_vzyv",
+  "customer",
+  "sales_order",
+  "shipping_info"
+ ],
+ "fields": [
+  {
+   "fieldname": "project_name",
+   "fieldtype": "Data",
+   "label": "Project Name"
+  },
+  {
+   "fieldname": "project_description",
+   "fieldtype": "Data",
+   "label": "Project Description "
+  },
+  {
+   "fieldname": "priority",
+   "fieldtype": "Select",
+   "label": "Priority ",
+   "options": "\nLow\nHigh\nMedium"
+  },
+  {
+   "fieldname": "percentage_complete",
+   "fieldtype": "Data",
+   "label": "Percentage Complete "
+  },
+  {
+   "fieldname": "section_break_vzyv",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "customer",
+   "fieldtype": "Data",
+   "label": "Customer"
+  },
+  {
+   "fieldname": "sales_order",
+   "fieldtype": "Data",
+   "label": "Sales Order "
+  },
+  {
+   "fieldname": "shipping_info",
+   "fieldtype": "Data",
+   "label": "Shipping Info "
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-01-03 13:34:57.379834",
+ "modified_by": "Administrator",
+ "module": "Fabtrk",
+ "name": "FXL Project",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}
