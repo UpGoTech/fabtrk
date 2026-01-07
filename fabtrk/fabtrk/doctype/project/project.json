@@ -1,0 +1,129 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2026-01-03 14:30:24.392687",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "section_break_m5qt",
+  "amended_from",
+  "project_name",
+  "customer_information",
+  "percentage_completed",
+  "priority",
+  "column_break_vmkq",
+  "status",
+  "is_active",
+  "sales_order",
+  "shipping_information",
+  "total_mtd",
+  "section_break_mvho",
+  "project_type"
+ ],
+ "fields": [
+  {
+   "fieldname": "section_break_m5qt",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Project",
+   "print_hide": 1,
+   "read_only": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "project_name",
+   "fieldtype": "Data",
+   "label": "Project Name"
+  },
+  {
+   "fieldname": "customer_information",
+   "fieldtype": "Data",
+   "label": "Customer Information"
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "\nOpen\nCancelled\nOn hold\nCompleted"
+  },
+  {
+   "fieldname": "project_type",
+   "fieldtype": "Table",
+   "label": "Project Type",
+   "options": "Project Type"
+  },
+  {
+   "fieldname": "priority",
+   "fieldtype": "Select",
+   "label": "Priority ",
+   "options": "\nLow\nMedium\nHigh"
+  },
+  {
+   "fieldname": "column_break_vmkq",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "percentage_completed",
+   "fieldtype": "Data",
+   "label": "Percentage Completed"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_active",
+   "fieldtype": "Check",
+   "label": "Is active"
+  },
+  {
+   "fieldname": "sales_order",
+   "fieldtype": "Data",
+   "label": "Sales Order"
+  },
+  {
+   "fieldname": "shipping_information",
+   "fieldtype": "Data",
+   "label": "Shipping Information"
+  },
+  {
+   "fieldname": "total_mtd",
+   "fieldtype": "Float",
+   "label": "Total MTD"
+  },
+  {
+   "fieldname": "section_break_mvho",
+   "fieldtype": "Section Break"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2026-01-03 16:28:15.090764",
+ "modified_by": "Administrator",
+ "module": "Fabtrk",
+ "name": "Project",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1,
+ "track_views": 1
+}
