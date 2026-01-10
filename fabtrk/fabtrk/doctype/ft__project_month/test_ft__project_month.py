@@ -5,5 +5,5 @@
 from frappe.tests.utils import FrappeTestCase
 
 
-class TestFXLProject(FrappeTestCase):
+class TestFTProjectMonth(FrappeTestCase):
 	pass
