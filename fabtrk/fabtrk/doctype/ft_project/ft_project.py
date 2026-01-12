@@ -5,5 +5,5 @@
 from frappe.model.document import Document
 
 
-class FXLAchieved(Document):
+class FTProject(Document):
 	pass

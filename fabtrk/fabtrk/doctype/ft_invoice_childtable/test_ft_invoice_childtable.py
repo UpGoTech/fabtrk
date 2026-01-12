@@ -5,5 +5,5 @@
 from frappe.tests.utils import FrappeTestCase
 
 
-class TestFXLAchieved(FrappeTestCase):
+class TestFTInvoiceChildtable(FrappeTestCase):
 	pass

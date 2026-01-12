@@ -1,0 +1,115 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "format:{project_number}-{date}",
+ "creation": "2026-01-12 13:24:17.391117",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "date",
+  "project_number",
+  "project_description",
+  "customer",
+  "target_amount",
+  "achievement_type",
+  "total_weight",
+  "section_break_npva",
+  "invoice_data",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "date",
+   "fieldtype": "Date",
+   "label": "Date"
+  },
+  {
+   "fieldname": "project_number",
+   "fieldtype": "Link",
+   "label": "Project Number",
+   "options": "FT Project"
+  },
+  {
+   "fetch_from": "project_number.description",
+   "fieldname": "project_description",
+   "fieldtype": "Data",
+   "label": "Project description",
+   "read_only": 1
+  },
+  {
+   "fieldname": "achievement_type",
+   "fieldtype": "Select",
+   "label": "Achievement Type",
+   "options": "Production\nDispatch"
+  },
+  {
+   "description": "(Kg)",
+   "fieldname": "total_weight",
+   "fieldtype": "Float",
+   "label": "Total weight "
+  },
+  {
+   "fieldname": "section_break_npva",
+   "fieldtype": "Section Break"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "invoice_data",
+   "fieldtype": "Table",
+   "label": "Invoice Data",
+   "options": "FT Invoice Childtable"
+  },
+  {
+   "fetch_from": "project_number.customer",
+   "fieldname": "customer",
+   "fieldtype": "Data",
+   "label": " Customer",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "project_number.total_weight",
+   "fieldname": "target_amount",
+   "fieldtype": "Data",
+   "label": "Target Amount",
+   "read_only": 1
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "FT Monthly Achievement",
+   "print_hide": 1,
+   "read_only": 1,
+   "search_index": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2026-01-12 18:32:57.447230",
+ "modified_by": "Administrator",
+ "module": "Fabtrk",
+ "name": "FT Monthly Achievement",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1,
+ "track_views": 1
+}

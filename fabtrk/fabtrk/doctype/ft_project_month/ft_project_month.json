@@ -12,9 +12,9 @@
  "fields": [
   {
    "fieldname": "month",
-   "fieldtype": "Link",
+   "fieldtype": "Select",
    "label": "Month",
-   "options": "FT Month"
+   "options": "January\nFebruary\nMarch\nApril\nMay\nJune\nJuly\nAugust\nSeptember\nOctober\nNovember\nDecember"
   },
   {
    "fieldname": "year",
@@ -25,10 +25,10 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-01-10 16:34:45.292818",
+ "modified": "2026-01-12 14:16:42.087839",
  "modified_by": "Administrator",
  "module": "Fabtrk",
- "name": "FT  Project Month",
+ "name": "FT Project Month",
  "naming_rule": "Expression",
  "owner": "Administrator",
  "permissions": [

@@ -5,8 +5,5 @@
 from frappe.model.document import Document
 
 
-class FTMonth(Document):
+class FTMonthlyTarget(Document):
 	pass
-
-
-

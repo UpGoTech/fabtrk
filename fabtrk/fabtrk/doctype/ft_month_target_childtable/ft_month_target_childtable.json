@@ -1,0 +1,76 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2026-01-12 13:13:09.837804",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "project_number",
+  "customer",
+  "description",
+  "target_weight",
+  "section_break_jtty",
+  "project_amount",
+  "balance_amount"
+ ],
+ "fields": [
+  {
+   "fieldname": "project_number",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Project Number",
+   "options": "FT Project"
+  },
+  {
+   "fetch_from": "project_number.customer",
+   "fieldname": "customer",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Customer"
+  },
+  {
+   "fetch_from": "project_number.description",
+   "fieldname": "description",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Description "
+  },
+  {
+   "description": "(Kg)",
+   "fieldname": "target_weight",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Target Weight "
+  },
+  {
+   "fieldname": "section_break_jtty",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fetch_from": "project_number.total_weight",
+   "fieldname": "project_amount",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Project Amount"
+  },
+  {
+   "fieldname": "balance_amount",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Balance Amount"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-01-12 13:20:47.970237",
+ "modified_by": "Administrator",
+ "module": "Fabtrk",
+ "name": "FT Month Target Childtable",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}
