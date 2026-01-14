@@ -8,11 +8,12 @@
  "field_order": [
   "date",
   "project_number",
+  "project_name",
   "project_description",
-  "customer",
-  "target_amount",
+  "customer_name",
+  "actual_project_total_weight",
   "achievement_type",
-  "total_weight",
+  "total_weight_for_project",
   "section_break_npva",
   "invoice_data",
   "amended_from"
@@ -43,12 +44,6 @@
    "options": "Production\nDispatch"
   },
   {
-   "description": "(Kg)",
-   "fieldname": "total_weight",
-   "fieldtype": "Float",
-   "label": "Total weight "
-  },
-  {
    "fieldname": "section_break_npva",
    "fieldtype": "Section Break"
   },
@@ -60,20 +55,6 @@
    "options": "FT Invoice Childtable"
   },
   {
-   "fetch_from": "project_number.customer",
-   "fieldname": "customer",
-   "fieldtype": "Data",
-   "label": " Customer",
-   "read_only": 1
-  },
-  {
-   "fetch_from": "project_number.total_weight",
-   "fieldname": "target_amount",
-   "fieldtype": "Data",
-   "label": "Target Amount",
-   "read_only": 1
-  },
-  {
    "fieldname": "amended_from",
    "fieldtype": "Link",
    "label": "Amended From",
@@ -82,12 +63,39 @@
    "print_hide": 1,
    "read_only": 1,
    "search_index": 1
+  },
+  {
+   "fetch_from": "project_number.project_name",
+   "fieldname": "project_name",
+   "fieldtype": "Data",
+   "label": "Project Name",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "project_number.customer_name",
+   "fieldname": "customer_name",
+   "fieldtype": "Data",
+   "label": " Customer Name",
+   "read_only": 1
+  },
+  {
+   "description": "(Kg)",
+   "fieldname": "total_weight_for_project",
+   "fieldtype": "Float",
+   "label": "Total weight for Project"
+  },
+  {
+   "fetch_from": "project_number.total_weight",
+   "fieldname": "actual_project_total_weight",
+   "fieldtype": "Data",
+   "label": "Actual Project Total Weight",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-01-12 18:32:57.447230",
+ "modified": "2026-01-14 17:21:21.040980",
  "modified_by": "Administrator",
  "module": "Fabtrk",
  "name": "FT Monthly Achievement",

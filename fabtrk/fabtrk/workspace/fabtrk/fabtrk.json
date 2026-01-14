@@ -17,7 +17,7 @@
    "hidden": 0,
    "is_query_report": 0,
    "label": "doctype",
-   "link_count": 6,
+   "link_count": 7,
    "link_type": "DocType",
    "onboard": 0,
    "type": "Card Break"
@@ -38,6 +38,16 @@
    "label": "FT Customer Group",
    "link_count": 0,
    "link_to": "FT Customer Group",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "FT Customer Series",
+   "link_count": 0,
+   "link_to": "FT Customer Series",
    "link_type": "DocType",
    "onboard": 0,
    "type": "Link"
@@ -83,7 +93,7 @@
    "type": "Link"
   }
  ],
- "modified": "2026-01-13 16:01:59.994888",
+ "modified": "2026-01-14 16:46:10.187683",
  "modified_by": "Administrator",
  "module": "Fabtrk",
  "name": "Fabtrk",
