@@ -1,0 +1,95 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "format:{month}",
+ "creation": "2026-01-12 13:06:19.872856",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "month",
+  "project",
+  "month_sort",
+  "total_target_section",
+  "kg",
+  "column_break_znlu",
+  "mt",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "month",
+   "fieldtype": "Select",
+   "label": "Month"
+  },
+  {
+   "fieldname": "project",
+   "fieldtype": "Table",
+   "label": "Project",
+   "options": "FT Month Target Childtable"
+  },
+  {
+   "fieldname": "total_target_section",
+   "fieldtype": "Section Break",
+   "label": "Total Target"
+  },
+  {
+   "fieldname": "kg",
+   "fieldtype": "Float",
+   "label": "Kg"
+  },
+  {
+   "fieldname": "mt",
+   "fieldtype": "Float",
+   "label": "MT"
+  },
+  {
+   "fieldname": "column_break_znlu",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "month_sort",
+   "fieldtype": "Int",
+   "hidden": 1,
+   "label": "Month Sort",
+   "read_only": 1
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "FT Monthly Target",
+   "print_hide": 1,
+   "read_only": 1,
+   "search_index": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2026-01-12 18:19:04.448969",
+ "modified_by": "Administrator",
+ "module": "Fabtrk",
+ "name": "FT Monthly Target",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1,
+ "track_views": 1
+}
