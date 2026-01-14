@@ -1,6 +1,6 @@
 {
  "charts": [],
- "content": "[{\"id\":\"zZRE_3czml\",\"type\":\"card\",\"data\":{\"card_name\":\"doctype\",\"col\":4}}]",
+ "content": "[{\"id\":\"zZRE_3czml\",\"type\":\"card\",\"data\":{\"card_name\":\"doctype\",\"col\":4}},{\"id\":\"F0lp7NXOGm\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"FT Project Report\",\"col\":3}}]",
  "creation": "2025-12-15 17:34:19.067438",
  "custom_blocks": [],
  "docstatus": 0,
@@ -83,7 +83,7 @@
    "type": "Link"
   }
  ],
- "modified": "2026-01-12 17:59:55.059991",
+ "modified": "2026-01-13 16:01:59.994888",
  "modified_by": "Administrator",
  "module": "Fabtrk",
  "name": "Fabtrk",
@@ -94,6 +94,14 @@
  "quick_lists": [],
  "roles": [],
  "sequence_id": 11.0,
- "shortcuts": [],
+ "shortcuts": [
+  {
+   "color": "Grey",
+   "doc_view": "List",
+   "label": "FT Project Report",
+   "link_to": "FT Project Report",
+   "type": "Report"
+  }
+ ],
  "title": "Fabtrk"
 }

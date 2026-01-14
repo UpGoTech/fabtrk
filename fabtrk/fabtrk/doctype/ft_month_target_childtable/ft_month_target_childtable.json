@@ -39,7 +39,7 @@
   {
    "description": "(Kg)",
    "fieldname": "target_weight",
-   "fieldtype": "Float",
+   "fieldtype": "Int",
    "in_list_view": 1,
    "label": "Target Weight "
   },
@@ -64,7 +64,7 @@
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2026-01-12 13:20:47.970237",
+ "modified": "2026-01-13 12:22:16.227341",
  "modified_by": "Administrator",
  "module": "Fabtrk",
  "name": "FT Month Target Childtable",
