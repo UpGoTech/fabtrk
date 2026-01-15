@@ -6,6 +6,13 @@
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
+  "year",
+  "column_break_exuj",
+  "select_month",
+  "section_break_oqhg",
+  "project_total_weight",
+  "project_balance",
+  "section_break_nfas",
   "date",
   "project_number",
   "project_name",
@@ -13,7 +20,7 @@
   "customer_name",
   "actual_project_total_weight",
   "achievement_type",
-  "total_weight_for_project",
+  "total_weight_for_project_achieve",
   "section_break_npva",
   "invoice_data",
   "amended_from"
@@ -79,23 +86,57 @@
    "read_only": 1
   },
   {
-   "description": "(Kg)",
-   "fieldname": "total_weight_for_project",
-   "fieldtype": "Float",
-   "label": "Total weight for Project"
-  },
-  {
    "fetch_from": "project_number.total_weight",
    "fieldname": "actual_project_total_weight",
    "fieldtype": "Data",
    "label": "Actual Project Total Weight",
    "read_only": 1
+  },
+  {
+   "fieldname": "year",
+   "fieldtype": "Link",
+   "label": "Year",
+   "options": "FT Year"
+  },
+  {
+   "fieldname": "select_month",
+   "fieldtype": "Link",
+   "label": "Select Month",
+   "options": "FT Monthly Target"
+  },
+  {
+   "fieldname": "section_break_nfas",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "column_break_exuj",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "section_break_oqhg",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "project_total_weight",
+   "fieldtype": "Float",
+   "label": "Project Total Weight"
+  },
+  {
+   "fieldname": "project_balance",
+   "fieldtype": "Float",
+   "label": "Project Balance"
+  },
+  {
+   "description": "(Kg)",
+   "fieldname": "total_weight_for_project_achieve",
+   "fieldtype": "Float",
+   "label": "Total weight for Project Achieve"
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-01-14 17:21:21.040980",
+ "modified": "2026-01-15 15:14:20.247775",
  "modified_by": "Administrator",
  "module": "Fabtrk",
  "name": "FT Monthly Achievement",

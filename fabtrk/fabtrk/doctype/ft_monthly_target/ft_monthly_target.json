@@ -1,14 +1,19 @@
 {
  "actions": [],
- "autoname": "format:{monthss}",
+ "autoname": "format:{select_month}",
  "creation": "2026-01-12 13:06:19.872856",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
+  "section_break_jwts",
   "month",
   "monthss",
-  "project",
   "month_sort",
+  "section_break_sykg",
+  "year",
+  "select_month",
+  "monthly_total_weight",
+  "project",
   "total_weight_of_project_section",
   "kg",
   "column_break_znlu",
@@ -69,12 +74,38 @@
    "fieldtype": "Link",
    "label": "Monthss",
    "options": "FT Project Month"
+  },
+  {
+   "fieldname": "section_break_jwts",
+   "fieldtype": "Section Break",
+   "hidden": 1
+  },
+  {
+   "fieldname": "section_break_sykg",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "year",
+   "fieldtype": "Link",
+   "label": "Year",
+   "options": "FT Year"
+  },
+  {
+   "fieldname": "select_month",
+   "fieldtype": "Link",
+   "label": "Select Month",
+   "options": "FT Month"
+  },
+  {
+   "fieldname": "monthly_total_weight",
+   "fieldtype": "Float",
+   "label": "Monthly Total Weight "
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-01-14 14:23:05.913254",
+ "modified": "2026-01-15 16:10:11.081566",
  "modified_by": "Administrator",
  "module": "Fabtrk",
  "name": "FT Monthly Target",

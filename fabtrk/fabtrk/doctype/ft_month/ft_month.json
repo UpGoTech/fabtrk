@@ -19,12 +19,13 @@
   {
    "fieldname": "month_order",
    "fieldtype": "Int",
+   "hidden": 1,
    "label": "Month Order"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-01-10 16:35:05.725437",
+ "modified": "2026-01-15 17:55:56.609895",
  "modified_by": "Administrator",
  "module": "Fabtrk",
  "name": "FT Month",

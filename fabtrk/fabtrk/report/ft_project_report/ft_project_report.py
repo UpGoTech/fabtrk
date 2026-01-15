@@ -8,160 +8,200 @@
 # 	columns, data = [], []
 # 	return columns, data
 
-# import frappe
 
-# def execute(filters=None):
-#     filters = filters or {}
 
-#     columns = get_columns()
-#     data = get_data(filters)
 
-#     return columns, data
-
-# def get_columns():
-#     return [
-#         {"label": "Project", "fieldname": "name", "fieldtype": "Link", "options": "FT Project", "width": 130},
-#         {"label": "Project Name", "fieldname": "project_name", "fieldtype": "Data", "width": 120},
-#         {"label": "Status", "fieldname": "status", "fieldtype": "Data", "width": 120},
-#         {"label": "Project Type", "fieldname": "project_type", "fieldtype": "Link", "options": "FT Project Type", "width": 110},
-#         {"label": "Priority", "fieldname": "priority", "fieldtype": "Data", "width": 80},
-#         {"label": "% Completed", "fieldname": "percentage_completed", "fieldtype": "Percent", "width": 120},
-#         {"label": "Customer", "fieldname": "customer", "fieldtype": "Link", "options": "FT Customer", "width": 150},
-#         {"label": "Shipping Scope", "fieldname": "shipping_scope", "fieldtype": "Data", "width": 130},
-#         {"label": "Destination", "fieldname": "shipping_destination", "fieldtype": "Data", "width": 130},
-#         {"label": "Total Weight (Kg)", "fieldname": "total_weight", "fieldtype": "Float", "width": 140},
-#         {"label": "Bill Weight By", "fieldname": "bill_weight_by", "fieldtype": "Data", "width": 125},
-#         {"label": "Start Date", "fieldname": "excepted_start_date", "fieldtype": "Date", "width": 120},
-#         {"label": "End Date", "fieldname": "excepted_end_date", "fieldtype": "Date", "width": 120},
-#         {"label": "Is Active", "fieldname": "is_active", "fieldtype": "Check", "width": 90},
-		
-#     ]
-
-# def get_data(filters):
-#     conditions = "1=1"
-#     values = {}
-
-#     if filters.get("project_name"):
-#         conditions += " AND project_name LIKE %(project_name)s"
-#         values["project_name"] = f"%{filters['project_name']}%"
-
-#     if filters.get("status"):
-#         conditions += " AND status = %(status)s"
-#         values["status"] = filters["status"]
-
-#     if filters.get("project_type"):
-#         conditions += " AND project_type = %(project_type)s"
-#         values["project_type"] = filters["project_type"]
-
-#     if filters.get("customer"):
-#         conditions += " AND customer = %(customer)s"
-#         values["customer"] = filters["customer"]
-
-#     if filters.get("is_active") is not None:
-#         conditions += " AND is_active = %(is_active)s"
-#         values["is_active"] = filters["is_active"]
-
-#     if filters.get("from_date"):
-#         conditions += " AND excepted_start_date >= %(from_date)s"
-#         values["from_date"] = filters["from_date"]
-
-#     if filters.get("to_date"):
-#         conditions += " AND excepted_end_date <= %(to_date)s"
-#         values["to_date"] = filters["to_date"]
-
-#     return frappe.db.sql(f"""
-#         SELECT
-#             name, project_name, status, project_type, priority,
-#             percentage_completed, customer, shipping_scope,
-#             shipping_destination, total_weight, bill_weight_by,
-#             excepted_start_date, excepted_end_date, is_active
-#         FROM `tabFT Project`
-#         WHERE {conditions}
-#         ORDER BY excepted_start_date DESC
-#     """, values, as_dict=True)
 
 
 import frappe
 
+# def execute(filters=None):
+#     filters = filters or {}
+#     year = filters.get("year")
+#     project = filters.get("project")
 
+#     columns = get_columns()
+#     data = get_data(year, project)
+
+#     total_target = sum(d.target for d in data)
+#     total_achieved = sum(d.achieved for d in data)
+
+#     summary = [
+#         {"label": "Total Target (Kg)", "value": total_target},
+#         {"label": "Total Achieved (Kg)", "value": total_achieved},
+#         {"label": "Balance", "value": total_target - total_achieved}
+#     ]
+
+#     return columns, data, None, None, summary
 def execute(filters=None):
     filters = filters or {}
+    year = filters.get("year")
+    project = filters.get("project")
 
     columns = get_columns()
-    data = get_data(filters)
+    data = get_data(year, project)
 
-    return columns, data
+    total_target = sum(d.get("target", 0) for d in data)
+    total_achieved = sum(d.get("achieved", 0) for d in data)
+
+    summary = [
+        {"label": "Total Target (Kg)", "value": total_target},
+        {"label": "Total Achieved (Kg)", "value": total_achieved},
+        {"label": "Balance", "value": total_target - total_achieved}
+    ]
+
+    return columns, data, None, None, summary
 
 
 def get_columns():
     return [
-        {"label": "Project", "fieldname": "name", "fieldtype": "Link", "options": "FT Project", "width": 130},
-        {"label": "Project Name", "fieldname": "project_name", "fieldtype": "Data", "width": 120},
-        {"label": "Status", "fieldname": "status", "fieldtype": "Data", "width": 120},
-        {"label": "Project Type", "fieldname": "project_type", "fieldtype": "Link", "options": "FT Project Type", "width": 110},
-        {"label": "Priority", "fieldname": "priority", "fieldtype": "Data", "width": 80},
-        {"label": "% Completed", "fieldname": "percentage_completed", "fieldtype": "Percent", "width": 120},
-        {"label": "Customer", "fieldname": "customer", "fieldtype": "Link", "options": "FT Customer", "width": 150},
-        {"label": "Shipping Scope", "fieldname": "shipping_scope", "fieldtype": "Data", "width": 130},
-        {"label": "Destination", "fieldname": "shipping_destination", "fieldtype": "Data", "width": 130},
-        {"label": "Total Weight (Kg)", "fieldname": "total_weight", "fieldtype": "Float", "width": 140},
-        {"label": "Bill Weight By", "fieldname": "bill_weight_by", "fieldtype": "Data", "width": 125},
-        {"label": "Start Date", "fieldname": "excepted_start_date", "fieldtype": "Date", "width": 120},
-        {"label": "End Date", "fieldname": "excepted_end_date", "fieldtype": "Date", "width": 120},
-        {"label": "Is Active", "fieldname": "is_active", "fieldtype": "Check", "width": 90},
+        {"label": "Month", "fieldname": "month_display", "width": 120},
+        {"label": "Target (Kg)", "fieldname": "target", "width": 140},
+        {"label": "Achieved (Kg)", "fieldname": "achieved", "width": 140},
+        {"label": "Balance", "fieldname": "balance", "width": 120},
+        {"label": "View", "fieldname": "view", "width": 80},
     ]
 
 
-def get_data(filters):
-    conditions = "1=1"
+# def get_data(year=None, project=None):
+#     conditions = []
+#     values = {}
+
+#     if year:
+#         conditions.append("mt.year = %(year)s")
+#         values["year"] = year
+
+#     if project:
+#         conditions.append("ct.project_number = %(project)s")
+#         values["project"] = project
+
+#     where = " AND ".join(conditions)
+#     if where:
+#         where = "WHERE " + where
+
+#     data = frappe.db.sql(f"""
+#         SELECT
+#             mt.select_month AS month_raw,
+#             SUM(ct.total_weight_of_project) AS target,
+#             COALESCE(SUM(ma.total_weight_for_project_achieve),0) AS achieved
+#         FROM `tabFT Monthly Target` mt
+#         INNER JOIN `tabFT Month Target Childtable` ct
+#             ON ct.parent = mt.name
+#         LEFT JOIN `tabFT Monthly Achievement` ma
+#             ON ma.project_number = ct.project_number
+#             AND ma.select_month = mt.name
+#         {where}
+#         GROUP BY mt.select_month
+#     """, values, as_dict=True)
+
+#     for d in data:
+#         d.month_display = d.month_raw
+#         d.balance = (d.target or 0) - (d.achieved or 0)
+#         d.view = ""
+
+#     return data
+def get_data(year=None, project=None):
+    conditions = []
     values = {}
 
-    # ✅ MULTI PROJECT FILTER (FIXED)
-    if filters.get("project_name"):
-        projects = filters.get("project_name")
+    if year:
+        conditions.append("mt.year = %(year)s")
+        values["year"] = year
 
-        if isinstance(projects, list) and projects:
-            conditions += " AND name IN %(projects)s"
-            values["projects"] = tuple(projects)
-        elif isinstance(projects, str):
-            conditions += " AND name = %(project_name)s"
-            values["project_name"] = projects
+    if project:
+        conditions.append("ct.project_number = %(project)s")
+        values["project"] = project
 
-    if filters.get("status"):
-        conditions += " AND status = %(status)s"
-        values["status"] = filters["status"]
+    where = " AND ".join(conditions)
+    if where:
+        where = "WHERE " + where
 
-    if filters.get("project_type"):
-        conditions += " AND project_type = %(project_type)s"
-        values["project_type"] = filters["project_type"]
-
-    if filters.get("customer"):
-        conditions += " AND customer = %(customer)s"
-        values["customer"] = filters["customer"]
-
-    if filters.get("is_active") is not None:
-        conditions += " AND is_active = %(is_active)s"
-        values["is_active"] = filters["is_active"]
-
-    if filters.get("from_date"):
-        conditions += " AND excepted_start_date >= %(from_date)s"
-        values["from_date"] = filters["from_date"]
-
-    if filters.get("to_date"):
-        conditions += " AND excepted_end_date <= %(to_date)s"
-        values["to_date"] = filters["to_date"]
-
-    return frappe.db.sql(
-        f"""
+    data = frappe.db.sql(f"""
         SELECT
-            name, project_name, status, project_type, priority,
-            percentage_completed, customer, shipping_scope,
-            shipping_destination, total_weight, bill_weight_by,
-            excepted_start_date, excepted_end_date, is_active
-        FROM `tabFT Project`
-        WHERE {conditions}
-        ORDER BY excepted_start_date DESC
-        """,
-        values,
-        as_dict=True,
-    )
+            mt.name AS month_id,
+            mt.select_month AS month_display,
+            SUM(ct.total_weight_of_project) AS target,
+            COALESCE(SUM(ma.total_weight_for_project_achieve), 0) AS achieved
+        FROM `tabFT Monthly Target` mt
+        INNER JOIN `tabFT Month Target Childtable` ct
+            ON ct.parent = mt.name
+        LEFT JOIN `tabFT Monthly Achievement` ma
+            ON ma.project_number = ct.project_number
+            AND ma.select_month = mt.name
+        {where}
+        GROUP BY mt.name, mt.select_month
+    """, values, as_dict=True)
+
+    for d in data:
+        d["balance"] = (d["target"] or 0) - (d["achieved"] or 0)
+        d["view"] = ""
+
+    return data
+
+
+# @frappe.whitelist()
+# def get_month_details(year=None, project=None, month=None):
+#     return frappe.db.sql("""
+#         SELECT
+#             ct.project_number AS project,
+#             ct.total_weight_of_project AS target,
+#             ma.total_weight_for_project_achieve AS achieved,
+#             (ct.total_weight_of_project -
+#              COALESCE(ma.total_weight_for_project_achieve,0)) AS balance,
+#             ic.invoice_no,
+#             ic.attach_file AS attachment
+#         FROM `tabFT Monthly Target` mt
+#         INNER JOIN `tabFT Month Target Childtable` ct
+#             ON ct.parent = mt.name
+#         LEFT JOIN `tabFT Monthly Achievement` ma
+#             ON ma.project_number = ct.project_number
+#             AND ma.select_month = mt.name
+#         LEFT JOIN `tabFT Invoice Childtable` ic
+#             ON ic.parent = ma.name
+#         WHERE mt.year = %(year)s
+#           AND mt.select_month = %(month)s
+#           AND (%(project)s IS NULL OR ct.project_number = %(project)s)
+#     """, {
+#         "year": year,
+#         "month": month,
+#         "project": project
+#     }, as_dict=True)
+@frappe.whitelist()
+def get_month_details(year=None, project=None, month=None):
+    if not month:
+        return []
+
+    return frappe.db.sql("""
+        SELECT
+            ct.project_number AS project,
+            ct.total_weight_of_project AS target,
+
+            COALESCE(ma.total_weight_for_project_achieve, 0) AS achieved,
+
+            (ct.total_weight_of_project -
+             COALESCE(ma.total_weight_for_project_achieve, 0)) AS balance,
+
+            ic.invoice_no,
+            ic.attach_file AS attachment
+
+        FROM `tabFT Monthly Target` mt
+
+        INNER JOIN `tabFT Month Target Childtable` ct
+            ON ct.parent = mt.name
+
+        LEFT JOIN `tabFT Monthly Achievement` ma
+            ON ma.project_number = ct.project_number
+            AND ma.select_month = mt.name
+
+        LEFT JOIN `tabFT Invoice Childtable` ic
+            ON ic.parenttype = 'FT Monthly Achievement'
+            AND ic.parent = ma.name
+
+        WHERE mt.name = %(month)s
+          AND mt.year = %(year)s
+          AND (%(project)s IS NULL OR ct.project_number = %(project)s)
+    """, {
+        "year": year,
+        "month": month,
+        "project": project
+    }, as_dict=True)
