@@ -114,7 +114,8 @@
   },
   {
    "fieldname": "section_break_oqhg",
-   "fieldtype": "Section Break"
+   "fieldtype": "Section Break",
+   "hidden": 1
   },
   {
    "fieldname": "project_total_weight",
@@ -136,7 +137,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-01-15 15:14:20.247775",
+ "modified": "2026-01-17 16:36:16.116637",
  "modified_by": "Administrator",
  "module": "Fabtrk",
  "name": "FT Monthly Achievement",

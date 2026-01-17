@@ -21,71 +21,6 @@ class FTMonthlyTarget(Document):
 
 
 # 🔹 Month duplicate prevent (year wise)
-# @frappe.whitelist()
-# def get_used_months(doctype, txt, searchfield, start, page_len, filters):
-    # year = filters.get("year")
-    # current_doc = filters.get("current_doc")
-
-    # values = {"year": year}
-    # cond = ""
-
-    # if current_doc:
-    #     cond = "AND name != %(current_doc)s"
-    #     values["current_doc"] = current_doc
-
-    # used = frappe.db.sql(f"""
-    #     SELECT select_month
-    #     FROM `tabFT Monthly Target`
-    #     WHERE year = %(year)s
-    #     {cond}
-    # """, values)
-
-    # used_months = [d[0] for d in used]
-
-    # all_months = frappe.db.get_all(
-    #     "FT Month",
-    #     pluck="name",
-    #     order_by="month_sort asc"
-    # )
-
-    # return [[m] for m in all_months if m not in used_months]
-
-# @frappe.whitelist()
-# def get_used_months(doctype, txt, searchfield, start, page_len, filters):
-#     year = filters.get("year")
-#     current_doc = filters.get("current_doc")
-
-#     values = {"year": year}
-#     cond = ""
-
-#     if current_doc:
-#         cond = "AND name != %(current_doc)s"
-#         values["current_doc"] = current_doc
-
-#     used = frappe.db.sql(f"""
-#         SELECT select_month
-#         FROM `tabFT Monthly Target`
-#         WHERE year = %(year)s
-#         {cond}
-#     """, values)
-
-#     used_months = [d[0] for d in used]
-
-#     month_order = [
-#         "January", "February", "March", "April", "May", "June",
-#         "July", "August", "September", "October", "November", "December"
-#     ]
-
-#     result = []
-#     txt = (txt or "").lower()
-
-#     for m in month_order:
-#         if m not in used_months:
-#             label = m[:3].upper()  # JAN / FEB / ...
-#             if txt in m.lower() or txt in label.lower():
-#                 result.append([m, label])
-
-#     return result[start:start + page_len]
 @frappe.whitelist()
 def get_used_months(doctype, txt, searchfield, start, page_len, filters):
     year = filters.get("year")
@@ -98,7 +33,6 @@ def get_used_months(doctype, txt, searchfield, start, page_len, filters):
         cond = "AND name != %(current_doc)s"
         values["current_doc"] = current_doc
 
-    # Already used months
     used = frappe.db.sql(f"""
         SELECT select_month
         FROM `tabFT Monthly Target`
@@ -108,21 +42,23 @@ def get_used_months(doctype, txt, searchfield, start, page_len, filters):
 
     used_months = [d[0] for d in used]
 
-    # Month order
     month_order = [
         "January", "February", "March", "April", "May", "June",
         "July", "August", "September", "October", "November", "December"
     ]
 
     result = []
-    txt = (txt or "").lower()
+    txt = (txt or "").lower().strip()
 
     for m in month_order:
-        if m not in used_months:
-            if txt in m.lower():  # Filter typing
-                result.append([m])  # 🔹 Only full month name
+        if m in used_months:
+            continue
 
-    return result[start:start + page_len]
+        if not txt or txt in m.lower():
+            result.append([m])
+
+    # 🔥 IMPORTANT FIX → return ALL months at once
+    return result[:12]
 
 
 # 🔹 Project balance
