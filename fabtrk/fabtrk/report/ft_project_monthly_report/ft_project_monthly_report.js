@@ -1,20 +1,28 @@
-// // Copyright (c) 2026, UpGo Technologies and contributors
-// // For license information, please see license.txt
+// Copyright (c) 2026, UpGo Technologies and contributors
+// For license information, please see license.txt
 
-
-
-frappe.query_reports["FT Project Report"] = {
-	filters: [
+frappe.query_reports["FT Project Monthly Report"] = {
+	"filters": [
 		{
-			fieldname: "year",
-			label: __("Year"),
+			fieldname: "month",
+			label: __("Month"),
 			fieldtype: "Link",
-			options: "FT Year",
+			options: "FT Monthly Target",
+			get_query() {
+				return {
+					query: "frappe.desk.search.search_link",
+					filters: {},
+					order_by: "year desc, FIELD(select_month, \
+				'January','February','March','April','May','June',\
+				'July','August','September','October','November','December')"
+				};
+			},
 			on_change() {
 				frappe.query_report.refresh();
 				$("#details_area").html("");
 			}
 		},
+
 		{
 			fieldname: "project",
 			label: __("Project"),
@@ -47,7 +55,7 @@ frappe.query_reports["FT Project Report"] = {
 
 		return default_formatter(value, row, column, data);
 	},
-	
+
 	onload(report) {
 		// ✅ 1️⃣ TOP BUTTON (Fabtrk Workspace)
 		report.page.add_inner_button(__("Go to Fabtrk Workspace"), () => {
@@ -72,12 +80,12 @@ function fmt(num) {
 
 function refresh_project_details(month) {
 	frappe.call({
-		method: "fabtrk.fabtrk.report.ft_project_report.ft_project_report.get_month_details",
+		method: "fabtrk.fabtrk.report.ft_project_monthly_report.ft_project_monthly_report.get_month_details",
 		args: {
-			year: frappe.query_report.get_filter_value("year"),
 			project: frappe.query_report.get_filter_value("project"),
-			month: month
-		},
+			month: frappe.query_report.get_filter_value("month")
+		}
+		,
 		callback(r) {
 			if (r.message && r.message.length) {
 				// month_display ko pass kar rahe hain
