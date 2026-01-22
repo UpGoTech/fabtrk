@@ -20,7 +20,6 @@
 #     summary = get_summary(data)
 #     return columns, data, None, None, summary
 
-
 # def get_columns():
 #     return [
 #         {"label": "Year", "fieldname": "year", "fieldtype": "Data", "width": 120},
@@ -34,7 +33,6 @@
 #             "width": 100
 #         },
 #     ]
-
 
 # def get_data(filters=None):
 #     conditions = ""
@@ -92,7 +90,6 @@
 
 #     return data
 
-
 # def get_summary(data):
 #     data = data or []
 
@@ -132,7 +129,6 @@
 #         },
 #     ]
 
-
 # @frappe.whitelist()
 # def get_year_wise_project_data(year):
 #     return frappe.db.sql("""
@@ -145,9 +141,6 @@
 #         WHERE docstatus = 1
 #           AND year = %s
 #     """, year, as_dict=True)
-
-
-
 
 # # def get_chart(data):
 # #     return {
@@ -167,6 +160,131 @@
 # #         "type": "bar",
 # #     }
 
+
+# ///////////////////////////////21-01-26
+# import frappe
+
+# # ---------------- LEVEL 1 ----------------
+# def execute(filters=None):
+#     columns = get_columns()
+#     data = get_data(filters) or []
+#     summary = get_summary(data)
+#     return columns, data, None, None, summary
+
+
+# def get_columns():
+#     return [
+#         {"label": "Year", "fieldname": "year", "fieldtype": "Data", "width": 120},
+#         {"label": "Total Weight", "fieldname": "total_weight", "fieldtype": "Float", "width": 150},
+#         {"label": "Achieved Weight", "fieldname": "achieved_weight", "fieldtype": "Float", "width": 150},
+#         {"label": "Achieved %", "fieldname": "achieved_percent", "fieldtype": "Percent", "width": 120},
+#         {"label": "View", "fieldname": "view", "fieldtype": "HTML", "width": 100},
+#     ]
+
+
+# def get_data(filters=None):
+#     conditions = ""
+#     values = {}
+
+#     if filters and filters.get("year"):
+#         conditions = " AND year = %(year)s"
+#         values["year"] = filters.get("year")
+
+#     data = frappe.db.sql(f"""
+#         SELECT
+#             t.year,
+#             t.total_weight,
+#             IFNULL(a.achieved_weight, 0) achieved_weight
+#         FROM (
+#             SELECT year, SUM(kg) total_weight
+#             FROM `tabFT Monthly Target`
+#             WHERE docstatus = 1 {conditions}
+#             GROUP BY year
+#         ) t
+#         LEFT JOIN (
+#             SELECT year, SUM(total_weight_for_project_achieve) achieved_weight
+#             FROM `tabFT Monthly Achievement`
+#             WHERE docstatus = 1 {conditions}
+#             GROUP BY year
+#         ) a ON t.year = a.year
+#         ORDER BY t.year
+#     """, values, as_dict=True)
+
+#     for d in data:
+#         d.achieved_percent = round((d.achieved_weight / d.total_weight) * 100, 1) if d.total_weight else 0
+#         d.view = f"""
+#             <button class="btn btn-xs btn-primary ft-view-btn" data-year="{d.year}">
+#                 View
+#             </button>
+#         """
+#     return data
+
+
+# def get_summary(data):
+#     total = sum(d.total_weight for d in data)
+#     achieved = sum(d.achieved_weight for d in data)
+#     bal = total - achieved
+#     percent = round((achieved / total) * 100, 1) if total else 0
+
+#     return [
+#         {"label": "Total Weight", "value": total, "datatype": "Float"},
+#         {"label": "Achieved", "value": achieved, "datatype": "Float"},
+#         {"label": "Balance", "value": bal, "datatype": "Float"},
+#         {"label": "Percent", "value": f"{percent} %", "datatype": "Data"},
+#     ]
+
+
+# # ---------------- LEVEL 2 ----------------
+# @frappe.whitelist()
+# def get_month_wise_data(year):
+#     return frappe.db.sql("""
+#         SELECT
+#             MONTH(creation) AS month_no,
+#             DATE_FORMAT(creation, '%%M') AS month,
+#             SUM(total_weight_for_project_achieve) AS total_weight,
+#             SUM(total_weight_for_project_achieve) AS achieved_weight
+#         FROM `tabFT Monthly Achievement`
+#         WHERE docstatus = 1
+#           AND year = %s
+#         GROUP BY MONTH(creation)
+#         ORDER BY MONTH(creation)
+#     """, year, as_dict=True)
+
+
+# # ---------------- LEVEL 3 ----------------
+# @frappe.whitelist()
+# def get_project_wise_data(year, month):
+#     return frappe.db.sql("""
+#         SELECT
+#             project_name,
+#             SUM(total_weight_for_project_achieve) AS total_weight,
+#             SUM(total_weight_for_project_achieve) AS achieved_weight,
+#             COUNT(name) AS entry_count
+#         FROM `tabFT Monthly Achievement`
+#         WHERE docstatus = 1
+#           AND year = %s
+#           AND MONTH(creation) = %s
+#         GROUP BY project_name
+#     """, (year, month), as_dict=True)
+
+
+# # ---------------- LEVEL 4 ----------------
+# @frappe.whitelist()
+# def get_project_entry_data(project_name):
+#     return frappe.db.sql("""
+#         SELECT
+#             project_name,
+#             description,
+#             total_weight_for_project_achieve AS project_weight,
+#             total_weight_for_project_achieve AS achieved_weight,
+#             creation AS posting_date
+#         FROM `tabFT Monthly Achievement`
+#         WHERE docstatus = 1
+#           AND project_name = %s
+#         ORDER BY creation
+#     """, project_name, as_dict=True)
+
+# ///////////////////////////////21-01-26
 
 
 import frappe
@@ -246,16 +364,35 @@ def get_summary(data):
 def get_month_wise_data(year):
     return frappe.db.sql("""
         SELECT
-            MONTH(creation) AS month_no,
-            DATE_FORMAT(creation, '%%M') AS month,
-            SUM(total_weight_for_project_achieve) AS total_weight,
-            SUM(total_weight_for_project_achieve) AS achieved_weight
-        FROM `tabFT Monthly Achievement`
-        WHERE docstatus = 1
-          AND year = %s
-        GROUP BY MONTH(creation)
-        ORDER BY MONTH(creation)
-    """, year, as_dict=True)
+            m.month_no,
+            m.month_name AS month,
+            IFNULL(SUM(t.kg), 0) AS total_weight,
+            IFNULL(SUM(a.total_weight_for_project_achieve), 0) AS achieved_weight
+        FROM (
+            SELECT 1 month_no,'January' month_name UNION ALL
+            SELECT 2,'February' UNION ALL
+            SELECT 3,'March' UNION ALL
+            SELECT 4,'April' UNION ALL
+            SELECT 5,'May' UNION ALL
+            SELECT 6,'June' UNION ALL
+            SELECT 7,'July' UNION ALL
+            SELECT 8,'August' UNION ALL
+            SELECT 9,'September' UNION ALL
+            SELECT 10,'October' UNION ALL
+            SELECT 11,'November' UNION ALL
+            SELECT 12,'December'
+        ) m
+        LEFT JOIN `tabFT Monthly Target` t
+            ON t.docstatus = 1
+           AND t.year = %s
+           AND MONTH(t.creation) = m.month_no
+        LEFT JOIN `tabFT Monthly Achievement` a
+            ON a.docstatus = 1
+           AND a.year = %s
+           AND MONTH(a.creation) = m.month_no
+        GROUP BY m.month_no
+        ORDER BY m.month_no
+    """, (year, year), as_dict=True)
 
 
 # ---------------- LEVEL 3 ----------------
@@ -290,133 +427,3 @@ def get_project_entry_data(project_name):
           AND project_name = %s
         ORDER BY creation
     """, project_name, as_dict=True)
-
-# import frappe
-
-
-# def execute(filters=None):
-#     columns = get_columns()
-#     data = get_data(filters) or []
-#     summary = get_summary(data)
-#     return columns, data, None, None, summary
-
-
-# def get_columns():
-#     return [
-#         {"label": "Year", "fieldname": "year", "fieldtype": "Data", "width": 120},
-#         {"label": "Total Weight", "fieldname": "total_weight", "fieldtype": "Float", "width": 150},
-#         {"label": "Achieved Weight", "fieldname": "achieved_weight", "fieldtype": "Float", "width": 150},
-#         {"label": "Achieved %", "fieldname": "achieved_percent", "fieldtype": "Percent", "width": 120},
-#         {"label": "View", "fieldname": "view", "fieldtype": "HTML", "width": 100},
-#     ]
-
-
-# def get_data(filters=None):
-#     conditions = ""
-#     values = {}
-
-#     if filters and filters.get("year"):
-#         conditions = " AND year = %(year)s"
-#         values["year"] = filters.get("year")
-
-#     data = frappe.db.sql(f"""
-#         SELECT
-#             t.year,
-#             t.total_weight,
-#             IFNULL(a.achieved_weight, 0) achieved_weight
-#         FROM (
-#             SELECT year, SUM(kg) total_weight
-#             FROM `tabFT Monthly Target`
-#             WHERE docstatus = 1 {conditions}
-#             GROUP BY year
-#         ) t
-#         LEFT JOIN (
-#             SELECT year, SUM(total_weight_for_project_achieve) achieved_weight
-#             FROM `tabFT Monthly Achievement`
-#             WHERE docstatus = 1 {conditions}
-#             GROUP BY year
-#         ) a ON t.year = a.year
-#         ORDER BY t.year
-#     """, values, as_dict=True)
-
-#     for d in data:
-#         d.achieved_percent = round(
-#             (d.achieved_weight / d.total_weight) * 100, 1
-#         ) if d.total_weight else 0
-
-#         d.view = f"""
-#             <button class="btn btn-xs btn-primary ft-view-btn"
-#                 data-year="{d.year}">
-#                 View
-#             </button>
-#         """
-
-#     return data
-
-
-# def get_summary(data):
-#     total = sum(d.total_weight for d in data)
-#     achieved = sum(d.achieved_weight for d in data)
-#     bal = total - achieved
-#     percent = round((achieved / total) * 100, 1) if total else 0
-
-#     return [
-#         {"label": "Total Weight", "value": total, "datatype": "Float"},
-#         {"label": "Achieved", "value": achieved, "datatype": "Float"},
-#         {"label": "Balance", "value": bal, "datatype": "Float"},
-#         {"label": "Percent", "value": f"{percent} %", "datatype": "Data"},
-#     ]
-
-
-# # ---------------- LEVEL 2 ----------------
-# @frappe.whitelist()
-# def get_month_wise_data(year):
-#     return frappe.db.sql("""
-#         SELECT
-#             MONTH(creation) AS month_no,
-#             DATE_FORMAT(creation, '%%M') AS month,
-#             SUM(total_weight_for_project_achieve) AS total_weight,
-#             SUM(total_weight_for_project_achieve) AS achieved_weight
-#         FROM `tabFT Monthly Achievement`
-#         WHERE docstatus = 1
-#           AND year = %s
-#         GROUP BY MONTH(creation)
-#         ORDER BY MONTH(creation)
-#     """, year, as_dict=True)
-
-
-
-
-# # ---------------- LEVEL 3 ----------------
-# @frappe.whitelist()
-# def get_project_wise_data(year, month):
-#     return frappe.db.sql("""
-#         SELECT
-#             project_name,
-#             SUM(total_weight_for_project_achieve) AS total_weight,
-#             SUM(total_weight_for_project_achieve) AS achieved_weight,
-#             COUNT(name) AS entry_count
-#         FROM `tabFT Monthly Achievement`
-#         WHERE docstatus = 1
-#           AND year = %s
-#           AND DATE_FORMAT(creation, '%%M') = %s
-#         GROUP BY project_name
-#     """, (year, month), as_dict=True)
-
-
-
-# # ---------------- LEVEL 4 ----------------
-# @frappe.whitelist()
-# def get_project_entry_data(project_name):
-#     return frappe.db.sql("""
-#         SELECT
-#             project_name,
-#             description,
-#             total_weight_for_project_achieve AS achieved_weight,
-#             creation AS entry_date
-#         FROM `tabFT Monthly Achievement`
-#         WHERE docstatus = 1
-#           AND project_name = %s
-#         ORDER BY creation
-#     """, project_name, as_dict=True)
-
