@@ -89,6 +89,7 @@
    "fetch_from": "project_number.total_weight",
    "fieldname": "actual_project_total_weight",
    "fieldtype": "Data",
+   "hidden": 1,
    "label": "Actual Project Total Weight",
    "read_only": 1
   },
@@ -131,13 +132,14 @@
   {
    "fieldname": "month_total_weight_of_project",
    "fieldtype": "Float",
-   "label": "Month Total Weight of Project"
+   "label": "Month Total Weight of Project",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-01-19 15:20:18.627460",
+ "modified": "2026-01-22 13:41:12.831091",
  "modified_by": "Administrator",
  "module": "Fabtrk",
  "name": "FT Monthly Achievement",
