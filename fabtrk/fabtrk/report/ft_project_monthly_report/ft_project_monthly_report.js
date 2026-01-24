@@ -4,26 +4,6 @@
 frappe.query_reports["FT Project Monthly Report"] = {
 	"filters": [
 		{
-			fieldname: "month",
-			label: __("Month"),
-			fieldtype: "Link",
-			options: "FT Monthly Target",
-			get_query() {
-				return {
-					query: "frappe.desk.search.search_link",
-					filters: {},
-					order_by: "year desc, FIELD(select_month, \
-				'January','February','March','April','May','June',\
-				'July','August','September','October','November','December')"
-				};
-			},
-			on_change() {
-				frappe.query_report.refresh();
-				$("#details_area").html("");
-			}
-		},
-
-		{
 			fieldname: "project",
 			label: __("Project"),
 			fieldtype: "Link",
@@ -32,7 +12,33 @@ frappe.query_reports["FT Project Monthly Report"] = {
 				frappe.query_report.refresh();
 				$("#details_area").html("");
 			}
+		},
+
+		{
+			fieldname: "month",
+			label: __("Month"),
+			fieldtype: "Link",
+			options: "FT Monthly Target",
+			// get_query() {
+			// 	return {
+			// 		query: "fabtrk.fabtrk.report.ft_project_monthly_report.ft_project_monthly_report.get_sorted_months"
+			// 	};
+			// },
+			
+			// all monh+year show
+			get_query() {
+				return {
+					query: "fabtrk.fabtrk.report.ft_project_monthly_report.ft_project_monthly_report.get_all_months"
+				};
+			},
+
+			on_change() {
+				frappe.query_report.refresh();
+				$("#details_area").html("");
+			}
 		}
+
+
 	],
 
 	formatter(value, row, column, data, default_formatter) {
@@ -83,12 +89,10 @@ function refresh_project_details(month) {
 		method: "fabtrk.fabtrk.report.ft_project_monthly_report.ft_project_monthly_report.get_month_details",
 		args: {
 			project: frappe.query_report.get_filter_value("project"),
-			month: frappe.query_report.get_filter_value("month")
-		}
-		,
+			month: frappe.query_report.get_filter_value("month") || month
+		},
 		callback(r) {
 			if (r.message && r.message.length) {
-				// month_display ko pass kar rahe hain
 				render_details(r.message, r.message[0].month_display || month);
 			} else {
 				$("#details_area").html("<b>No data found</b>");

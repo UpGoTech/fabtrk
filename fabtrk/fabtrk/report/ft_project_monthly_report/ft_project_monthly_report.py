@@ -115,6 +115,26 @@ def get_data(month=None, project=None):
 
 @frappe.whitelist()
 def get_month_details(project=None, month=None):
+
+    # ✅ Month blank → latest month
+    if not month:
+        res = frappe.db.sql(
+            """
+            SELECT name
+            FROM `tabFT Monthly Target`
+            ORDER BY
+                year DESC,
+                FIELD(
+                    select_month,
+                    'January','February','March','April','May','June',
+                    'July','August','September','October','November','December'
+                ) DESC
+            LIMIT 1
+            """,
+            as_dict=False
+        )
+        month = res[0][0] if res else None
+
     if not month:
         return []
 
@@ -133,7 +153,8 @@ def get_month_details(project=None, month=None):
             ic.invoice_no,
             ic.invoice_weight,
             ic.invoice_amount,
-            ic.attach_file
+            ic.attach_file,
+            CONCAT(LEFT(mt.select_month,3), '-', RIGHT(mt.year,2)) AS month_display
         FROM `tabFT Monthly Target` mt
         INNER JOIN `tabFT Month Target Childtable` ct
             ON ct.parent = mt.name
@@ -153,3 +174,42 @@ def get_month_details(project=None, month=None):
         as_dict=True,
     )
 
+
+@frappe.whitelist()
+def get_sorted_months(*args, **kwargs):
+    res = frappe.db.sql(
+        """
+        SELECT CONCAT(LEFT(select_month,3), '-', RIGHT(year,2)) AS month_display
+        FROM `tabFT Monthly Target`
+        ORDER BY year DESC,
+            FIELD(select_month,
+                'January','February','March','April','May','June',
+                'July','August','September','October','November','December') DESC
+        """,
+        as_dict=False
+    )
+    # return [(value, title), ...] but make both same so no double display
+    return [(r[0], r[0]) for r in res]
+
+##### // all monh+year show
+@frappe.whitelist()
+def get_all_months(*args, **kwargs):
+    # Start aur end year define karo
+    start_year = 2024
+    end_year = 2026
+    
+    months = [
+        "January","February","March","April","May","June",
+        "July","August","September","October","November","December"
+    ]
+    
+    all_months = []
+    for year in range(start_year, end_year + 1):
+        for month in months:
+            month_display = f"{month[:3]}-{str(year)[-2:]}"  # e.g. Mar-26
+            all_months.append((month_display, month_display))  # value, title same
+    
+    # Descending order (latest month first)
+    all_months.reverse()
+    
+    return all_months
