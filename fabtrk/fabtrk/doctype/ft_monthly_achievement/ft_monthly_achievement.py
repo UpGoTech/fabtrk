@@ -216,24 +216,47 @@ def check_project_weight(year, select_month, project_number, current_value, docn
 
     return {"status": "ok", "actual": actual_weight, "achieved": achieved_weight, "balance": balance - current_value}
 
+# //////////////////////////// year pe  month filter
+# @frappe.whitelist()
+# def get_months_by_year(doctype, txt, searchfield, start, page_len, filters):
+#     year = filters.get("year")
 
+#     if not year:
+#         return []
+
+#     return frappe.db.sql("""
+#         SELECT name
+#         FROM `tabFT Monthly Target`
+#         WHERE year = %(year)s
+#           AND name LIKE %(txt)s
+#         ORDER BY name
+#     """, {
+#         "year": year,
+#         "txt": f"%{txt}%"
+#     })
+
+# //////////////////// year pe  month filter
+
+# seperat month sort
 @frappe.whitelist()
 def get_months_by_year(doctype, txt, searchfield, start, page_len, filters):
-    year = filters.get("year")
-
-    if not year:
-        return []
 
     return frappe.db.sql("""
         SELECT name
         FROM `tabFT Monthly Target`
-        WHERE year = %(year)s
-          AND name LIKE %(txt)s
-        ORDER BY name
+        WHERE name LIKE %(txt)s
+        ORDER BY
+            year DESC,
+            FIELD(select_month,
+                'December','November','October','September','August','July',
+                'June','May','April','March','February','January'
+            )
     """, {
-        "year": year,
         "txt": f"%{txt}%"
     })
+
+# seperat month sort
+
 
 #### ////project number filter after select month
 @frappe.whitelist()

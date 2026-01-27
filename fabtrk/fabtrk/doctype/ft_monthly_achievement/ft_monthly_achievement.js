@@ -81,30 +81,49 @@ frappe.ui.form.on("FT Monthly Achievement", {
         frm.trigger("set_month_filter");
         frm.trigger("set_project_filter");
     },
+    ////////////// year pe  month filter
+    // set_month_filter(frm) {
+    //     if (!frm.doc.year) return;
 
+    //     frm.set_query("select_month", () => ({
+    //         query: "fabtrk.fabtrk.doctype.ft_monthly_achievement.ft_monthly_achievement.get_months_by_year",
+    //         filters: {
+    //             year: frm.doc.year
+    //         }
+    //     }));
+    // },
+    ////////////// year pe  month filter
+
+    // # seperat month sort
     set_month_filter(frm) {
-        if (!frm.doc.year) return;
-
         frm.set_query("select_month", () => ({
-            query: "fabtrk.fabtrk.doctype.ft_monthly_achievement.ft_monthly_achievement.get_months_by_year",
-            filters: {
-                year: frm.doc.year
-            }
+            query: "fabtrk.fabtrk.doctype.ft_monthly_achievement.ft_monthly_achievement.get_months_by_year"
         }));
     },
+    // # seperat month sort
 
     //  ////project number filter after select month
-    set_project_filter(frm) {
-        if (!frm.doc.year || !frm.doc.select_month) return;
+    // set_project_filter(frm) {
+    //     if (!frm.doc.year || !frm.doc.select_month) return;
 
+    //     frm.set_query("project_number", () => ({
+    //         query: "fabtrk.fabtrk.doctype.ft_monthly_achievement.ft_monthly_achievement.get_projects_by_year_month",
+    //         filters: {
+    //             year: frm.doc.year,
+    //             month: frm.doc.select_month
+    //         }
+    //     }));
+    // },
+
+    // ////only show those project which is check the is active
+    set_project_filter(frm) {
         frm.set_query("project_number", () => ({
-            query: "fabtrk.fabtrk.doctype.ft_monthly_achievement.ft_monthly_achievement.get_projects_by_year_month",
             filters: {
-                year: frm.doc.year,
-                month: frm.doc.select_month
+                is_active: 1
             }
         }));
     },
+    // ////only show those project which is check the is active
 
     total_weight_for_project_achieve(frm) {
         if (!frm.doc.year || !frm.doc.select_month || !frm.doc.project_number) return;

@@ -6,9 +6,9 @@
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
-  "year",
-  "column_break_exuj",
   "select_month",
+  "column_break_exuj",
+  "year",
   "section_break_oqhg",
   "project_balance",
   "section_break_nfas",
@@ -96,6 +96,7 @@
   {
    "fieldname": "year",
    "fieldtype": "Link",
+   "hidden": 1,
    "label": "Year",
    "options": "FT Year"
   },
@@ -139,7 +140,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-01-22 13:41:12.831091",
+ "modified": "2026-01-27 12:38:01.552655",
  "modified_by": "Administrator",
  "module": "Fabtrk",
  "name": "FT Monthly Achievement",
