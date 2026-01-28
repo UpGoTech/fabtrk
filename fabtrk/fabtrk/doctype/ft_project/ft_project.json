@@ -16,7 +16,7 @@
   "priority",
   "percentage_completed",
   "customer_info_section",
-  "customer",
+  "customer_name",
   "shipping_details_section",
   "shipping_scope",
   "shipping_destination",
@@ -80,7 +80,7 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Priority ",
-   "options": "\nLow\nMedium\nHight"
+   "options": "\nLow\nMedium\nHigh"
   },
   {
    "fieldname": "percentage_completed",
@@ -92,13 +92,6 @@
    "fieldname": "customer_info_section",
    "fieldtype": "Section Break",
    "label": "Customer Info"
-  },
-  {
-   "fieldname": "customer",
-   "fieldtype": "Link",
-   "in_list_view": 1,
-   "label": "Customer",
-   "options": "FT Customer"
   },
   {
    "fieldname": "shipping_details_section",
@@ -125,6 +118,7 @@
    "label": "Project weight & Timeline "
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "total_weight",
    "fieldtype": "Float",
    "in_list_view": 1,
@@ -162,15 +156,23 @@
    "print_hide": 1,
    "read_only": 1,
    "search_index": 1
+  },
+  {
+   "fieldname": "customer_name",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Customer Name",
+   "options": "FT Customer"
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-01-13 12:30:51.961994",
+ "modified": "2026-01-14 18:05:53.273385",
  "modified_by": "Administrator",
  "module": "Fabtrk",
  "name": "FT Project",
+ "naming_rule": "By \"Naming Series\" field",
  "owner": "Administrator",
  "permissions": [
   {
@@ -189,6 +191,7 @@
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": [],
+ "title_field": "project_name",
  "track_changes": 1,
  "track_views": 1
 }

@@ -1,6 +1,6 @@
 {
  "charts": [],
- "content": "[{\"id\":\"zZRE_3czml\",\"type\":\"card\",\"data\":{\"card_name\":\"doctype\",\"col\":4}},{\"id\":\"F0lp7NXOGm\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"FT Project Report\",\"col\":3}}]",
+ "content": "[{\"id\":\"zZRE_3czml\",\"type\":\"card\",\"data\":{\"card_name\":\"doctype\",\"col\":4}},{\"id\":\"nBH-yeqcZ1\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Project Monthly Report\",\"col\":3}},{\"id\":\"F0lp7NXOGm\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Project Year Report\",\"col\":3}}]",
  "creation": "2025-12-15 17:34:19.067438",
  "custom_blocks": [],
  "docstatus": 0,
@@ -17,7 +17,7 @@
    "hidden": 0,
    "is_query_report": 0,
    "label": "doctype",
-   "link_count": 6,
+   "link_count": 7,
    "link_type": "DocType",
    "onboard": 0,
    "type": "Card Break"
@@ -38,6 +38,16 @@
    "label": "FT Customer Group",
    "link_count": 0,
    "link_to": "FT Customer Group",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "FT Customer Series",
+   "link_count": 0,
+   "link_to": "FT Customer Series",
    "link_type": "DocType",
    "onboard": 0,
    "type": "Link"
@@ -83,7 +93,7 @@
    "type": "Link"
   }
  ],
- "modified": "2026-01-13 16:01:59.994888",
+ "modified": "2026-01-28 13:03:28.958335",
  "modified_by": "Administrator",
  "module": "Fabtrk",
  "name": "Fabtrk",
@@ -98,8 +108,15 @@
   {
    "color": "Grey",
    "doc_view": "List",
-   "label": "FT Project Report",
+   "label": "Project Year Report",
    "link_to": "FT Project Report",
+   "type": "Report"
+  },
+  {
+   "color": "Grey",
+   "doc_view": "List",
+   "label": "Project Monthly Report",
+   "link_to": "FT Project Monthly Report",
    "type": "Report"
   }
  ],

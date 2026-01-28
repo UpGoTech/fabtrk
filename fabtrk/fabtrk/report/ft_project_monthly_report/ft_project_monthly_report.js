@@ -1,20 +1,8 @@
-// // Copyright (c) 2026, UpGo Technologies and contributors
-// // For license information, please see license.txt
+// Copyright (c) 2026, UpGo Technologies and contributors
+// For license information, please see license.txt
 
-
-
-frappe.query_reports["FT Project Report"] = {
-	filters: [
-		{
-			fieldname: "year",
-			label: __("Year"),
-			fieldtype: "Link",
-			options: "FT Year",
-			on_change() {
-				frappe.query_report.refresh();
-				$("#details_area").html("");
-			}
-		},
+frappe.query_reports["FT Project Monthly Report"] = {
+	"filters": [
 		{
 			fieldname: "project",
 			label: __("Project"),
@@ -24,7 +12,33 @@ frappe.query_reports["FT Project Report"] = {
 				frappe.query_report.refresh();
 				$("#details_area").html("");
 			}
+		},
+
+		{
+			fieldname: "month",
+			label: __("Month"),
+			fieldtype: "Link",
+			options: "FT Monthly Target",
+			// get_query() {
+			// 	return {
+			// 		query: "fabtrk.fabtrk.report.ft_project_monthly_report.ft_project_monthly_report.get_sorted_months"
+			// 	};
+			// },
+			
+			// all monh+year show
+			get_query() {
+				return {
+					query: "fabtrk.fabtrk.report.ft_project_monthly_report.ft_project_monthly_report.get_all_months"
+				};
+			},
+
+			on_change() {
+				frappe.query_report.refresh();
+				$("#details_area").html("");
+			}
 		}
+
+
 	],
 
 	formatter(value, row, column, data, default_formatter) {
@@ -47,7 +61,7 @@ frappe.query_reports["FT Project Report"] = {
 
 		return default_formatter(value, row, column, data);
 	},
-	
+
 	onload(report) {
 		// ✅ 1️⃣ TOP BUTTON (Fabtrk Workspace)
 		report.page.add_inner_button(__("Go to Fabtrk Workspace"), () => {
@@ -72,15 +86,13 @@ function fmt(num) {
 
 function refresh_project_details(month) {
 	frappe.call({
-		method: "fabtrk.fabtrk.report.ft_project_report.ft_project_report.get_month_details",
+		method: "fabtrk.fabtrk.report.ft_project_monthly_report.ft_project_monthly_report.get_month_details",
 		args: {
-			year: frappe.query_report.get_filter_value("year"),
 			project: frappe.query_report.get_filter_value("project"),
-			month: month
+			month: frappe.query_report.get_filter_value("month") || month
 		},
 		callback(r) {
 			if (r.message && r.message.length) {
-				// month_display ko pass kar rahe hain
 				render_details(r.message, r.message[0].month_display || month);
 			} else {
 				$("#details_area").html("<b>No data found</b>");

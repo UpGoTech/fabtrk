@@ -1,18 +1,19 @@
 {
  "actions": [],
- "allow_rename": 1,
- "autoname": "format:{month}-{year}",
+ "autoname": "format:{months}-{year}",
  "creation": "2026-01-10 16:07:12.838563",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
   "month",
+  "months",
   "year"
  ],
  "fields": [
   {
    "fieldname": "month",
    "fieldtype": "Select",
+   "hidden": 1,
    "label": "Month",
    "options": "January\nFebruary\nMarch\nApril\nMay\nJune\nJuly\nAugust\nSeptember\nOctober\nNovember\nDecember"
   },
@@ -21,11 +22,17 @@
    "fieldtype": "Link",
    "label": "Year",
    "options": "FT Year"
+  },
+  {
+   "fieldname": "months",
+   "fieldtype": "Link",
+   "label": "months",
+   "options": "FT Month"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-01-12 14:16:42.087839",
+ "modified": "2026-01-14 14:21:33.449909",
  "modified_by": "Administrator",
  "module": "Fabtrk",
  "name": "FT Project Month",

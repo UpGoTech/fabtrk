@@ -1,214 +1,458 @@
-// Copyright (c) 2026, UpGo Technologies and contributors
-// For license information, please see license.txt
+// // // // Copyright (c) 2026, UpGo Technologies and contributors
+// // // // For license information, please see license.txt
 
 
-// ================= GLOBAL =================
-let CURRENT_YEAR = "";
-let CURRENT_MONTH = "";
+// frappe.query_reports["FT Report"] = {
+//     filters: [
+//         {
+//             fieldname: "year",
+//             label: __("Year"),
+//             fieldtype: "Link",
+//             options: "FT Year"
+//         }
+//     ],
 
+//     onload: function (report) {
+
+//         // container for detail table
+//         report.page.wrapper.append(`
+//             <div id="ft-detail-container" style="margin-top:25px;"></div>
+//         `);
+
+//         // 🔥 VIEW BUTTON CLICK
+//         report.page.wrapper.on("click", ".ft-view-btn", function () {
+//             let year = $(this).data("year");
+
+//             frappe.call({
+//                 method: "fabtrk.fabtrk.report.ft_report.ft_report.get_year_wise_project_data",
+//                 args: { year: year },
+//                 callback: function (r) {
+
+//                     let html = `
+//                         <div class="card">
+//                             <div class="card-body">
+//                                 <h4>Project Details - ${year}</h4>
+//                                 <table class="table table-bordered table-striped">
+//                                     <thead>
+//                                         <tr>
+//                                             <th>Project No</th>
+//                                             <th>Project Name</th>
+//                                             <th>Customer</th>
+//                                             <th>Achieved Weight</th>
+//                                         </tr>
+//                                     </thead>
+//                                     <tbody>
+//                     `;
+
+//                     if (r.message && r.message.length) {
+//                         r.message.forEach(d => {
+//                             html += `
+//                                 <tr>
+//                                     <td>${d.project_number || ""}</td>
+//                                     <td>${d.project_name || ""}</td>
+//                                     <td>${d.customer_name || ""}</td>
+//                                     <td class="text-end">
+//                                         ${d.total_weight_for_project_achieve || 0}
+//                                     </td>
+//                                 </tr>
+//                             `;
+//                         });
+//                     } else {
+//                         html += `
+//                             <tr>
+//                                 <td colspan="4" class="text-center">
+//                                     No Data Found
+//                                 </td>
+//                             </tr>
+//                         `;
+//                     }
+
+//                     html += `
+//                                     </tbody>
+//                                 </table>
+//                             </div>
+//                         </div>
+//                     `;
+
+//                     $("#ft-detail-container").html(html);
+//                 }
+//             });
+//         });
+//     }
+// };
+
+
+
+// # ///////////////////////////////21-01-26
+// frappe.query_reports["FT Report"] = {
+//     filters: [
+//         { fieldname: "year", label: __("Year"), fieldtype: "Link", options: "FT Year" }
+//     ],
+
+//     onload(report) {
+//         report.page.wrapper.append(`<div id="ft-detail-container" style="margin-top:25px;"></div>`);
+
+//         // YEAR → MONTH
+//         report.page.wrapper.on("click", ".ft-view-btn", function () {
+//             let year = $(this).data("year");
+
+//             frappe.call({
+//                 method: "fabtrk.fabtrk.report.ft_report.ft_report.get_month_wise_data",
+//                 args: { year },
+//                 callback(r) {
+//                     let html = `<h4>Month Details - ${year}</h4>
+//                     <table class="table table-bordered"><thead>
+//                     <tr><th>Month</th><th>Total</th><th>Achieved</th><th>Balance</th><th>%</th><th>View</th></tr>
+//                     </thead><tbody>`;
+
+//                     r.message.forEach(d => {
+//                         let bal = d.total_weight - d.achieved_weight;
+//                         let per = d.total_weight ? ((d.achieved_weight / d.total_weight) * 100).toFixed(1) : 0;
+
+//                         html += `<tr>
+//                             <td>${d.month}</td>
+//                             <td>${d.total_weight}</td>
+//                             <td>${d.achieved_weight}</td>
+//                             <td>${bal}</td>
+//                             <td>${per}%</td>
+//                             <td>
+//                                 <button class="btn btn-xs btn-info ft-month-view"
+//                                     data-year="${year}"
+//                                     data-month="${d.month_no}">
+//                                     View
+//                                 </button>
+//                             </td>
+//                         </tr>`;
+//                     });
+
+//                     $("#ft-detail-container").html(html + "</tbody></table>");
+//                 }
+//             });
+//         });
+
+//         // MONTH → PROJECT
+//         report.page.wrapper.on("click", ".ft-month-view", function () {
+//             frappe.call({
+//                 method: "fabtrk.fabtrk.report.ft_report.ft_report.get_project_wise_data",
+//                 args: {
+//                     year: $(this).data("year"),
+//                     month: $(this).data("month")  // JS key matches Python parameter
+//                 },
+//                 callback(r) {
+//                     let html = `<h4>Project Details</h4>
+//                     <table class="table table-bordered"><thead>
+//                     <tr><th>Project</th><th>Total</th><th>Achieved</th><th>Balance</th><th>Entries</th><th>View</th></tr>
+//                     </thead><tbody>`;
+
+//                     r.message.forEach(d => {
+//                         html += `<tr>
+//                             <td>${d.project_name}</td>
+//                             <td>${d.total_weight}</td>
+//                             <td>${d.achieved_weight}</td>
+//                             <td>${d.total_weight - d.achieved_weight}</td>
+//                             <td>${d.entry_count}</td>
+//                             <td>
+//                                 <button class="btn btn-xs btn-warning ft-project-view"
+//                                     data-project="${d.project_name}">
+//                                     View
+//                                 </button>
+//                             </td>
+//                         </tr>`;
+//                     });
+
+//                     $("#ft-detail-container").html(html + "</tbody></table>");
+//                 }
+//             });
+//         });
+
+//         // PROJECT → ENTRY
+//         report.page.wrapper.on("click", ".ft-project-view", function () {
+//             frappe.call({
+//                 method: "fabtrk.fabtrk.report.ft_report.ft_report.get_project_entry_data",
+//                 args: { project_name: $(this).data("project") },
+//                 callback(r) {
+//                     let html = `<h4>Project Entries</h4>
+//                     <table class="table table-bordered"><thead>
+//                     <tr><th>Description</th><th>Weight</th><th>Achieved</th><th>Balance</th><th>Date</th></tr>
+//                     </thead><tbody>`;
+
+//                     r.message.forEach(d => {
+//                         html += `<tr>
+//                             <td>${d.description || ""}</td>
+//                             <td>${d.project_weight}</td>
+//                             <td>${d.achieved_weight}</td>
+//                             <td>${d.project_weight - d.achieved_weight}</td>
+//                             <td>${d.posting_date}</td>
+//                         </tr>`;
+//                     });
+
+//                     $("#ft-detail-container").html(html + "</tbody></table>");
+//                 }
+//             });
+//         });
+//     }
+// };
+// # ///////////////////////////////21-01-26
+
+// /////////////////////////////////////////
 frappe.query_reports["FT Report"] = {
-	"filters": [
+    filters: [
+        { fieldname: "year", label: __("Year"), fieldtype: "Link", options: "FT Year" }
+    ],
 
-		{
-			fieldname: "year",
-			label: "Year",
-			fieldtype: "Int",
-			reqd: 1,
-			on_change: function () {
-				let year = frappe.query_report.get_filter_value("year");
-				$("#drilldown-container").html("");
+    onload(report) {
+        report.page.wrapper.append(`
+            <div id="ft-detail-container" style="margin-top:25px;">
+                <div id="ft-month-container"></div>
+                <div id="ft-project-container" style="margin-top:20px;"></div>
+                <div id="ft-entry-container" style="margin-top:20px;"></div>
+            </div>
+        `);
 
-				if (year) {
-					CURRENT_YEAR = year;
-					frappe.query_report.refresh();
-					setTimeout(() => {
-						load_month_data(year);
-					}, 300);
-				}
-			}
-		}
-	],
+        // YEAR → MONTH
+        report.page.wrapper.on("click", ".ft-view-btn", function () {
+            let year = $(this).data("year");
 
-	onload: function (report) {
-		if (!$("#drilldown-container").length) {
-			report.page.wrapper.append(
-				`<div id="drilldown-container" style="margin-top:20px;"></div>`
-			);
-		}
+            frappe.call({
+                method: "fabtrk.fabtrk.report.ft_report.ft_report.get_month_wise_data",
+                args: { year },
+                callback(r) {
+                    let html = `<h4>Month Details - ${year}</h4>
+                    <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Month</th>
+                            <th>Total</th>
+                            <th>Achieved</th>
+                            <th>Balance</th>
+                            <th>%</th>
+                            <th>View</th>
+                        </tr>
+                    </thead><tbody>`;
 
-		$(document).on("click", ".view-month", function () {
-			let month = $(this).data("month");
-			CURRENT_MONTH = month;
-			load_project_data(CURRENT_YEAR, month);
-		});
+                    r.message.forEach(d => {
+                        let bal = d.total_weight - d.achieved_weight;
+                        let per = d.total_weight ? ((d.achieved_weight / d.total_weight) * 100).toFixed(1) : 0;
 
-		$(document).on("click", ".view-project", function () {
-			let project = $(this).data("project");
-			load_project_entries(CURRENT_YEAR, CURRENT_MONTH, project);
-		});
-	}
+                        html += `<tr>
+                            <td>${d.month}</td>
+                            <td>${d.total_weight}</td>
+                            <td>${d.achieved_weight}</td>
+                            <td>${bal}</td>
+                            <td>${per}%</td>
+                            <td>
+                                <button class="btn btn-xs btn-info ft-month-view"
+                                    data-year="${year}"
+                                    data-month="${d.month_no}">
+                                    View
+                                </button>
+                            </td>
+                        </tr>`;
+                    });
+
+                    html += `</tbody></table>`;
+
+                    $("#ft-month-container").html(html);
+                    $("#ft-project-container").html("");
+                    $("#ft-entry-container").html("");
+                }
+            });
+        });
+
+        // MONTH → PROJECT
+        report.page.wrapper.on("click", ".ft-month-view", function () {
+            let year = $(this).data("year");
+            let month = $(this).data("month");
+
+            frappe.call({
+                method: "fabtrk.fabtrk.report.ft_report.ft_report.get_project_wise_data",
+                args: { year, month },
+                callback(r) {
+                    let html = `<h4>Project Details</h4>
+                    <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Project</th>
+                            <th>Total</th>
+                            <th>Achieved</th>
+                            <th>Balance</th>
+                            <th>Entries</th>
+                            <th>View</th>
+                        </tr>
+                    </thead><tbody>`;
+
+                    r.message.forEach(d => {
+                        html += `<tr>
+                            <td>${d.project_name}</td>
+                            <td>${d.total_weight}</td>
+                            <td>${d.achieved_weight}</td>
+                            <td>${d.total_weight - d.achieved_weight}</td>
+                            <td>${d.entry_count}</td>
+                            <td>
+                                <button class="btn btn-xs btn-warning ft-project-view"
+                                    data-project="${d.project_name}">
+                                    View
+                                </button>
+                            </td>
+                        </tr>`;
+                    });
+
+                    html += `</tbody></table>`;
+
+                    $("#ft-project-container").html(html);
+                    $("#ft-entry-container").html("");
+                }
+            });
+        });
+
+        // PROJECT → ENTRY
+        report.page.wrapper.on("click", ".ft-project-view", function () {
+            let project_name = $(this).data("project");
+
+            frappe.call({
+                method: "fabtrk.fabtrk.report.ft_report.ft_report.get_project_entry_data",
+                args: { project_name },
+                callback(r) {
+                    let html = `<h4>Project Entries</h4>
+                    <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Description</th>
+                            <th>Weight</th>
+                            <th>Achieved</th>
+                            <th>Balance</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead><tbody>`;
+
+                    r.message.forEach(d => {
+                        html += `<tr>
+                            <td>${d.description || ""}</td>
+                            <td>${d.project_weight}</td>
+                            <td>${d.achieved_weight}</td>
+                            <td>${d.project_weight - d.achieved_weight}</td>
+                            <td>${d.posting_date}</td>
+                        </tr>`;
+                    });
+
+                    html += `</tbody></table>`;
+
+                    $("#ft-entry-container").html(html);
+                }
+            });
+        });
+    }
 };
 
-// ================= LOAD MONTH DATA =================
-function load_month_data(year) {
-	frappe.call({
-		method: "testapp.testapp.report.show_all_date_related_to_project_entry.show_all_date_related_to_project_entry.get_month_data",
-		args: { year },
-		callback(r) {
-			render_month_table(r.message || [], year);
-		}
-	});
-}
+// /////////////////////////////////////////
 
-// ================= LOAD PROJECT DATA =================
-function load_project_data(year, month) {
-	frappe.call({
-		method: "testapp.testapp.report.show_all_date_related_to_project_entry.show_all_date_related_to_project_entry.get_project_data",
-		args: { year, month },
-		callback(r) {
-			render_project_table(r.message || [], month);
-		}
-	});
-}
 
-// ================= LOAD PROJECT ENTRIES =================
-function load_project_entries(year, month, project) {
-	frappe.call({
-		method: "testapp.testapp.report.show_all_date_related_to_project_entry.show_all_date_related_to_project_entry.get_project_entries",
-		args: { year, month, project },
-		callback(r) {
-			render_project_entry_table(r.message || [], project);
-		}
-	});
-}
 
-// ================= RENDER MONTH TABLE =================
-function render_month_table(data, year) {
+// frappe.query_reports["FT Report"] = {
+//     filters: [
+//         { fieldname: "year", label: __("Year"), fieldtype: "Link", options: "FT Year" }
+//     ],
 
-	let html = `
-        <hr>
-        <h4>Month Details - ${year}</h4>
-        <table class="table table-bordered">
-            <thead>
-                <tr>
-                    <th>Month</th>
-                    <th>Target (MT)</th>
-                    <th>Achieved (MT)</th>
-                    <th>Balance</th>
-                    <th>%</th>
-                    <th>Entry</th>
-                    <th>View</th>
-                </tr>
-            </thead>
-            <tbody>
-    `;
+//     onload(report) {
+//         report.page.wrapper.append(`<div id="ft-detail-container" style="margin-top:25px;"></div>`);
 
-	data.forEach(d => {
-		html += `
-            <tr>
-                <td>${d.month}</td>
-                <td>${d.target || 0}</td>
-                <td>${d.achieved || 0}</td>
-                <td>${d.balance || 0}</td>
-                <td>${(d.percent || 0).toFixed(1)}%</td>
-                <td>${d.entry || 0}</td>
-                <td>
-                    <button class="btn btn-xs btn-secondary view-month"
-                        data-month="${d.month}">
-                        View
-                    </button>
-                </td>
-            </tr>
-        `;
-	});
+//         // YEAR → MONTH
+//         report.page.wrapper.on("click", ".ft-view-btn", function () {
+//             let year = $(this).data("year");
 
-	html += `
-            </tbody>
-        </table>
-        <div id="project-table-container"></div>
-    `;
+//             frappe.call({
+//                 method: "fabtrk.fabtrk.report.ft_report.ft_report.get_month_wise_data",
+//                 args: { year },
+//                 callback(r) {
+//                     let html = `<h4>Month Details - ${year}</h4>
+//                     <table class="table table-bordered"><thead>
+//                     <tr><th>Month</th><th>Total</th><th>Achieved</th><th>Balance</th><th>%</th><th>View</th></tr>
+//                     </thead><tbody>`;
 
-	$("#drilldown-container").html(html);
-}
+//                     r.message.forEach(d => {
+//                         let bal = d.total_weight - d.achieved_weight;
+//                         let per = d.total_weight ? ((d.achieved_weight / d.total_weight) * 100).toFixed(1) : 0;
 
-// ================= RENDER PROJECT TABLE =================
-function render_project_table(data, month) {
+//                         html += `<tr>
+//                             <td>${d.month}</td>
+//                             <td>${d.total_weight}</td>
+//                             <td>${d.achieved_weight}</td>
+//                             <td>${bal}</td>
+//                             <td>${per}%</td>
+//                             <td>
+//                                 <button class="btn btn-xs btn-info ft-month-view"
+//                                     data-year="${year}"
+//                                     data-month-no="${d.month_no}">
+//                                     View
+//                                 </button>
+//                             </td>
+//                         </tr>`;
+//                     });
 
-	let html = `
-        <h4>Project Details - ${month}</h4>
-        <table class="table table-bordered">
-            <thead>
-                <tr>
-                    <th>Project</th>
-                    <th>Target (MT)</th>
-                    <th>Achieved (MT)</th>
-                    <th>Balance</th>
-                    <th>No. of Entry</th>
-                    <th>View</th>
-                </tr>
-            </thead>
-            <tbody>
-    `;
+//                     $("#ft-detail-container").html(html + "</tbody></table>");
+//                 }
+//             });
+//         });
 
-	data.forEach(d => {
-		html += `
-            <tr>
-                <td>${d.project}</td>
-                <td>${d.project_target || 0}</td>
-                <td>${d.achieved || 0}</td>
-                <td>${d.balance || 0}</td>
-                <td>${d.entry_count || 0}</td>
-                <td>
-                    <button class="btn btn-xs btn-primary view-project"
-                        data-project="${d.project}">
-                        View
-                    </button>
-                </td>
-            </tr>
-        `;
-	});
+//         // MONTH → PROJECT
+//         report.page.wrapper.on("click", ".ft-month-view", function () {
+//             frappe.call({
+//                 method: "fabtrk.fabtrk.report.ft_report.ft_report.get_project_wise_data",
+//                 args: {
+//                     year: $(this).data("year"),
+//                     month_no: $(this).data("month-no")
+//                 },
+//                 callback(r) {
+//                     let html = `<h4>Project Details</h4>
+//                     <table class="table table-bordered"><thead>
+//                     <tr><th>Project</th><th>Total</th><th>Achieved</th><th>Balance</th><th>Entries</th><th>View</th></tr>
+//                     </thead><tbody>`;
 
-	html += `</tbody></table>
-             <div id="project-entry-container"></div>`;
+//                     r.message.forEach(d => {
+//                         html += `<tr>
+//                             <td>${d.project_name}</td>
+//                             <td>${d.total_weight}</td>
+//                             <td>${d.achieved_weight}</td>
+//                             <td>${d.total_weight - d.achieved_weight}</td>
+//                             <td>${d.entry_count}</td>
+//                             <td>
+//                                 <button class="btn btn-xs btn-warning ft-project-view"
+//                                     data-project="${d.project_name}">
+//                                     View
+//                                 </button>
+//                             </td>
+//                         </tr>`;
+//                     });
 
-	$("#project-table-container").html(html);
-}
+//                     $("#ft-detail-container").html(html + "</tbody></table>");
+//                 }
+//             });
+//         });
 
-// ================= RENDER PROJECT ENTRY TABLE =================
-function render_project_entry_table(data, project) {
+//         // PROJECT → ENTRY
+//         report.page.wrapper.on("click", ".ft-project-view", function () {
+//             frappe.call({
+//                 method: "fabtrk.fabtrk.report.ft_report.ft_report.get_project_entry_data",
+//                 args: { project_name: $(this).data("project") },
+//                 callback(r) {
+//                     let html = `<h4>Project Entries</h4>
+//                     <table class="table table-bordered"><thead>
+//                     <tr><th>Description</th><th>Weight</th><th>Achieved</th><th>Balance</th><th>Date</th></tr>
+//                     </thead><tbody>`;
 
-	let html = `
-        <h5 style="margin-top:15px;">Project Entries - ${project}</h5>
-        <table class="table table-bordered">
-            <thead>
-                <tr>
-                    <th>Date</th>
-                    <th>Project</th>
-                    <th>Description</th>
-                    <th>Customer</th>
-                    <th>Target</th>
-                    <th>Achieved</th>
-                    <th>Balance</th>
-                </tr>
-            </thead>
-            <tbody>
-    `;
+//                     r.message.forEach(d => {
+//                         html += `<tr>
+//                             <td>${d.description || ""}</td>
+//                             <td>${d.project_weight}</td>
+//                             <td>${d.total_weight_for_project_achieve}</td>
+//                             <td>${d.project_weight - d.total_weight_for_project_achieve}</td>
+//                             <td>${d.posting_date}</td>
+//                         </tr>`;
+//                     });
 
-	data.forEach(d => {
-		html += `
-            <tr>
-                <td>${frappe.datetime.str_to_user(d.date)}</td>
-                <td>${d.project}</td>
-                <td>${d.project_description || ""}</td>
-                <td>${d.customer || ""}</td>
-                <td>${d.project_target || 0}</td>
-                <td>${d.achieved || 0}</td>
-                <td>${d.balance || 0}</td>
-            </tr>
-        `;
-	});
-
-	html += `</tbody></table>`;
-
-	$("#project-entry-container").html(html);
-}
+//                     $("#ft-detail-container").html(html + "</tbody></table>");
+//                 }
+//             });
+//         });
+//     }
+// };

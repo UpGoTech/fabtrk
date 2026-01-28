@@ -1,15 +1,20 @@
 {
  "actions": [],
- "allow_rename": 1,
- "autoname": "format:{month}",
+ "autoname": "format:{select_month}",
  "creation": "2026-01-12 13:06:19.872856",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
+  "section_break_jwts",
   "month",
-  "project",
+  "monthss",
   "month_sort",
-  "total_target_section",
+  "section_break_sykg",
+  "year",
+  "select_month",
+  "monthly_total_weight",
+  "project",
+  "total_weight_of_project_section",
   "kg",
   "column_break_znlu",
   "mt",
@@ -19,6 +24,7 @@
   {
    "fieldname": "month",
    "fieldtype": "Select",
+   "hidden": 1,
    "label": "Month"
   },
   {
@@ -26,11 +32,6 @@
    "fieldtype": "Table",
    "label": "Project",
    "options": "FT Month Target Childtable"
-  },
-  {
-   "fieldname": "total_target_section",
-   "fieldtype": "Section Break",
-   "label": "Total Target"
   },
   {
    "fieldname": "kg",
@@ -62,12 +63,50 @@
    "print_hide": 1,
    "read_only": 1,
    "search_index": 1
+  },
+  {
+   "fieldname": "total_weight_of_project_section",
+   "fieldtype": "Section Break",
+   "label": "Total Weight of Project"
+  },
+  {
+   "fieldname": "monthss",
+   "fieldtype": "Link",
+   "label": "Monthss",
+   "options": "FT Project Month"
+  },
+  {
+   "fieldname": "section_break_jwts",
+   "fieldtype": "Section Break",
+   "hidden": 1
+  },
+  {
+   "fieldname": "section_break_sykg",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "year",
+   "fieldtype": "Link",
+   "label": "Year",
+   "options": "FT Year"
+  },
+  {
+   "fieldname": "select_month",
+   "fieldtype": "Link",
+   "label": "Select Month",
+   "options": "FT Month"
+  },
+  {
+   "fieldname": "monthly_total_weight",
+   "fieldtype": "Float",
+   "hidden": 1,
+   "label": "Monthly Total Weight "
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-01-12 18:19:04.448969",
+ "modified": "2026-01-17 16:36:42.175756",
  "modified_by": "Administrator",
  "module": "Fabtrk",
  "name": "FT Monthly Target",
