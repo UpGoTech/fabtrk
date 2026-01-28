@@ -1,6 +1,6 @@
 {
  "charts": [],
- "content": "[{\"id\":\"zZRE_3czml\",\"type\":\"card\",\"data\":{\"card_name\":\"doctype\",\"col\":4}},{\"id\":\"F0lp7NXOGm\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Project Year Report\",\"col\":3}},{\"id\":\"nBH-yeqcZ1\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Project Monthly Report\",\"col\":3}}]",
+ "content": "[{\"id\":\"zZRE_3czml\",\"type\":\"card\",\"data\":{\"card_name\":\"doctype\",\"col\":4}},{\"id\":\"nBH-yeqcZ1\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Project Monthly Report\",\"col\":3}},{\"id\":\"F0lp7NXOGm\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Project Year Report\",\"col\":3}}]",
  "creation": "2025-12-15 17:34:19.067438",
  "custom_blocks": [],
  "docstatus": 0,
@@ -93,7 +93,7 @@
    "type": "Link"
   }
  ],
- "modified": "2026-01-22 17:45:20.386112",
+ "modified": "2026-01-28 13:03:28.958335",
  "modified_by": "Administrator",
  "module": "Fabtrk",
  "name": "Fabtrk",

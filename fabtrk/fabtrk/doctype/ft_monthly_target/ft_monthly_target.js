@@ -7,7 +7,7 @@
 // 	},
 // });
 
-///// month aut year change 
+///// month aur year change 
 
 // frappe.ui.form.on('FT Monthly Target', {
 //     onload(frm) {
@@ -31,7 +31,7 @@
 
 //     frm.set_df_property('month', 'options', options.join('\n'));
 // }
-///// month aut year change 
+///// month aur year change 
 
 
 
@@ -71,78 +71,36 @@ frappe.ui.form.on("FT Monthly Target", {
                 no_cache: true
             };
         });
+    },
+
+    validate(frm) {
+        let missing_weight = [];
+
+        if (frm.doc.project && frm.doc.project.length) {
+            frm.doc.project.forEach((row, index) => {
+                if (!row.total_weight_of_project || row.total_weight_of_project <= 0) {
+                    missing_weight.push(index + 1); // Row number
+                }
+            });
+        }
+
+        if (missing_weight.length) {
+            frappe.msgprint({
+                title: __("Missing Total Weight"),
+                indicator: "red",
+                message: __(
+                    `❌ Total Weight of Project not entered in row(s): <b>${missing_weight.join(", ")}</b><br>
+                     ⚠ Please enter Total Weight before saving.`
+                )
+            });
+
+            frappe.validated = false; // 🚫 Stop Save
+        }
     }
-    
+
 });
 
-// frappe.ui.form.on("FT Month Target Childtable", {
 
-//     project_number(frm, cdt, cdn) {
-//         let row = locals[cdt][cdn];
-//         if (!row.project_number) return;
-
-//         // ❌ Duplicate project
-//         let duplicate = frm.doc.project.filter(
-//             d => d.project_number === row.project_number && d.name !== row.name
-//         );
-
-//         if (duplicate.length) {
-//             frappe.msgprint("❌ This Project is already added");
-//             frappe.model.set_value(cdt, cdn, "project_number", "");
-//             return;
-//         }
-
-//         frappe.call({
-//             method: "fabtrk.fabtrk.doctype.ft_monthly_target.ft_monthly_target.get_project_balance",
-//             args: { project: row.project_number },
-//             callback(r) {
-//                 if (r.message !== undefined) {
-//                     frappe.model.set_value(
-//                         cdt,
-//                         cdn,
-//                         "balance_amount",
-//                         r.message
-//                     );
-
-//                     if (r.message <= 0) {
-//                         frappe.msgprint("✅ Project target already completed");
-//                         frappe.model.set_value(cdt, cdn, "project_number", "");
-//                     }
-//                 }
-//             }
-//         });
-//     },
-
-//     total_weight_of_project(frm, cdt, cdn) {
-//         let row = locals[cdt][cdn];
-//         let entered = flt(row.total_weight_of_project);
-//         let balance = flt(row.balance_amount);
-
-//         if (!entered || entered <= 0) {
-//             frappe.model.set_value(cdt, cdn, "total_weight_of_project", 0);
-//             return;
-//         }
-
-//         if (entered > balance) {
-//             frappe.msgprint(`❌ Maximum allowed: ${balance} 
-//                 `);
-//             frappe.model.set_value(cdt, cdn, "total_weight_of_project", 0);
-//             return;
-//         }
-
-//         frappe.model.set_value(
-//             cdt,
-//             cdn,
-//             "balance_amount",
-//             balance - entered
-//         );
-
-//         calculate_total_target_and_mt(frm);
-//     },
-//     project_remove: function (frm, cdt, cdn) {
-//         calculate_total_target_and_mt(frm);
-//     }
-// });
 frappe.ui.form.on("FT Month Target Childtable", {
 
     project_number(frm, cdt, cdn) {
@@ -185,8 +143,19 @@ frappe.ui.form.on("FT Month Target Childtable", {
         let balance = flt(row.balance_amount);
         // let project_amount = flt(row.project_amount);
 
+        // ✅ Store original balance only once
+        if (!row.previous_balance) {
+            frappe.model.set_value(cdt, cdn, "previous_balance", balance);
+        }
+
         if (!entered || entered <= 0) {
             frappe.model.set_value(cdt, cdn, "total_weight_of_project", 0);
+            frappe.model.set_value(
+                cdt,
+                cdn,
+                "balance_amount",
+                flt(row.previous_balance)
+            );
             return;
         }
 
@@ -205,6 +174,7 @@ frappe.ui.form.on("FT Month Target Childtable", {
                     ⚠ Please adjust the weight.
             `);
             frappe.model.set_value(cdt, cdn, "total_weight_of_project", 0);
+            frappe.model.set_value(cdt, cdn, "balance_amount", flt(row.previous_balance));
             return;
         }
 
@@ -264,6 +234,7 @@ function calculate_total_target_and_mt(frm) {
     let mt = total / 1000;
     frm.set_value('mt', mt);
 }
+
 // ////////////15-01-26
 
 

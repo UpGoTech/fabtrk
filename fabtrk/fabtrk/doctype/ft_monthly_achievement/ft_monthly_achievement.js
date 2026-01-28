@@ -181,6 +181,11 @@ frappe.ui.form.on("FT Monthly Achievement", {
     },
 
     project_number(frm) {
+        // 🔄 RESET Month Total Weight when project changes
+        frm.set_value("month_total_weight_of_project", 0);
+        frm.set_value("total_weight_for_project_achieve", 0);
+
+        
         if (!frm.doc.select_month || !frm.doc.project_number) return;
 
         frappe.call({
