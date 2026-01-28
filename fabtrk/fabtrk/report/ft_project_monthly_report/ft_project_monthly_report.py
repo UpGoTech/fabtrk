@@ -59,6 +59,58 @@ def get_columns():
     ]
 
 
+# def get_data(month=None, project=None):
+#     conditions = []
+#     values = {}
+
+#     if month:
+#         conditions.append("mt.name = %(month)s")
+#         values["month"] = month
+
+#     if project:
+#         conditions.append("ct.project_number = %(project)s")
+#         values["project"] = project
+
+#     where = " AND ".join(conditions)
+#     if where:
+#         where = "WHERE " + where
+
+#     data = frappe.db.sql(
+#         f"""
+#         SELECT
+#             mt.name AS month_id,
+#             mt.select_month AS month_name,
+#             mt.year AS month_year,
+#             SUM(DISTINCT ct.total_weight_of_project) AS target,
+#             COALESCE(SUM(ma.total_weight_for_project_achieve), 0) AS achieved
+#         FROM `tabFT Monthly Target` mt
+#         INNER JOIN `tabFT Month Target Childtable` ct
+#             ON ct.parent = mt.name
+#         LEFT JOIN `tabFT Monthly Achievement` ma
+#             ON ma.project_number = ct.project_number
+#             AND ma.select_month = mt.name
+#             AND ma.year = mt.year
+#         {where}
+#         GROUP BY mt.name
+#         ORDER BY mt.year,
+#             FIELD(
+#                 mt.select_month,
+#                 'January','February','March','April','May','June',
+#                 'July','August','September','October','November','December'
+#             )
+#         """,
+#         values,
+#         as_dict=True,
+#     )
+
+#     for d in data:
+#         d["month_display"] = f"{d['month_name'][:3]}-{str(d['month_year'])[-2:]}"
+#         d["balance"] = (d["target"] or 0) - (d["achieved"] or 0)
+#         d["achieved_percent"] = round((d["achieved"] / d["target"]) * 100, 2) if d["target"] else 0
+#         d["view"] = ""
+
+#     return data
+
 def get_data(month=None, project=None):
     conditions = []
     values = {}
@@ -81,7 +133,7 @@ def get_data(month=None, project=None):
             mt.name AS month_id,
             mt.select_month AS month_name,
             mt.year AS month_year,
-            SUM(DISTINCT ct.total_weight_of_project) AS target,
+            SUM(ct.total_weight_of_project) AS target,
             COALESCE(SUM(ma.total_weight_for_project_achieve), 0) AS achieved
         FROM `tabFT Monthly Target` mt
         INNER JOIN `tabFT Month Target Childtable` ct
@@ -89,7 +141,6 @@ def get_data(month=None, project=None):
         LEFT JOIN `tabFT Monthly Achievement` ma
             ON ma.project_number = ct.project_number
             AND ma.select_month = mt.name
-            AND ma.year = mt.year
         {where}
         GROUP BY mt.name
         ORDER BY mt.year,
@@ -110,7 +161,6 @@ def get_data(month=None, project=None):
         d["view"] = ""
 
     return data
-
 
 
 @frappe.whitelist()
@@ -213,3 +263,9 @@ def get_all_months(*args, **kwargs):
     all_months.reverse()
     
     return all_months
+
+
+
+
+
+

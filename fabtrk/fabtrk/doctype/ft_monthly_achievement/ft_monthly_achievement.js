@@ -1,64 +1,3 @@
-// Copyright (c) 2026, UpGo Technologies and contributors
-// For license information, please see license.txt
-
-// frappe.ui.form.on("FT Monthly Achievement", {
-// 	refresh(frm) {
-
-// 	},
-// });
-
-
-// 19-1-26
-// frappe.ui.form.on("FT Monthly Achievement", {
-
-//     year(frm) {
-//         frm.set_value("select_month", "");
-//         frm.set_value("project_number", "");
-//         frm.trigger("set_month_filter");
-//         frm.trigger("set_project_filter");
-//     },
-
-//     select_month(frm) {
-//         frm.set_value("project_number", "");
-//         frm.trigger("set_project_filter");
-//         frm.trigger("filter_project_by_month");
-//     },
-
-//     refresh(frm) {
-//         frm.trigger("set_month_filter");
-//         frm.trigger("set_project_filter");
-//         frm.trigger("filter_project_by_month");
-//     },
-
-//     set_month_filter(frm) {
-//         if (!frm.doc.year) return;
-
-//         frm.set_query("select_month", () => ({
-//             filters: {
-//                 year: frm.doc.year
-//             }
-//         }));
-//     },
-
-
-//     filter_project_by_month(frm) {
-//         if (!frm.doc.select_month) return;
-
-//         frm.set_query("project_number", function () {
-//             return {
-//                 query: "fabtrk.fabtrk.doctype.ft_monthly_achievement.ft_monthly_achievement.get_projects_by_month",
-//                 filters: {
-//                     month: frm.doc.select_month
-//                 }
-//             };
-//         });
-//     }
-// });
-// 19-1-26
-
-
-
-
 
 function formatINR(value) {
     return frappe.format(value, { fieldtype: "Float" });
@@ -81,6 +20,8 @@ frappe.ui.form.on("FT Monthly Achievement", {
         frm.trigger("set_month_filter");
         frm.trigger("set_project_filter");
     },
+
+
     ////////////// year pe  month filter
     // set_month_filter(frm) {
     //     if (!frm.doc.year) return;
@@ -94,6 +35,8 @@ frappe.ui.form.on("FT Monthly Achievement", {
     // },
     ////////////// year pe  month filter
 
+
+
     // # seperat month sort
     set_month_filter(frm) {
         frm.set_query("select_month", () => ({
@@ -101,6 +44,8 @@ frappe.ui.form.on("FT Monthly Achievement", {
         }));
     },
     // # seperat month sort
+
+
 
     //  ////project number filter after select month
     // set_project_filter(frm) {
@@ -114,6 +59,8 @@ frappe.ui.form.on("FT Monthly Achievement", {
     //         }
     //     }));
     // },
+
+
 
     // ////only show those project which is check the is active
     set_project_filter(frm) {
@@ -181,11 +128,10 @@ frappe.ui.form.on("FT Monthly Achievement", {
     },
 
     project_number(frm) {
-        // 🔄 RESET Month Total Weight when project changes
+        //  RESET [Target set for the month] filed Month Total Weight when project changes
         frm.set_value("month_total_weight_of_project", 0);
         frm.set_value("total_weight_for_project_achieve", 0);
 
-        
         if (!frm.doc.select_month || !frm.doc.project_number) return;
 
         frappe.call({
@@ -203,6 +149,16 @@ frappe.ui.form.on("FT Monthly Achievement", {
     },
 
 });
+
+
+
+
+
+
+
+
+
+
 
 
 

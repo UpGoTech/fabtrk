@@ -9,6 +9,7 @@
   "month",
   "monthss",
   "month_sort",
+  "month_index",
   "section_break_sykg",
   "year",
   "select_month",
@@ -87,6 +88,7 @@
   {
    "fieldname": "year",
    "fieldtype": "Link",
+   "in_standard_filter": 1,
    "label": "Year",
    "options": "FT Year"
   },
@@ -101,12 +103,19 @@
    "fieldtype": "Float",
    "hidden": 1,
    "label": "Monthly Total Weight "
+  },
+  {
+   "fieldname": "month_index",
+   "fieldtype": "Int",
+   "hidden": 1,
+   "label": "Month Index",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-01-17 16:36:42.175756",
+ "modified": "2026-01-28 15:38:28.578793",
  "modified_by": "Administrator",
  "module": "Fabtrk",
  "name": "FT Monthly Target",
@@ -127,7 +136,7 @@
   }
  ],
  "sort_field": "modified",
- "sort_order": "DESC",
+ "sort_order": "ASC",
  "states": [],
  "track_changes": 1,
  "track_views": 1
