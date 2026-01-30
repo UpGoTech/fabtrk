@@ -59,6 +59,7 @@ def get_columns():
     ]
 
 
+
 # def get_data(month=None, project=None):
 #     conditions = []
 #     values = {}
@@ -81,15 +82,14 @@ def get_columns():
 #             mt.name AS month_id,
 #             mt.select_month AS month_name,
 #             mt.year AS month_year,
-#             SUM(DISTINCT ct.total_weight_of_project) AS target,
-#             COALESCE(SUM(ma.total_weight_for_project_achieve), 0) AS achieved
+#             SUM(ct.total_weight_of_project) AS target,
+#             COALESCE(SUM(ma.total_weight_for_project_achieved), 0) AS achieved
 #         FROM `tabFT Monthly Target` mt
 #         INNER JOIN `tabFT Month Target Childtable` ct
 #             ON ct.parent = mt.name
 #         LEFT JOIN `tabFT Monthly Achievement` ma
 #             ON ma.project_number = ct.project_number
 #             AND ma.select_month = mt.name
-#             AND ma.year = mt.year
 #         {where}
 #         GROUP BY mt.name
 #         ORDER BY mt.year,
@@ -116,11 +116,11 @@ def get_data(month=None, project=None):
     values = {}
 
     if month:
-        conditions.append("mt.name = %(month)s")
+        conditions.append("t.month_id = %(month)s")
         values["month"] = month
 
     if project:
-        conditions.append("ct.project_number = %(project)s")
+        conditions.append("t.project_number = %(project)s")
         values["project"] = project
 
     where = " AND ".join(conditions)
@@ -130,22 +130,40 @@ def get_data(month=None, project=None):
     data = frappe.db.sql(
         f"""
         SELECT
-            mt.name AS month_id,
-            mt.select_month AS month_name,
-            mt.year AS month_year,
-            SUM(ct.total_weight_of_project) AS target,
-            COALESCE(SUM(ma.total_weight_for_project_achieve), 0) AS achieved
-        FROM `tabFT Monthly Target` mt
-        INNER JOIN `tabFT Month Target Childtable` ct
-            ON ct.parent = mt.name
-        LEFT JOIN `tabFT Monthly Achievement` ma
-            ON ma.project_number = ct.project_number
-            AND ma.select_month = mt.name
+            t.month_id,
+            t.month_name,
+            t.month_year,
+            SUM(t.project_target) AS target,
+            COALESCE(SUM(a.project_achieved), 0) AS achieved
+        FROM (
+            /* ✅ UNIQUE TARGET PER PROJECT */
+            SELECT
+                mt.name AS month_id,
+                mt.select_month AS month_name,
+                mt.year AS month_year,
+                ct.project_number,
+                MAX(ct.total_weight_of_project) AS project_target
+            FROM `tabFT Monthly Target` mt
+            INNER JOIN `tabFT Month Target Childtable` ct
+                ON ct.parent = mt.name
+            GROUP BY mt.name, ct.project_number
+        ) t
+        LEFT JOIN (
+            /* ✅ AGGREGATED ACHIEVEMENT PER PROJECT */
+            SELECT
+                select_month,
+                project_number,
+                SUM(total_weight_for_project_achieved) AS project_achieved
+            FROM `tabFT Monthly Achievement`
+            GROUP BY select_month, project_number
+        ) a
+            ON a.select_month = t.month_id
+            AND a.project_number = t.project_number
         {where}
-        GROUP BY mt.name
-        ORDER BY mt.year,
+        GROUP BY t.month_id
+        ORDER BY t.month_year,
             FIELD(
-                mt.select_month,
+                t.month_name,
                 'January','February','March','April','May','June',
                 'July','August','September','October','November','December'
             )
@@ -157,7 +175,9 @@ def get_data(month=None, project=None):
     for d in data:
         d["month_display"] = f"{d['month_name'][:3]}-{str(d['month_year'])[-2:]}"
         d["balance"] = (d["target"] or 0) - (d["achieved"] or 0)
-        d["achieved_percent"] = round((d["achieved"] / d["target"]) * 100, 2) if d["target"] else 0
+        d["achieved_percent"] = round(
+            (d["achieved"] / d["target"]) * 100, 2
+        ) if d["target"] else 0
         d["view"] = ""
 
     return data
@@ -196,9 +216,9 @@ def get_month_details(project=None, month=None):
             ct.customer_name,
             ct.description,
             ct.total_weight_of_project AS target_weight,
-            COALESCE(ma.total_weight_for_project_achieve, 0) AS achieved_weight,
+            COALESCE(ma.total_weight_for_project_achieved, 0) AS achieved_weight,
             (ct.total_weight_of_project -
-             COALESCE(ma.total_weight_for_project_achieve, 0)) AS balance_weight,
+             COALESCE(ma.total_weight_for_project_achieved, 0)) AS balance_weight,
             ma.achievement_type,
             ic.invoice_no,
             ic.invoice_weight,

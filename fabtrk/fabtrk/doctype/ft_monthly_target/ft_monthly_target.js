@@ -1,50 +1,6 @@
 // Copyright (c) 2026, UpGo Technologies and contributors
 // For license information, please see license.txt
 
-// frappe.ui.form.on("FT Monthly Target", {
-// 	refresh(frm) {
-
-// 	},
-// });
-
-///// month aur year change 
-
-// frappe.ui.form.on('FT Monthly Target', {
-//     onload(frm) {
-//         set_month_options(frm);
-//     },
-
-//     refresh(frm) {
-//         set_month_options(frm);
-//     }
-// });
-
-// function set_month_options(frm) {
-//     const current_year = new Date().getFullYear().toString().slice(-2);
-
-//     const months = [
-//         'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-//         'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
-//     ];
-
-//     const options = months.map(m => `${m}-${current_year}`);
-
-//     frm.set_df_property('month', 'options', options.join('\n'));
-// }
-///// month aur year change 
-
-
-
-
-
-
-
-
-
-
-// ////////////15-01-26
-
-
 frappe.ui.form.on("FT Monthly Target", {
 
     year(frm) {
@@ -98,9 +54,6 @@ frappe.ui.form.on("FT Monthly Target", {
         }
     },
 
-
-
-
 });
 
 
@@ -139,6 +92,7 @@ frappe.ui.form.on("FT Month Target Childtable", {
             }
         });
     },
+
 
     total_weight_of_project(frm, cdt, cdn) {
         let row = locals[cdt][cdn];
@@ -230,6 +184,7 @@ function calculate_total_target_and_mt(frm) {
     let mt = total / 1000;
     frm.set_value('mt', mt);
 }
+
 
 
 

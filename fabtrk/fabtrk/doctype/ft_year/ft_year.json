@@ -1,7 +1,8 @@
 {
  "actions": [],
  "allow_rename": 1,
-
+ "autoname": "field:year",
+ "creation": "2026-01-22 17:49:00.070327",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
@@ -10,14 +11,14 @@
  "fields": [
   {
    "fieldname": "year",
-   "fieldtype": "Data",
+   "fieldtype": "Int",
    "label": "Year",
    "unique": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
-
+ "modified": "2026-01-29 17:12:59.219583",
  "modified_by": "Administrator",
  "module": "Fabtrk",
  "name": "FT Year",

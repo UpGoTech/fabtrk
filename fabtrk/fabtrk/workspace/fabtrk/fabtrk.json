@@ -17,10 +17,30 @@
    "hidden": 0,
    "is_query_report": 0,
    "label": "doctype",
-   "link_count": 7,
+   "link_count": 9,
    "link_type": "DocType",
    "onboard": 0,
    "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Year",
+   "link_count": 0,
+   "link_to": "FT Year",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Month",
+   "link_count": 0,
+   "link_to": "FT Month",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
   },
   {
    "hidden": 0,
@@ -93,7 +113,7 @@
    "type": "Link"
   }
  ],
- "modified": "2026-01-28 13:03:28.958335",
+ "modified": "2026-01-29 17:27:56.287431",
  "modified_by": "Administrator",
  "module": "Fabtrk",
  "name": "Fabtrk",

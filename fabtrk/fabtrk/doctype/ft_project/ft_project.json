@@ -32,7 +32,6 @@
   {
    "fieldname": "naming_series",
    "fieldtype": "Select",
-   "in_list_view": 1,
    "label": "Naming series",
    "options": "\nFXL-\nBSI-\nBABJ-"
   },
@@ -70,7 +69,6 @@
   {
    "fieldname": "project_type",
    "fieldtype": "Link",
-   "in_list_view": 1,
    "label": "Project Type",
    "options": "FT Project Type"
   },
@@ -78,14 +76,12 @@
    "allow_on_submit": 1,
    "fieldname": "priority",
    "fieldtype": "Select",
-   "in_list_view": 1,
    "label": "Priority ",
    "options": "\nLow\nMedium\nHigh"
   },
   {
    "fieldname": "percentage_completed",
    "fieldtype": "Percent",
-   "in_list_view": 1,
    "label": "Percentage Completed"
   },
   {
@@ -102,14 +98,12 @@
    "allow_on_submit": 1,
    "fieldname": "shipping_scope",
    "fieldtype": "Select",
-   "in_list_view": 1,
    "label": "Shipping Scope ",
    "options": "self\nCustomer"
   },
   {
    "fieldname": "shipping_destination",
    "fieldtype": "Data",
-   "in_list_view": 1,
    "label": " Shipping Destination "
   },
   {
@@ -121,20 +115,17 @@
    "allow_on_submit": 1,
    "fieldname": "total_weight",
    "fieldtype": "Float",
-   "in_list_view": 1,
    "label": "Total weight (Kg)"
   },
   {
    "fieldname": "bill_weight_by",
    "fieldtype": "Select",
-   "in_list_view": 1,
    "label": "Bill Weight by",
    "options": "Drawing Weight\nKata Weight"
   },
   {
    "fieldname": "excepted_start_date",
    "fieldtype": "Date",
-   "in_list_view": 1,
    "label": "Excepted Start Date"
   },
   {
@@ -144,7 +135,6 @@
   {
    "fieldname": "excepted_end_date",
    "fieldtype": "Date",
-   "in_list_view": 1,
    "label": "Excepted End Date"
   },
   {
@@ -168,7 +158,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-01-14 18:05:53.273385",
+ "modified": "2026-01-29 17:46:07.217445",
  "modified_by": "Administrator",
  "module": "Fabtrk",
  "name": "FT Project",

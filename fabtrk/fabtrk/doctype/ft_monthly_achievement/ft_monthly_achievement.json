@@ -8,9 +8,9 @@
  "field_order": [
   "select_month",
   "column_break_exuj",
-  "year",
   "date",
   "section_break_oqhg",
+  "year",
   "project_balance",
   "section_break_nfas",
   "project_number",
@@ -20,19 +20,17 @@
   "actual_project_total_weight",
   "column_break_ixna",
   "achievement_type",
-  "month_total_weight_of_project",
-  "total_weight_for_project_achieve",
+  "target_set_for_the_month",
+  "total_weight_for_project_achieved",
   "section_break_npva",
   "invoice_data",
   "amended_from"
  ],
  "fields": [
   {
-   "default": "Today",
    "fieldname": "date",
    "fieldtype": "Date",
-   "label": "Date",
-   "read_only": 1
+   "label": "Date"
   },
   {
    "fieldname": "project_number",
@@ -122,7 +120,7 @@
   {
    "fieldname": "section_break_oqhg",
    "fieldtype": "Section Break",
-   "label": "Hidden"
+   "label": "Hidden Filed "
   },
   {
    "fieldname": "project_balance",
@@ -131,26 +129,26 @@
    "label": "Project Balance"
   },
   {
+   "fieldname": "column_break_ixna",
+   "fieldtype": "Column Break"
+  },
+  {
    "description": "(Kg)",
-   "fieldname": "total_weight_for_project_achieve",
+   "fieldname": "total_weight_for_project_achieved",
    "fieldtype": "Float",
    "label": "Total weight for Project Achieved"
   },
   {
-   "fieldname": "month_total_weight_of_project",
+   "fieldname": "target_set_for_the_month",
    "fieldtype": "Float",
    "label": "Target set for the Month",
    "read_only": 1
-  },
-  {
-   "fieldname": "column_break_ixna",
-   "fieldtype": "Column Break"
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-01-28 18:15:20.476754",
+ "modified": "2026-01-30 12:41:33.267877",
  "modified_by": "Administrator",
  "module": "Fabtrk",
  "name": "FT Monthly Achievement",
