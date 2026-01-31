@@ -52,7 +52,7 @@ frappe.ui.form.on("FT Monthly Achievement", {
         });
     },
 
-   
+
     total_weight_for_project_achieved(frm) {
         if (!frm.doc.total_weight_for_project_achieved || !frm.doc.target_set_for_the_month) return;
 
@@ -144,3 +144,6 @@ frappe.ui.form.on("FT Monthly Achievement", {
     }
 
 });
+
+
+

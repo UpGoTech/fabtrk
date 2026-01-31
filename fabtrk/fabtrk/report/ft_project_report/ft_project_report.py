@@ -83,7 +83,7 @@ def get_data(year=None, project=None):
             SUM(DISTINCT ct.total_weight_of_project) AS target,
 
             -- Sum of all achieved values
-            COALESCE(SUM(ma.total_weight_for_project_achieve), 0) AS achieved
+            COALESCE(SUM(ma.total_weight_for_project_achieved), 0) AS achieved
 
         FROM `tabFT Monthly Target` mt
         INNER JOIN `tabFT Month Target Childtable` ct
@@ -92,7 +92,7 @@ def get_data(year=None, project=None):
         LEFT JOIN `tabFT Monthly Achievement` ma
             ON ma.project_number = ct.project_number
             AND ma.select_month = mt.name
-            AND ma.year = mt.year
+           
 
         {where}
 
@@ -117,6 +117,13 @@ def get_data(year=None, project=None):
     return data
 
 
+
+
+
+
+
+
+
 @frappe.whitelist()
 def get_month_details(year=None, project=None, month=None):
     if not month:
@@ -130,10 +137,10 @@ def get_month_details(year=None, project=None, month=None):
             ct.description,
             ct.total_weight_of_project AS target_weight,
 
-            COALESCE(ma.total_weight_for_project_achieve, 0) AS achieved_weight,
+            COALESCE(ma.total_weight_for_project_achieved, 0) AS achieved_weight,
 
             (ct.total_weight_of_project -
-             COALESCE(ma.total_weight_for_project_achieve, 0)) AS balance_weight,
+             COALESCE(ma.total_weight_for_project_achieved, 0)) AS balance_weight,
 
             ma.achievement_type,
 
@@ -201,7 +208,7 @@ def get_month_details(year=None, project=None, month=None):
 #             mt.year AS month_year,
 #             ct.project_number,
 #             SUM(ct.total_weight_of_project) AS target,
-#             COALESCE(SUM(ma.total_weight_for_project_achieve), 0) AS achieved
+#             COALESCE(SUM(ma.total_weight_for_project_achieved), 0) AS achieved
 
 #         FROM `tabFT Monthly Target` mt
 #         INNER JOIN `tabFT Month Target Childtable` ct
