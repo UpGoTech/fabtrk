@@ -1,65 +1,3 @@
-// Copyright (c) 2026, UpGo Technologies and contributors
-// For license information, please see license.txt
-
-// frappe.ui.form.on("FT Monthly Achievement", {
-// 	refresh(frm) {
-
-// 	},
-// });
-
-
-// 19-1-26
-// frappe.ui.form.on("FT Monthly Achievement", {
-
-//     year(frm) {
-//         frm.set_value("select_month", "");
-//         frm.set_value("project_number", "");
-//         frm.trigger("set_month_filter");
-//         frm.trigger("set_project_filter");
-//     },
-
-//     select_month(frm) {
-//         frm.set_value("project_number", "");
-//         frm.trigger("set_project_filter");
-//         frm.trigger("filter_project_by_month");
-//     },
-
-//     refresh(frm) {
-//         frm.trigger("set_month_filter");
-//         frm.trigger("set_project_filter");
-//         frm.trigger("filter_project_by_month");
-//     },
-
-//     set_month_filter(frm) {
-//         if (!frm.doc.year) return;
-
-//         frm.set_query("select_month", () => ({
-//             filters: {
-//                 year: frm.doc.year
-//             }
-//         }));
-//     },
-
-
-//     filter_project_by_month(frm) {
-//         if (!frm.doc.select_month) return;
-
-//         frm.set_query("project_number", function () {
-//             return {
-//                 query: "fabtrk.fabtrk.doctype.ft_monthly_achievement.ft_monthly_achievement.get_projects_by_month",
-//                 filters: {
-//                     month: frm.doc.select_month
-//                 }
-//             };
-//         });
-//     }
-// });
-// 19-1-26
-
-
-
-
-
 function formatINR(value) {
     return frappe.format(value, { fieldtype: "Float" });
 }
@@ -81,111 +19,23 @@ frappe.ui.form.on("FT Monthly Achievement", {
         frm.trigger("set_month_filter");
         frm.trigger("set_project_filter");
     },
-    ////////////// year pe  month filter
-    // set_month_filter(frm) {
-    //     if (!frm.doc.year) return;
 
-    //     frm.set_query("select_month", () => ({
-    //         query: "fabtrk.fabtrk.doctype.ft_monthly_achievement.ft_monthly_achievement.get_months_by_year",
-    //         filters: {
-    //             year: frm.doc.year
-    //         }
-    //     }));
-    // },
-    ////////////// year pe  month filter
-
-    // # seperat month sort
     set_month_filter(frm) {
         frm.set_query("select_month", () => ({
             query: "fabtrk.fabtrk.doctype.ft_monthly_achievement.ft_monthly_achievement.get_months_by_year"
         }));
     },
-    // # seperat month sort
 
-    //  ////project number filter after select month
-    // set_project_filter(frm) {
-    //     if (!frm.doc.year || !frm.doc.select_month) return;
-
-    //     frm.set_query("project_number", () => ({
-    //         query: "fabtrk.fabtrk.doctype.ft_monthly_achievement.ft_monthly_achievement.get_projects_by_year_month",
-    //         filters: {
-    //             year: frm.doc.year,
-    //             month: frm.doc.select_month
-    //         }
-    //     }));
-    // },
-
-    // ////only show those project which is check the is active
     set_project_filter(frm) {
         frm.set_query("project_number", () => ({
-            filters: {
-                is_active: 1
-            }
+            filters: { is_active: 1 }
         }));
-    },
-    // ////only show those project which is check the is active
-
-    total_weight_for_project_achieve(frm) {
-        if (!frm.doc.year || !frm.doc.select_month || !frm.doc.project_number) return;
-        if (!frm.doc.total_weight_for_project_achieve) return;
-
-        frappe.call({
-            method: "fabtrk.fabtrk.doctype.ft_monthly_achievement.ft_monthly_achievement.check_project_weight",
-            args: {
-                year: frm.doc.year,
-                select_month: frm.doc.select_month,
-                project_number: frm.doc.project_number,
-                current_value: frm.doc.total_weight_for_project_achieve,
-                docname: frm.doc.name,
-                actual_weight: frm.doc.month_total_weight_of_project  // ✅ Pass month total weight
-            },
-            callback: function (r) {
-                if (!r.message) return;
-
-                const res = r.message;
-
-                if (res.status === "full") {
-                    frappe.msgprint({
-                        title: "Project Fully Achieved",
-                        indicator: "red",
-                        message: `
-                            Month Total Weight of Project: ${formatINR(res.actual)}<br>
-                            Already Achieved: ${res.achieved}<br><br>
-                            🎉 This project is already fully achieved.
-                        `
-                    });
-                    frm.set_value("total_weight_for_project_achieve", 0);
-                }
-
-                if (res.status === "exceed") {
-                    frappe.msgprint({
-                        title: "Invalid Weight Entry",
-                        indicator: "red",
-                        message: `
-                            Month Total Weight of Project: ${res.actual}<br>
-                            Already Achieved: ${res.achieved}<br>
-                            Remaining Balance: ${res.balance}<br><br>
-                            👉 You can enter maximum ${res.balance}
-                        `
-                    });
-                }
-
-                if (res.status === "ok") {
-                    frappe.show_alert({
-                        message: `✅ Entry OK. Remaining balance after save: ${res.balance}`,
-                        indicator: "green"
-                    });
-                }
-            }
-        });
     },
 
     project_number(frm) {
-        // 🔄 RESET Month Total Weight when project changes
-        frm.set_value("month_total_weight_of_project", 0);
-        frm.set_value("total_weight_for_project_achieve", 0);
+        frm.set_value("target_set_for_the_month", 0);
+        frm.set_value("total_weight_for_project_achieved", 0);
 
-        
         if (!frm.doc.select_month || !frm.doc.project_number) return;
 
         frappe.call({
@@ -196,14 +46,104 @@ frappe.ui.form.on("FT Monthly Achievement", {
             },
             callback: function (r) {
                 if (r.message) {
-                    frm.set_value("month_total_weight_of_project", r.message);
+                    frm.set_value("target_set_for_the_month", r.message);
                 }
             }
         });
     },
 
-});
 
+    total_weight_for_project_achieved(frm) {
+        if (!frm.doc.total_weight_for_project_achieved || !frm.doc.target_set_for_the_month) return;
+
+        let entered = flt(frm.doc.total_weight_for_project_achieved);
+        let target = flt(frm.doc.target_set_for_the_month);
+
+        frappe.call({
+            method: "fabtrk.fabtrk.doctype.ft_monthly_achievement.ft_monthly_achievement.get_already_achieved",
+            args: {
+                select_month: frm.doc.select_month,
+                project_number: frm.doc.project_number,
+                docname: frm.doc.name
+            },
+            callback(r) {
+                let already = flt(r.message || 0);
+                let remaining = target - already;
+
+                /* 🔴 CASE 1: Target already achieved */
+                if (remaining <= 0) {
+                    frappe.msgprint({
+                        title: __("Target Already Achieved"),
+                        indicator: "green",
+                        wide: true,
+                        message: `
+                        <div class="text-center" style="padding: 15px;width:300px">
+                            <h4 class="text-success">✅ Monthly Target Completed</h4>
+                            <p style="margin-top:10px;">
+                                This project's monthly target has already been fully achieved.
+                            </p>
+                        </div>
+                    `
+                    });
+
+                    frm.set_value("total_weight_for_project_achieved", 0);
+                    return;
+                }
+
+                /* 🔴 CASE 2: Exceeding remaining balance */
+                if (entered > remaining) {
+                    frappe.msgprint({
+                        title: __("Exceeding Monthly Limit"),
+                        indicator: "red",
+                        wide: true,
+                        message: `
+                        <table class="table table-bordered table-sm" style="width:420px; margin:auto;">
+                            <tr>
+                                <td><strong>Monthly Target</strong></td>
+                                <td class="text-right">${formatINR(target)} Kg</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Remaining Balance</strong></td>
+                                <td class="text-right text-success">
+                                    <strong>${formatINR(remaining)} Kg</strong>
+                                </td>
+                            </tr>
+                            <tr class="text-danger">
+                                <td><strong>You Entered</strong></td>
+                                <td class="text-right">
+                                    <strong>${formatINR(entered)} Kg</strong>
+                                </td>
+                            </tr>
+                            <tr class="text-danger">
+                                <td><strong>Excess Amount</strong></td>
+                                <td class="text-right">
+                                    <strong>${formatINR(entered - remaining)} Kg</strong>
+                                </td>
+                            </tr>
+                        </table>
+                    `
+                    });
+
+                    frm.set_value("total_weight_for_project_achieved", 0);
+                    return;
+                }
+
+                /* 🟢 CASE 3: Valid entry (OPTIONAL popup – can remove if not needed) */
+                frappe.msgprint({
+                    title: __("Entry Accepted"),
+                    indicator: "blue",
+                    message: `
+                    <div style="padding:10px;">
+                        Remaining after this entry: 
+                        <strong>${formatINR(remaining - entered)} Kg</strong>
+                    </div>
+                `
+                });
+            }
+        });
+    }
+
+});
 
 
 
