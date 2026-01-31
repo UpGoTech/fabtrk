@@ -1,0 +1,168 @@
+{
+ "actions": [],
+ "autoname": "field:project_no",
+ "creation": "2025-05-22 13:29:34.662337",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "customer_name",
+  "column_break_gysp",
+  "project_no",
+  "status",
+  "section_break_lmxx",
+  "po_date",
+  "po_closing_date",
+  "type_of_work",
+  "delivery_location",
+  "delivery_city",
+  "column_break_eqny",
+  "transport_scope",
+  "total_weight_mt",
+  "rate__mt",
+  "amount_wo_gst",
+  "amount_with_gst",
+  "section_break_lxdv",
+  "remarks",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "customer_name",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Customer Name",
+   "options": "Customer"
+  },
+  {
+   "fieldname": "column_break_gysp",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "project_no",
+   "fieldtype": "Data",
+   "label": "Project Number",
+   "unique": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Status",
+   "options": "Order Received\nWIP\nCompleted",
+   "reqd": 1
+  },
+  {
+   "fieldname": "section_break_lmxx",
+   "fieldtype": "Section Break",
+   "label": "Customer Purchase Order Details"
+  },
+  {
+   "fieldname": "po_date",
+   "fieldtype": "Date",
+   "label": "PO Date"
+  },
+  {
+   "fieldname": "po_closing_date",
+   "fieldtype": "Date",
+   "label": "PO Closing Date"
+  },
+  {
+   "fieldname": "type_of_work",
+   "fieldtype": "Data",
+   "label": "Type of Work"
+  },
+  {
+   "fieldname": "delivery_location",
+   "fieldtype": "Data",
+   "label": "Project / Delivery Location"
+  },
+  {
+   "fieldname": "delivery_city",
+   "fieldtype": "Data",
+   "label": "Delivery City"
+  },
+  {
+   "fieldname": "column_break_eqny",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "transport_scope",
+   "fieldtype": "Select",
+   "label": "Transport Scope",
+   "options": "Customer\nFXL"
+  },
+  {
+   "fieldname": "total_weight_mt",
+   "fieldtype": "Float",
+   "label": "Total Weight (MT)",
+   "non_negative": 1,
+   "precision": "3"
+  },
+  {
+   "fieldname": "rate__mt",
+   "fieldtype": "Currency",
+   "label": "Rate / MT"
+  },
+  {
+   "fieldname": "amount_wo_gst",
+   "fieldtype": "Currency",
+   "label": "Amount W/o GST"
+  },
+  {
+   "fieldname": "amount_with_gst",
+   "fieldtype": "Currency",
+   "label": "Amount With GST"
+  },
+  {
+   "fieldname": "section_break_lxdv",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "remarks",
+   "fieldtype": "Text",
+   "label": "Remarks"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "FXL Projects",
+   "print_hide": 1,
+   "read_only": 1,
+   "search_index": 1
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2025-09-10 10:58:32.627288",
+ "modified_by": "Administrator",
+ "module": "Fabtrk",
+ "name": "FXL Projects",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "search_fields": "remarks",
+ "show_title_field_in_link": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "project_no"
+}
