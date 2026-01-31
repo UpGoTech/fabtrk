@@ -41,7 +41,10 @@ frappe.ui.form.on("FT Monthly Target", {
 
             frappe.validated = false; // 🚫 Stop Save
         }
-    }
+    },
+
+
+
 
 });
 
