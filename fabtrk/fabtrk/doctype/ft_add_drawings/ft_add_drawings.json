@@ -1,0 +1,63 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2026-02-03 17:56:07.361651",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "customer_name",
+  "project",
+  "drawing_no",
+  "drawing_material_list"
+ ],
+ "fields": [
+  {
+   "fieldname": "customer_name",
+   "fieldtype": "Link",
+   "label": "Customer Name",
+   "options": "FT Customer"
+  },
+  {
+   "fieldname": "project",
+   "fieldtype": "Link",
+   "label": "Project",
+   "options": "FT Project"
+  },
+  {
+   "fieldname": "drawing_no",
+   "fieldtype": "Link",
+   "label": "Drawing No.",
+   "options": "FT Drawings"
+  },
+  {
+   "fieldname": "drawing_material_list",
+   "fieldtype": "Table",
+   "label": "Drawing Material List ",
+   "options": "FT Drawing Childtable"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-02-03 18:03:26.379807",
+ "modified_by": "Administrator",
+ "module": "Fabtrk",
+ "name": "FT Add Drawings",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

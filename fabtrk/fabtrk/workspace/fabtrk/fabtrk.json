@@ -17,7 +17,7 @@
    "hidden": 0,
    "is_query_report": 0,
    "label": "doctype",
-   "link_count": 9,
+   "link_count": 10,
    "link_type": "DocType",
    "onboard": 0,
    "type": "Card Break"
@@ -45,9 +45,29 @@
   {
    "hidden": 0,
    "is_query_report": 0,
-   "label": "FT Customer",
+   "label": "Customer",
    "link_count": 0,
    "link_to": "FT Customer",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Stock RM Type",
+   "link_count": 0,
+   "link_to": "FT Stock RM Type",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Project Type",
+   "link_count": 0,
+   "link_to": "FT Project Type",
    "link_type": "DocType",
    "onboard": 0,
    "type": "Link"
@@ -68,16 +88,6 @@
    "label": "FT Customer Series",
    "link_count": 0,
    "link_to": "FT Customer Series",
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Link"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "FT Project Type",
-   "link_count": 0,
-   "link_to": "FT Project Type",
    "link_type": "DocType",
    "onboard": 0,
    "type": "Link"
@@ -113,7 +123,7 @@
    "type": "Link"
   }
  ],
- "modified": "2026-01-29 17:27:56.287431",
+ "modified": "2026-02-03 12:24:00.337259",
  "modified_by": "Administrator",
  "module": "Fabtrk",
  "name": "Fabtrk",

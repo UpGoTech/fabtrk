@@ -1,0 +1,64 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2026-02-02 12:49:06.687434",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "drawing_no",
+  "stock_item",
+  "quality_weight",
+  "qty",
+  "total_weight_kg"
+ ],
+ "fields": [
+  {
+   "fieldname": "drawing_no",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Drawing No",
+   "options": "FT Drawings"
+  },
+  {
+   "fieldname": "stock_item",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Stock Item",
+   "options": "FT Stock RM List"
+  },
+  {
+   "fetch_from": "stock_item.stock_weight_kg",
+   "fieldname": "quality_weight",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Quality Weight ",
+   "read_only": 1
+  },
+  {
+   "fieldname": "qty",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Qty"
+  },
+  {
+   "fieldname": "total_weight_kg",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Total Weight (kg)",
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-02-03 14:45:20.615474",
+ "modified_by": "Administrator",
+ "module": "Fabtrk",
+ "name": "FT Drawing Childtable",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

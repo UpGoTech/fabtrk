@@ -19,18 +19,20 @@ frappe.query_reports["FT Project Monthly Report"] = {
 			label: __("Month"),
 			fieldtype: "Link",
 			options: "FT Monthly Target",
-			// get_query() {
-			// 	return {
-			// 		query: "fabtrk.fabtrk.report.ft_project_monthly_report.ft_project_monthly_report.get_sorted_months"
-			// 	};
-			// },
-			
-			// all monh+year show
+
+			// /// isme sort by monthwise 
 			get_query() {
 				return {
-					query: "fabtrk.fabtrk.report.ft_project_monthly_report.ft_project_monthly_report.get_all_months"
+					query: "fabtrk.fabtrk.report.ft_project_monthly_report.ft_project_monthly_report.get_sorted_months"
 				};
 			},
+			
+			// // all monh+year show
+			// get_query() {
+			// 	return {
+			// 		query: "fabtrk.fabtrk.report.ft_project_monthly_report.ft_project_monthly_report.get_all_months"
+			// 	};
+			// },
 
 			on_change() {
 				frappe.query_report.refresh();
