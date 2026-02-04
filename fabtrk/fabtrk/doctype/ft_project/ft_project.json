@@ -179,7 +179,7 @@
    "fieldname": "add_drawings",
    "fieldtype": "Table",
    "label": "Add Drawings",
-   "options": "FT Drawing Childtable"
+   "options": "FT Drawing Childtable Old"
   },
   {
    "fieldname": "stock_summary",
@@ -198,7 +198,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-02-03 11:56:43.299250",
+ "modified": "2026-02-04 18:01:54.220997",
  "modified_by": "Administrator",
  "module": "Fabtrk",
  "name": "FT Project",

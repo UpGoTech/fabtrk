@@ -7,7 +7,7 @@ frappe.ui.form.on("FT Stock RM List", {
     // RM TYPE CHANGE → RESET FIELDS
     stock_rm_type: function (frm) {
         // Section change hone par baki fields clear karo
-        frm.set_value("length", null);
+        // frm.set_value("length", null);
         frm.set_value("breath", null);
         frm.set_value("weight", null);
         frm.set_value("thickness_mm", null);
@@ -70,7 +70,7 @@ function update_computed_name(frm) {
     let section = frm.doc.stock_rm_type || "";
     let parts = [];
 
-    if (frm.doc.length) parts.push(frm.doc.length);
+    // if (frm.doc.length) parts.push(frm.doc.length);
     if (frm.doc.breath) parts.push(frm.doc.breath);
     if (frm.doc.thickness_mm) parts.push(frm.doc.thickness_mm + "MM");
     if (frm.doc.weight) parts.push(frm.doc.weight);

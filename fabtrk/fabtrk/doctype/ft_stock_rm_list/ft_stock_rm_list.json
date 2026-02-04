@@ -7,7 +7,7 @@
   "section_type",
   "stock_rm_type",
   "grade",
-  "length",
+  "surface_area_sqmm",
   "breath",
   "d_mm",
   "b_mm",
@@ -26,15 +26,9 @@
   },
   {
    "depends_on": "eval:(doc.section_type == 'Section' && doc.stock_rm_type)",
-   "fieldname": "length",
-   "fieldtype": "Float",
-   "label": "length "
-  },
-  {
-   "depends_on": "eval:(doc.section_type == 'Section' && doc.stock_rm_type)",
    "fieldname": "breath",
    "fieldtype": "Float",
-   "label": "Breath "
+   "label": "Surface Area sqm/ton "
   },
   {
    "fieldname": "computed_name",
@@ -75,6 +69,7 @@
   {
    "fieldname": "alias",
    "fieldtype": "Data",
+   "hidden": 1,
    "label": "Alias"
   },
   {
@@ -88,11 +83,17 @@
    "fieldname": "b_mm",
    "fieldtype": "Float",
    "label": "B mm"
+  },
+  {
+   "depends_on": "eval:(doc.section_type == 'Section' && doc.stock_rm_type)",
+   "fieldname": "surface_area_sqmm",
+   "fieldtype": "Float",
+   "label": "Surface Area sqm/m"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-03 17:53:44.612185",
+ "modified": "2026-02-04 12:51:10.969045",
  "modified_by": "Administrator",
  "module": "Fabtrk",
  "name": "FT Stock RM List",

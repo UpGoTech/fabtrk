@@ -1,0 +1,78 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2026-02-04 18:21:01.983129",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "drawing_number",
+  "position_number",
+  "quantity",
+  "item",
+  "lenght",
+  "single_weight",
+  "total_weight"
+ ],
+ "fields": [
+  {
+   "fieldname": "drawing_number",
+   "fieldtype": "Link",
+   "label": "Drawing Number",
+   "options": "Add Drawing"
+  },
+  {
+   "fieldname": "position_number",
+   "fieldtype": "Float",
+   "label": "Position number"
+  },
+  {
+   "fieldname": "quantity",
+   "fieldtype": "Float",
+   "label": "Quantity  "
+  },
+  {
+   "fieldname": "item",
+   "fieldtype": "Data",
+   "label": "Item"
+  },
+  {
+   "fieldname": "lenght",
+   "fieldtype": "Float",
+   "label": "Lenght"
+  },
+  {
+   "fieldname": "single_weight",
+   "fieldtype": "Float",
+   "label": "Single Weight"
+  },
+  {
+   "fieldname": "total_weight",
+   "fieldtype": "Float",
+   "label": "Total Weight"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-02-04 18:23:08.099949",
+ "modified_by": "Administrator",
+ "module": "Fabtrk",
+ "name": "Drawing Parts",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

@@ -1,7 +1,7 @@
 // Copyright (c) 2026, UpGo Technologies and contributors
 // For license information, please see license.txt
 
-// frappe.ui.form.on("FT Add Drawings", {
+// frappe.ui.form.on("Drawing Parts", {
 // 	refresh(frm) {
 
 // 	},

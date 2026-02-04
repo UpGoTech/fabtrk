@@ -5,5 +5,5 @@
 from frappe.model.document import Document
 
 
-class FTDrawingChildtable(Document):
+class FTAddPoToProjectOld(Document):
 	pass

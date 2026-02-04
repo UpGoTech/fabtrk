@@ -1,6 +1,6 @@
 {
  "charts": [],
- "content": "[{\"id\":\"zZRE_3czml\",\"type\":\"card\",\"data\":{\"card_name\":\"doctype\",\"col\":4}},{\"id\":\"nBH-yeqcZ1\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Project Monthly Report\",\"col\":3}},{\"id\":\"F0lp7NXOGm\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Project Year Report\",\"col\":3}}]",
+ "content": "[{\"id\":\"zZRE_3czml\",\"type\":\"card\",\"data\":{\"card_name\":\"doctype\",\"col\":4}},{\"id\":\"nBH-yeqcZ1\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Project Monthly Report\",\"col\":3}},{\"id\":\"F0lp7NXOGm\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Project Year Report\",\"col\":3}},{\"id\":\"z0h39zrxIJ\",\"type\":\"card\",\"data\":{\"card_name\":\"new Add\",\"col\":4}}]",
  "creation": "2025-12-15 17:34:19.067438",
  "custom_blocks": [],
  "docstatus": 0,
@@ -17,7 +17,7 @@
    "hidden": 0,
    "is_query_report": 0,
    "label": "doctype",
-   "link_count": 10,
+   "link_count": 9,
    "link_type": "DocType",
    "onboard": 0,
    "type": "Card Break"
@@ -55,9 +55,9 @@
   {
    "hidden": 0,
    "is_query_report": 0,
-   "label": "Stock RM Type",
+   "label": "Project",
    "link_count": 0,
-   "link_to": "FT Stock RM Type",
+   "link_to": "FT Project",
    "link_type": "DocType",
    "onboard": 0,
    "type": "Link"
@@ -65,7 +65,7 @@
   {
    "hidden": 0,
    "is_query_report": 0,
-   "label": "Project Type",
+   "label": "FT Project Type",
    "link_count": 0,
    "link_to": "FT Project Type",
    "link_type": "DocType",
@@ -95,16 +95,6 @@
   {
    "hidden": 0,
    "is_query_report": 0,
-   "label": "FT Project",
-   "link_count": 0,
-   "link_to": "FT Project",
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Link"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
    "label": "FT Monthly Target",
    "link_count": 0,
    "link_to": "FT Monthly Target",
@@ -121,9 +111,68 @@
    "link_type": "DocType",
    "onboard": 0,
    "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "new Add",
+   "link_count": 5,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Stock RM Type",
+   "link_count": 0,
+   "link_to": "FT Stock RM Type",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Material Grade",
+   "link_count": 0,
+   "link_to": "FT Material Grade Catalogues",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Stock RM List",
+   "link_count": 0,
+   "link_to": "FT Stock RM List",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Add Drawing Item ",
+   "link_count": 0,
+   "link_to": "FT Add Po To Project",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Add Drawing",
+   "link_count": 0,
+   "link_to": "FT Add Drawings",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
   }
  ],
- "modified": "2026-02-03 12:24:00.337259",
+ "modified": "2026-02-04 16:43:15.580938",
  "modified_by": "Administrator",
  "module": "Fabtrk",
  "name": "Fabtrk",
