@@ -261,30 +261,28 @@ def get_sorted_months(*args, **kwargs):
     # return [(value, title), ...] but make both same so no double display
     return [(r[0], r[0]) for r in res]
 
-##### // all monh+year show
-@frappe.whitelist()
-def get_all_months(*args, **kwargs):
-    # Start aur end year define karo
-    start_year = 2024
-    end_year = 2026
+# ##### // all monh+year show
+# @frappe.whitelist()
+# def get_all_months(*args, **kwargs):
+#     # Start aur end year define karo
+#     start_year = 2024
+#     end_year = 2026
     
-    months = [
-        "January","February","March","April","May","June",
-        "July","August","September","October","November","December"
-    ]
+#     months = [
+#         "January","February","March","April","May","June",
+#         "July","August","September","October","November","December"
+#     ]
     
-    all_months = []
-    for year in range(start_year, end_year + 1):
-        for month in months:
-            month_display = f"{month[:3]}-{str(year)[-2:]}"  # e.g. Mar-26
-            all_months.append((month_display, month_display))  # value, title same
+#     all_months = []
+#     for year in range(start_year, end_year + 1):
+#         for month in months:
+#             month_display = f"{month[:3]}-{str(year)[-2:]}"  # e.g. Mar-26
+#             all_months.append((month_display, month_display))  # value, title same
     
-    # Descending order (latest month first)
-    all_months.reverse()
+#     # Descending order (latest month first)
+#     all_months.reverse()
     
-    return all_months
-
-
+#     return all_months
 
 
 
