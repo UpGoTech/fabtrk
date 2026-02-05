@@ -1,6 +1,5 @@
 {
  "actions": [],
- "allow_rename": 1,
  "autoname": "field:drawing_number",
  "creation": "2026-02-04 18:08:16.232838",
  "doctype": "DocType",
@@ -43,7 +42,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-04 18:23:26.503988",
+ "modified": "2026-02-05 17:26:11.011299",
  "modified_by": "Administrator",
  "module": "Fabtrk",
  "name": "Add Drawing",
@@ -59,11 +58,14 @@
    "read": 1,
    "report": 1,
    "role": "System Manager",
+   "select": 1,
    "share": 1,
    "write": 1
   }
  ],
  "sort_field": "modified",
  "sort_order": "DESC",
- "states": []
+ "states": [],
+ "track_changes": 1,
+ "track_views": 1
 }
