@@ -1,28 +1,33 @@
 {
  "actions": [],
- "allow_rename": 1,
- "autoname": "field:drawing_number",
+ "allow_import": 1,
+ "autoname": "format:{drawing_number}",
  "creation": "2026-02-04 18:08:16.232838",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
   "project_number",
   "drawing_number",
-  "quantity",
   "unit_weight",
-  "total_weight"
+  "quantity",
+  "total_weight",
+  "column_break_mqgl",
+  "customer_name"
  ],
  "fields": [
   {
    "fieldname": "project_number",
    "fieldtype": "Link",
+   "in_standard_filter": 1,
    "label": "Project Number",
    "options": "FT Project"
   },
   {
    "fieldname": "drawing_number",
-   "fieldtype": "Data",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
    "label": "Drawing Number",
+   "options": "FT Drawings",
    "unique": 1
   },
   {
@@ -31,23 +36,37 @@
    "label": "Quantity"
   },
   {
+   "default": "0",
+   "fetch_from": "drawing_number.unit_weight",
    "fieldname": "unit_weight",
    "fieldtype": "Float",
-   "label": "Unit Weight"
+   "label": "Unit Weight",
+   "read_only": 1
   },
   {
    "fieldname": "total_weight",
    "fieldtype": "Float",
    "label": "Total Weight"
+  },
+  {
+   "fieldname": "column_break_mqgl",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fetch_from": "project_number.customer_name",
+   "fieldname": "customer_name",
+   "fieldtype": "Data",
+   "label": "Customer Name",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-04 18:23:26.503988",
+ "modified": "2026-02-07 15:02:30.367230",
  "modified_by": "Administrator",
  "module": "Fabtrk",
  "name": "Add Drawing",
- "naming_rule": "By fieldname",
+ "naming_rule": "Expression",
  "owner": "Administrator",
  "permissions": [
   {
@@ -65,5 +84,7 @@
  ],
  "sort_field": "modified",
  "sort_order": "DESC",
- "states": []
+ "states": [],
+ "track_changes": 1,
+ "track_views": 1
 }
