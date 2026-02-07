@@ -1,14 +1,16 @@
 {
  "actions": [],
+ "allow_import": 1,
  "allow_rename": 1,
+ "autoname": "format:{position_number}",
  "creation": "2026-02-04 18:21:01.983129",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
-  "drawing_number",
   "position_number",
-  "quantity",
+  "drawing_number",
   "item",
+  "quantity",
   "lenght",
   "single_weight",
   "total_weight"
@@ -22,7 +24,7 @@
   },
   {
    "fieldname": "position_number",
-   "fieldtype": "Float",
+   "fieldtype": "Data",
    "label": "Position number"
   },
   {
@@ -32,8 +34,9 @@
   },
   {
    "fieldname": "item",
-   "fieldtype": "Data",
-   "label": "Item"
+   "fieldtype": "Link",
+   "label": "Item",
+   "options": "FT Stock RM List"
   },
   {
    "fieldname": "lenght",
@@ -53,10 +56,11 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-04 18:23:08.099949",
+ "modified": "2026-02-07 13:00:21.608318",
  "modified_by": "Administrator",
  "module": "Fabtrk",
  "name": "Drawing Parts",
+ "naming_rule": "Expression",
  "owner": "Administrator",
  "permissions": [
   {
@@ -74,5 +78,7 @@
  ],
  "sort_field": "modified",
  "sort_order": "DESC",
- "states": []
+ "states": [],
+ "track_changes": 1,
+ "track_views": 1
 }

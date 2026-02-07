@@ -1,6 +1,6 @@
 {
  "charts": [],
- "content": "[{\"id\":\"zZRE_3czml\",\"type\":\"card\",\"data\":{\"card_name\":\"doctype\",\"col\":4}},{\"id\":\"nBH-yeqcZ1\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Project Monthly Report\",\"col\":3}},{\"id\":\"F0lp7NXOGm\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Project Year Report\",\"col\":3}},{\"id\":\"z0h39zrxIJ\",\"type\":\"card\",\"data\":{\"card_name\":\"new Add\",\"col\":4}}]",
+ "content": "[{\"id\":\"zZRE_3czml\",\"type\":\"card\",\"data\":{\"card_name\":\"doctype\",\"col\":4}},{\"id\":\"nBH-yeqcZ1\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Project Monthly Report\",\"col\":3}},{\"id\":\"F0lp7NXOGm\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Project Year Report\",\"col\":3}},{\"id\":\"z0h39zrxIJ\",\"type\":\"card\",\"data\":{\"card_name\":\"new Add\",\"col\":5}},{\"id\":\"Gc3ESY5x-h\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Drawing Report\",\"col\":4}}]",
  "creation": "2025-12-15 17:34:19.067438",
  "custom_blocks": [],
  "docstatus": 0,
@@ -154,9 +154,9 @@
   {
    "hidden": 0,
    "is_query_report": 0,
-   "label": "Add Drawing Item ",
+   "label": "Add Drawing",
    "link_count": 0,
-   "link_to": "FT Add Po To Project",
+   "link_to": "Add Drawing",
    "link_type": "DocType",
    "onboard": 0,
    "type": "Link"
@@ -164,15 +164,15 @@
   {
    "hidden": 0,
    "is_query_report": 0,
-   "label": "Add Drawing",
+   "label": "Drawing Parts",
    "link_count": 0,
-   "link_to": "FT Add Drawings",
+   "link_to": "Drawing Parts",
    "link_type": "DocType",
    "onboard": 0,
    "type": "Link"
   }
  ],
- "modified": "2026-02-04 16:43:15.580938",
+ "modified": "2026-02-07 15:09:56.523370",
  "modified_by": "Administrator",
  "module": "Fabtrk",
  "name": "Fabtrk",
@@ -196,6 +196,13 @@
    "doc_view": "List",
    "label": "Project Monthly Report",
    "link_to": "FT Project Monthly Report",
+   "type": "Report"
+  },
+  {
+   "color": "Grey",
+   "doc_view": "List",
+   "label": "Drawing Report",
+   "link_to": "FT Drawing Report",
    "type": "Report"
   }
  ],

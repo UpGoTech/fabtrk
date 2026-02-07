@@ -6,7 +6,10 @@
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
-  "drawing_no"
+  "drawing_no",
+  "unit_weight",
+  "quantity",
+  "total_weight"
  ],
  "fields": [
   {
@@ -14,11 +17,30 @@
    "fieldtype": "Data",
    "label": "Drawing No",
    "unique": 1
+  },
+  {
+   "fieldname": "unit_weight",
+   "fieldtype": "Float",
+   "label": "Unit Weight"
+  },
+  {
+   "fieldname": "quantity",
+   "fieldtype": "Float",
+   "label": "Quantity "
+  },
+  {
+   "fieldname": "total_weight",
+   "fieldtype": "Float",
+   "label": "Total Weight"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
+<<<<<<< HEAD
  "modified": "2026-02-05 16:55:19.535914",
+=======
+ "modified": "2026-02-06 12:22:23.128275",
+>>>>>>> 9284f18 (Add dawing , partdoctype ,show all data with Total Weight in report)
  "modified_by": "Administrator",
  "module": "Fabtrk",
  "name": "FT Drawings",
