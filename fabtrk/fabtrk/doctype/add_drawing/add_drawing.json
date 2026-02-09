@@ -1,5 +1,6 @@
 {
  "actions": [],
+ "allow_import": 1,
  "autoname": "field:drawing_number",
  "creation": "2026-02-04 18:08:16.232838",
  "doctype": "DocType",
@@ -20,8 +21,9 @@
   },
   {
    "fieldname": "drawing_number",
-   "fieldtype": "Data",
+   "fieldtype": "Link",
    "label": "Drawing Number",
+   "options": "Import Data",
    "unique": 1
   },
   {
@@ -42,7 +44,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-05 17:26:11.011299",
+ "modified": "2026-02-05 18:10:15.187847",
  "modified_by": "Administrator",
  "module": "Fabtrk",
  "name": "Add Drawing",
