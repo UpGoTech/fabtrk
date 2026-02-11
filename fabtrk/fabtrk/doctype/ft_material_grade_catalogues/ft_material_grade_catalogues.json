@@ -18,12 +18,14 @@
   {
    "fieldname": "stock_rm_type",
    "fieldtype": "Link",
+   "in_list_view": 1,
    "label": "Stock RM Type",
    "options": "FT Stock RM Type"
   },
   {
    "fieldname": "bis",
    "fieldtype": "Data",
+   "in_list_view": 1,
    "label": "BIS"
   },
   {
@@ -41,6 +43,7 @@
    "depends_on": "eval:doc.list_in_section == \"1\"",
    "fieldname": "bis_section",
    "fieldtype": "Data",
+   "in_list_view": 1,
    "label": "BIS section"
   },
   {
@@ -53,12 +56,13 @@
    "depends_on": "eval:doc.list_in_plates == \"1\"",
    "fieldname": "bis_plate",
    "fieldtype": "Data",
+   "in_list_view": 1,
    "label": "BIS Plate "
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-03 14:08:43.197872",
+ "modified": "2026-02-11 12:00:36.560873",
  "modified_by": "Administrator",
  "module": "Fabtrk",
  "name": "FT Material Grade Catalogues",
