@@ -1,8 +1,6 @@
 {
  "actions": [],
  "allow_import": 1,
- "allow_rename": 1,
- "autoname": "format:{position_number}",
  "creation": "2026-02-04 18:21:01.983129",
  "doctype": "DocType",
  "engine": "InnoDB",
@@ -77,11 +75,10 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-12 14:02:54.378179",
+ "modified": "2026-02-13 12:47:34.122274",
  "modified_by": "Administrator",
  "module": "Fabtrk",
  "name": "Drawing Parts",
- "naming_rule": "Expression",
  "owner": "Administrator",
  "permissions": [
   {
