@@ -9,7 +9,6 @@
 
 
 
-
 frappe.ui.form.on("FT Add Drawings Old", {
 
     // ✅ Drawing select → fetch QTY SET (SAFE)
