@@ -1,11 +1,12 @@
 {
  "actions": [],
  "allow_import": 1,
- "autoname": "format:{drawing_number}",
+ "autoname": "format:{project_number}-{drawing_number}",
  "creation": "2026-02-04 18:08:16.232838",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
+  "position_no",
   "project_number",
   "drawing_number",
   "unit_weight",
@@ -24,24 +25,20 @@
   },
   {
    "fieldname": "drawing_number",
-   "fieldtype": "Link",
+   "fieldtype": "Data",
    "in_standard_filter": 1,
-   "label": "Drawing Number",
-   "options": "FT Drawings",
-   "unique": 1
+   "label": "Drawing Number"
   },
   {
+   "default": "1",
    "fieldname": "quantity",
-   "fieldtype": "Float",
-   "label": "Quantity"
+   "fieldtype": "Int",
+   "label": "Required Qty"
   },
   {
-   "default": "0",
-   "fetch_from": "drawing_number.unit_weight",
    "fieldname": "unit_weight",
    "fieldtype": "Float",
-   "label": "Unit Weight",
-   "read_only": 1
+   "label": "Unit Weight"
   },
   {
    "fieldname": "total_weight",
@@ -58,11 +55,16 @@
    "fieldtype": "Data",
    "label": "Customer Name",
    "read_only": 1
+  },
+  {
+   "fieldname": "position_no",
+   "fieldtype": "Data",
+   "label": "Position No"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-07 15:02:30.367230",
+ "modified": "2026-02-12 17:34:04.362329",
  "modified_by": "Administrator",
  "module": "Fabtrk",
  "name": "Add Drawing",

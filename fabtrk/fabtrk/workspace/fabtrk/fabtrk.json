@@ -1,6 +1,6 @@
 {
  "charts": [],
- "content": "[{\"id\":\"zZRE_3czml\",\"type\":\"card\",\"data\":{\"card_name\":\"doctype\",\"col\":4}},{\"id\":\"nBH-yeqcZ1\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Project Monthly Report\",\"col\":3}},{\"id\":\"F0lp7NXOGm\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Project Year Report\",\"col\":3}},{\"id\":\"z0h39zrxIJ\",\"type\":\"card\",\"data\":{\"card_name\":\"new Add\",\"col\":5}},{\"id\":\"Gc3ESY5x-h\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Drawing Report\",\"col\":4}}]",
+ "content": "[{\"id\":\"zZRE_3czml\",\"type\":\"card\",\"data\":{\"card_name\":\"doctype\",\"col\":4}},{\"id\":\"nBH-yeqcZ1\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Project Monthly Report\",\"col\":3}},{\"id\":\"F0lp7NXOGm\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Project Year Report\",\"col\":3}},{\"id\":\"z0h39zrxIJ\",\"type\":\"card\",\"data\":{\"card_name\":\"new Add\",\"col\":5}},{\"id\":\"Gc3ESY5x-h\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Drawing Report\",\"col\":4}},{\"id\":\"hKWyx_bLD1\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"FT Drawing Report 2\",\"col\":3}}]",
  "creation": "2025-12-15 17:34:19.067438",
  "custom_blocks": [],
  "docstatus": 0,
@@ -116,7 +116,7 @@
    "hidden": 0,
    "is_query_report": 0,
    "label": "new Add",
-   "link_count": 5,
+   "link_count": 6,
    "link_type": "DocType",
    "onboard": 0,
    "type": "Card Break"
@@ -164,6 +164,16 @@
   {
    "hidden": 0,
    "is_query_report": 0,
+   "label": "Add Section Type",
+   "link_count": 0,
+   "link_to": "FT Section Type",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
    "label": "Drawing Parts",
    "link_count": 0,
    "link_to": "Drawing Parts",
@@ -172,7 +182,7 @@
    "type": "Link"
   }
  ],
- "modified": "2026-02-07 15:09:56.523370",
+ "modified": "2026-02-11 18:20:38.177671",
  "modified_by": "Administrator",
  "module": "Fabtrk",
  "name": "Fabtrk",
@@ -203,6 +213,13 @@
    "doc_view": "List",
    "label": "Drawing Report",
    "link_to": "FT Drawing Report",
+   "type": "Report"
+  },
+  {
+   "color": "Grey",
+   "doc_view": "List",
+   "label": "FT Drawing Report 2",
+   "link_to": "FT Drawing Report 2",
    "type": "Report"
   }
  ],

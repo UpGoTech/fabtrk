@@ -1,152 +1,154 @@
-// Copyright (c) 2026, UpGo Technologies and contributors
-// For license information, please see license.txt
 
-
-///// computed filed me auto name likhna 
 frappe.ui.form.on("FT Stock RM List", {
-    // RM TYPE CHANGE → RESET FIELDS
-    stock_rm_type: function (frm) {
-        // Section change hone par baki fields clear karo
-        // frm.set_value("length", null);
-        frm.set_value("breath", null);
-        frm.set_value("weight", null);
-        frm.set_value("thickness_mm", null);
-        frm.set_value("grade", null);
 
-        // Computed Name update karo
+    refresh(frm) {
+        set_grade_filter(frm);
         update_computed_name(frm);
-    },
-    length: function (frm) { update_computed_name(frm); },
-    breath: function (frm) { update_computed_name(frm); },
-    weight: function (frm) { update_computed_name(frm); },
-    thickness_mm: function (frm) { update_computed_name(frm); },
-    grade: function (frm) { update_computed_name(frm); },
-
-
-
-    // //////plate/ section select krne pr stock rm type me filetr ho 
-    setup(frm) {
-        frm.set_query("stock_rm_type", function () {
-            if (frm.doc.section_type === "Plate") {
-                return {
-                    filters: {
-                        name: "Plate"
-                    }
-                };
-            }
-
-            if (frm.doc.section_type === "Section") {
-                return {
-                    filters: [
-                        ["FT Stock RM Type", "name", "!=", "Plate"]
-                    ]
-                };
-            }
-        });
-
-        // 🔹 Stock RM Type → Grade filter
-        frm.set_query("grade", function () {
-            if (frm.doc.stock_rm_type) {
-                return {
-                    filters: {
-                        stock_rm_type: frm.doc.stock_rm_type
-                    }
-                };
-            }
-        });
-        // 🔹 Stock RM Type → Grade filter
     },
 
     section_type(frm) {
-        // section change hua → RM type reset
+        frm.set_value("grade", "");
         frm.set_value("stock_rm_type", "");
-    }
-    // //////plate/ section select krne pr stock rm type me filetr ho 
+        set_grade_filter(frm);
+        update_computed_name(frm);
 
+        frm.set_value("name1", "");
+        frm.set_value("thickness_mm", "");
+        frm.set_value("kg__sqm", "");
+        frm.set_value("kg__meter", "");
+        frm.refresh_fields();
+    },
+
+    name1(frm) {
+        update_computed_name(frm);
+    },
+
+    stock_rm_type(frm) {
+        update_computed_name(frm);
+    },
+
+    thickness_mm(frm) {
+        update_computed_name(frm);
+    },
+
+    kg__sqm(frm) {
+        update_computed_name(frm);
+    },
+
+    kg__meter(frm) {
+        update_computed_name(frm);
+    },
+
+    grade(frm) {
+        update_computed_name(frm);
+    }
 });
 
 
-function update_computed_name(frm) {
-    let section = frm.doc.stock_rm_type || "";
-    let parts = [];
+// ✅ Grade Filter
+function set_grade_filter(frm) {
 
-    // if (frm.doc.length) parts.push(frm.doc.length);
-    if (frm.doc.breath) parts.push(frm.doc.breath);
-    if (frm.doc.thickness_mm) parts.push(frm.doc.thickness_mm + "MM");
-    if (frm.doc.weight) parts.push(frm.doc.weight);
+    frm.set_query("grade", function () {
 
-    if (frm.doc.grade) {
-        // Stock RM Type ke hisab se grade aur bis dono fetch karo
-        frappe.db.get_value('FT Material Grade Catalogues', frm.doc.grade, ['grade','bis_section','bis_plate'])
-            .then(r => {
-                let grade_display = r.message ? r.message.grade : frm.doc.grade;
-                let bis = "";
-
-                // Section type ke hisab se BIS select karo
-                if(frm.doc.section_type === "Section") {
-                    bis = r.message ? r.message.bis_section : "";
-                } else if(frm.doc.section_type === "Plate") {
-                    bis = r.message ? r.message.bis_plate : "";
+        if (frm.doc.section_type === "Section") {
+            return {
+                filters: {
+                    bis_section: ["!=", ""]
                 }
-
-                // Grade aur BIS combine karo
-                if(bis) {
-                    parts.push(`${grade_display} (${bis})`);
-                } else {
-                    parts.push(grade_display);
-                }
-
-                // Computed Name set karo
-                let computed = section;
-                if (parts.length > 0) {
-                    computed += " " + parts.join(" × ");
-                }
-                frm.set_value("computed_name", computed);
-            });
-    } else {
-        // Grade blank ho to normal computed name
-        let computed = section;
-        if (parts.length > 0) {
-            computed += " " + parts.join(" × ");
+            };
         }
-        frm.set_value("computed_name", computed);
-    }
+
+        if (frm.doc.section_type === "Plate") {
+            return {
+                filters: {
+                    bis_plate: ["!=", ""]
+                }
+            };
+        }
+    });
 }
 
-// function update_computed_name(frm) {
-//     let section = frm.doc.stock_rm_type || "";
-//     let parts = [];
 
-//     if (frm.doc.length) parts.push(frm.doc.length);
-//     if (frm.doc.breath) parts.push(frm.doc.breath);
-//     if (frm.doc.thickness_mm) parts.push(frm.doc.thickness_mm + "MM");
-//     if (frm.doc.weight) parts.push(frm.doc.weight);
-    
-//     if (frm.doc.grade) {
-//         // Asynchronous fetch of display value
-//         frappe.db.get_value('FT Material Grade Catalogues', frm.doc.grade, 'grade')
-//             .then(r => {
-//                 let grade_display = r.message ? r.message.grade : frm.doc.grade;
-//                 parts.push(grade_display);
+function update_computed_name(frm) {
 
-//                 let computed = section;
-//                 if (parts.length > 0) {
-//                     computed += " " + parts.join(" X ");
-//                 }
+    let base_name = "";
+    let size_part = "";
+    let grade_display = "";
+    let main_bis = "";
+    let type_bis = "";
 
-//                 frm.set_value("computed_name", computed);
-//             });
-//     } else {
-//         let computed = section;
-//         if (parts.length > 0) {
-//             computed += " " + parts.join(" × ");
-//         }
-//         frm.set_value("computed_name", computed);
-//     }
-// }
+    // 🔹 SECTION TYPE
+    if (frm.doc.section_type === "Section") {
 
+        base_name = frm.doc.stock_rm_type || "";
 
-///// computed fi;ed me auto name likhna 
+        if (frm.doc.name1) {
+            size_part = frm.doc.name1 + " THK";
+        }
+    }
 
+    // 🔹 PLATE TYPE
+    if (frm.doc.section_type === "Plate") {
+
+        base_name = "Plate";
+
+        if (frm.doc.thickness_mm) {
+            size_part = frm.doc.thickness_mm + " THK";
+        }
+    }
+
+    // 🔹 If No Grade Selected → Simple Name
+    if (!frm.doc.grade) {
+
+        let final_name = [base_name, size_part]
+            .filter(Boolean)
+            .join(" ");
+
+        frm.set_value("computed_name", final_name);
+        return;
+    }
+
+    // 🔹 Fetch Grade + BIS
+    frappe.call({
+        method: "frappe.client.get",
+        args: {
+            doctype: "FT Material Grade Catalogues",
+            name: frm.doc.grade
+        },
+        callback: function (res) {
+
+            if (res.message) {
+
+                let grade_doc = res.message;
+
+                grade_display = grade_doc.grade || frm.doc.grade;
+                main_bis = grade_doc.bis || "";
+
+                if (frm.doc.section_type === "Section") {
+                    type_bis = grade_doc.bis_section || "";
+                }
+
+                if (frm.doc.section_type === "Plate") {
+                    type_bis = grade_doc.bis_plate || "";
+                }
+
+                // 🔥 FINAL ORDER
+                // Beam 5131THK IS808 IS2062 E350BR
+
+                let final_name = [
+                    base_name,
+                    size_part,
+                    type_bis,
+                    main_bis,
+                    grade_display
+                ]
+                    .filter(Boolean)
+                    .join(" ");
+
+                frm.set_value("computed_name", final_name);
+            }
+        }
+    });
+}
 
 

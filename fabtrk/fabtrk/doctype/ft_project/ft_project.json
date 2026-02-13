@@ -1,7 +1,6 @@
 {
  "actions": [],
- "allow_rename": 1,
- "autoname": "naming_series:",
+ "autoname": "field:project_name",
  "creation": "2026-01-12 11:01:02.465433",
  "doctype": "DocType",
  "engine": "InnoDB",
@@ -38,6 +37,7 @@
   {
    "fieldname": "naming_series",
    "fieldtype": "Select",
+   "hidden": 1,
    "label": "Naming series",
    "options": "\nFXL-\nBSI-\nBABJ-"
   },
@@ -45,7 +45,8 @@
    "fieldname": "project_name",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "Project Name"
+   "label": "Project Name",
+   "unique": 1
   },
   {
    "fieldname": "description",
@@ -198,11 +199,11 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-02-04 18:01:54.220997",
+ "modified": "2026-02-11 13:43:52.358855",
  "modified_by": "Administrator",
  "module": "Fabtrk",
  "name": "FT Project",
- "naming_rule": "By \"Naming Series\" field",
+ "naming_rule": "By fieldname",
  "owner": "Administrator",
  "permissions": [
   {
@@ -221,7 +222,7 @@
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": [],
- "title_field": "project_name",
+ "title_field": "description",
  "track_changes": 1,
  "track_views": 1
 }
