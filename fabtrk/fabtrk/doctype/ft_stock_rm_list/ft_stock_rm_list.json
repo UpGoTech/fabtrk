@@ -5,17 +5,15 @@
  "engine": "InnoDB",
  "field_order": [
   "section_type",
-  "stock_rm_type",
   "grade",
-  "surface_area_sqmm",
-  "breath",
-  "d_mm",
-  "b_mm",
+  "stock_rm_type",
   "thickness_mm",
-  "weight",
-  "computed_name",
-  "alias",
-  "stock_weight_kg"
+  "kg__sqm",
+  "name1",
+  "kg__meter",
+  "surface_area_sqm__mtr",
+  "surface_area_sqm__ton",
+  "computed_name"
  ],
  "fields": [
   {
@@ -25,34 +23,16 @@
    "options": "\nPlate\nSection"
   },
   {
-   "depends_on": "eval:(doc.section_type == 'Section' && doc.stock_rm_type)",
-   "fieldname": "breath",
-   "fieldtype": "Float",
-   "label": "Surface Area sqm/ton "
-  },
-  {
    "fieldname": "computed_name",
    "fieldtype": "Data",
    "label": "Computed Name",
    "unique": 1
   },
   {
+   "depends_on": "eval:(doc.section_type == 'Plate')",
    "fieldname": "thickness_mm",
    "fieldtype": "Float",
    "label": "Thickness MM"
-  },
-  {
-   "depends_on": "eval:doc.stock_rm_type  || doc.section_type \r\n",
-   "fieldname": "weight",
-   "fieldtype": "Float",
-   "label": "Weight "
-  },
-  {
-   "fieldname": "stock_weight_kg",
-   "fieldtype": "Float",
-   "hidden": 1,
-   "in_list_view": 1,
-   "label": "Stock Weight (Kg)"
   },
   {
    "fieldname": "grade",
@@ -61,39 +41,46 @@
    "options": "FT Material Grade Catalogues"
   },
   {
+   "depends_on": "eval:(doc.section_type == 'Section')",
    "fieldname": "stock_rm_type",
    "fieldtype": "Link",
    "label": "Stock RM Type",
-   "options": "FT Stock RM Type"
+   "options": "FT Section Type"
   },
   {
-   "fieldname": "alias",
+   "depends_on": "eval:(doc.section_type == 'Plate')",
+   "fieldname": "kg__sqm",
+   "fieldtype": "Float",
+   "label": "KG / Sq.m"
+  },
+  {
+   "depends_on": "eval:(doc.section_type == 'Section')",
+   "fieldname": "surface_area_sqm__mtr",
+   "fieldtype": "Float",
+   "label": "Surface Area Sq.M / Mtr"
+  },
+  {
+   "depends_on": "eval:(doc.section_type == 'Section')",
+   "fieldname": "surface_area_sqm__ton",
+   "fieldtype": "Float",
+   "label": "Surface Area Sq.M / Ton "
+  },
+  {
+   "depends_on": "eval:(doc.section_type == 'Section')",
+   "fieldname": "kg__meter",
+   "fieldtype": "Float",
+   "label": "Kg / Meter"
+  },
+  {
+   "depends_on": "eval:(doc.section_type == 'Section')",
+   "fieldname": "name1",
    "fieldtype": "Data",
-   "hidden": 1,
-   "label": "Alias"
-  },
-  {
-   "depends_on": "eval:(doc.section_type == 'Section' && doc.stock_rm_type)",
-   "fieldname": "d_mm",
-   "fieldtype": "Float",
-   "label": "D mm"
-  },
-  {
-   "depends_on": "eval:(doc.section_type == 'Section' && doc.stock_rm_type)",
-   "fieldname": "b_mm",
-   "fieldtype": "Float",
-   "label": "B mm"
-  },
-  {
-   "depends_on": "eval:(doc.section_type == 'Section' && doc.stock_rm_type)",
-   "fieldname": "surface_area_sqmm",
-   "fieldtype": "Float",
-   "label": "Surface Area sqm/m"
+   "label": "Name"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-04 12:51:10.969045",
+ "modified": "2026-02-11 17:34:25.718220",
  "modified_by": "Administrator",
  "module": "Fabtrk",
  "name": "FT Stock RM List",

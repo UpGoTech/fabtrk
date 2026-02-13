@@ -20,12 +20,12 @@ def execute(filters=None):
     })
 
     columns = [
-        {"label": "Project", "fieldname": "project_name", "fieldtype": "Link", "options": "FT Project", "width": 200},
-        {"label": "Drawing Number", "fieldname": "drawing_number", "fieldtype": "Link", "options": "Add Drawing", "width": 150},
-        {"label": "Drawing Part", "fieldname": "drawing_part", "fieldtype": "Link", "options": "FT Stock RM List", "width": 150},
+        {"label": "Project", "fieldname": "project_name", "fieldtype": "Link", "options": "FT Project", "width": 130},
+        {"label": "Drawing Number", "fieldname": "drawing_number", "fieldtype": "Link", "options": "Add Drawing", "width": 200},
+        {"label": "Drawing Part", "fieldname": "drawing_part", "fieldtype": "Link", "options": "FT Stock RM List", "width": 270},
         
-        {"label": "Pos Number", "fieldname": "position_number", "fieldtype": "Data", "width": 90},
-        {"label": "Quantity", "fieldname": "quantity", "fieldtype": "Float", "width": 100},
+        {"label": "Pos Number", "fieldname": "position_number", "fieldtype": "Data", "width": 85},
+        {"label": "Quantity", "fieldname": "quantity", "fieldtype": "Float", "width": 90},
         {"label": "Single Weight", "fieldname": "single_weight", "fieldtype": "Float", "width": 120},
         {"label": "Total Weight", "fieldname": "total_weight", "fieldtype": "Float", "width": 120},
         {"label": "View", "fieldname": "view", "fieldtype": "Button", "width": 80 }

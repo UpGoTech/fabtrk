@@ -1,0 +1,47 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "field:section_type_name",
+ "creation": "2026-02-11 17:25:47.769965",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "section_type_name"
+ ],
+ "fields": [
+  {
+   "fieldname": "section_type_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Section Type Name",
+   "unique": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-02-11 17:26:58.317077",
+ "modified_by": "Administrator",
+ "module": "Fabtrk",
+ "name": "FT Section Type",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1,
+ "track_views": 1
+}

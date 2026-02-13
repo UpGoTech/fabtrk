@@ -7,13 +7,16 @@
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
-  "position_number",
+  "position_no",
+  "project_number",
   "drawing_number",
   "item",
   "quantity",
+  "breath",
   "lenght",
   "single_weight",
-  "total_weight"
+  "total_weight",
+  "painted_surface_percentage"
  ],
  "fields": [
   {
@@ -21,11 +24,6 @@
    "fieldtype": "Link",
    "label": "Drawing Number",
    "options": "Add Drawing"
-  },
-  {
-   "fieldname": "position_number",
-   "fieldtype": "Data",
-   "label": "Position number"
   },
   {
    "fieldname": "quantity",
@@ -52,11 +50,34 @@
    "fieldname": "total_weight",
    "fieldtype": "Float",
    "label": "Total Weight"
+  },
+  {
+   "fieldname": "project_number",
+   "fieldtype": "Link",
+   "label": "Project Number",
+   "options": "FT Project"
+  },
+  {
+   "default": "100",
+   "fieldname": "painted_surface_percentage",
+   "fieldtype": "Float",
+   "label": "Painted surface Percentage "
+  },
+  {
+   "fieldname": "breath",
+   "fieldtype": "Float",
+   "label": "breath "
+  },
+  {
+   "fetch_from": "drawing_number.position_no",
+   "fieldname": "position_no",
+   "fieldtype": "Data",
+   "label": "Position No"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-07 13:00:21.608318",
+ "modified": "2026-02-12 14:02:54.378179",
  "modified_by": "Administrator",
  "module": "Fabtrk",
  "name": "Drawing Parts",
