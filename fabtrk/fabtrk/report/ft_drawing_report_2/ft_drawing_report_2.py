@@ -117,7 +117,7 @@ def execute(filters=None):
 
     # Multi Drawing Filter
     if filters.get("drawing_number"):
-        conditions += " AND ad.name IN %(drawing_number)s"
+        conditions += " AND ad.drawing_number IN %(drawing_number)s"
         values["drawing_number"] = tuple(filters.get("drawing_number"))
 
     # Project Is Active Filter
@@ -128,7 +128,6 @@ def execute(filters=None):
     query = f"""
         SELECT
             p.name AS project_name,
-            
             ad.drawing_number AS drawing_number,
             IFNULL(ad.unit_weight, 0) AS unit_weight,
             IFNULL(ad.quantity, 0) AS quantity,

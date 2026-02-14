@@ -58,7 +58,7 @@
   {
    "default": "100",
    "fieldname": "painted_surface_percentage",
-   "fieldtype": "Float",
+   "fieldtype": "Percent",
    "label": "Painted surface Percentage "
   },
   {
@@ -75,7 +75,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-13 12:47:34.122274",
+ "modified": "2026-02-13 16:47:46.403904",
  "modified_by": "Administrator",
  "module": "Fabtrk",
  "name": "Drawing Parts",

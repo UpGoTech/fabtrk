@@ -1,6 +1,6 @@
 {
  "charts": [],
- "content": "[{\"id\":\"zZRE_3czml\",\"type\":\"card\",\"data\":{\"card_name\":\"doctype\",\"col\":4}},{\"id\":\"nBH-yeqcZ1\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Project Monthly Report\",\"col\":3}},{\"id\":\"F0lp7NXOGm\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Project Year Report\",\"col\":3}},{\"id\":\"z0h39zrxIJ\",\"type\":\"card\",\"data\":{\"card_name\":\"new Add\",\"col\":5}},{\"id\":\"Gc3ESY5x-h\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Drawing Report\",\"col\":4}},{\"id\":\"hKWyx_bLD1\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"FT Drawing Report 2\",\"col\":3}}]",
+ "content": "[{\"id\":\"zZRE_3czml\",\"type\":\"card\",\"data\":{\"card_name\":\"doctype\",\"col\":4}},{\"id\":\"nBH-yeqcZ1\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Project Monthly Report\",\"col\":3}},{\"id\":\"F0lp7NXOGm\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Project Year Report\",\"col\":3}},{\"id\":\"z0h39zrxIJ\",\"type\":\"card\",\"data\":{\"card_name\":\"new Add\",\"col\":5}},{\"id\":\"Gc3ESY5x-h\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Drawing Report\",\"col\":3}},{\"id\":\"hKWyx_bLD1\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"FT Drawing Report 2\",\"col\":3}}]",
  "creation": "2025-12-15 17:34:19.067438",
  "custom_blocks": [],
  "docstatus": 0,
@@ -13,105 +13,6 @@
  "is_hidden": 0,
  "label": "Fabtrk",
  "links": [
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "doctype",
-   "link_count": 9,
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Card Break"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Year",
-   "link_count": 0,
-   "link_to": "FT Year",
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Link"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Month",
-   "link_count": 0,
-   "link_to": "FT Month",
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Link"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Customer",
-   "link_count": 0,
-   "link_to": "FT Customer",
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Link"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Project",
-   "link_count": 0,
-   "link_to": "FT Project",
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Link"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "FT Project Type",
-   "link_count": 0,
-   "link_to": "FT Project Type",
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Link"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "FT Customer Group",
-   "link_count": 0,
-   "link_to": "FT Customer Group",
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Link"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "FT Customer Series",
-   "link_count": 0,
-   "link_to": "FT Customer Series",
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Link"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "FT Monthly Target",
-   "link_count": 0,
-   "link_to": "FT Monthly Target",
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Link"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "FT Monthly Achievement",
-   "link_count": 0,
-   "link_to": "FT Monthly Achievement",
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Link"
-  },
   {
    "hidden": 0,
    "is_query_report": 0,
@@ -180,9 +81,108 @@
    "link_type": "DocType",
    "onboard": 0,
    "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "doctype",
+   "link_count": 9,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Year",
+   "link_count": 0,
+   "link_to": "FT Year",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Month",
+   "link_count": 0,
+   "link_to": "FT Month",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "FT Project Type",
+   "link_count": 0,
+   "link_to": "FT Project Type",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "FT Customer Group",
+   "link_count": 0,
+   "link_to": "FT Customer Group",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "FT Customer Series",
+   "link_count": 0,
+   "link_to": "FT Customer Series",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Customer",
+   "link_count": 0,
+   "link_to": "FT Customer",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Project",
+   "link_count": 0,
+   "link_to": "FT Project",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "FT Monthly Target",
+   "link_count": 0,
+   "link_to": "FT Monthly Target",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "FT Monthly Achievement",
+   "link_count": 0,
+   "link_to": "FT Monthly Achievement",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
   }
  ],
- "modified": "2026-02-11 18:20:38.177671",
+ "modified": "2026-02-13 16:04:34.582291",
  "modified_by": "Administrator",
  "module": "Fabtrk",
  "name": "Fabtrk",
