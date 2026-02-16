@@ -4,21 +4,24 @@
 frappe.ui.form.on("Drawing Parts", {
     quantity(frm) {
         calculate_total(frm);
+        refresh_calculation_fields(frm);
     },
     lenght(frm) {
         calculate_total(frm);
+        refresh_calculation_fields(frm);
     },
     breath(frm) {
         calculate_total(frm);
+        refresh_calculation_fields(frm);
     },
     single_weight(frm) {
         calculate_total(frm);
+        refresh_calculation_fields(frm);
     },
     refresh(frm) {
         toggle_dimension_fields(frm);
         calculate_total(frm);
     },
-
     project_number(frm) {
         // Project change hote hi Drawing clear karo
         frm.set_value("drawing_number", "");
@@ -27,6 +30,7 @@ frappe.ui.form.on("Drawing Parts", {
         frm.set_value("breath", 0);
         frm.set_value("total_weight", 0);
 
+        reset_calculation_fields(frm);
         // Drawing filter set karo
         frm.set_query("drawing_number", function () {
             return {
@@ -40,41 +44,93 @@ frappe.ui.form.on("Drawing Parts", {
         toggle_dimension_fields(frm);
         calculate_total(frm);
     },
-
     drawing_number(frm) {
         frm.set_value("item", "");
         frm.set_value("lenght", 0);
         frm.set_value("breath", 0);
         frm.set_value("total_weight", 0);
 
+        reset_calculation_fields(frm);
         set_item_filter(frm);
         toggle_dimension_fields(frm);
         calculate_total(frm);
     },
-
     item(frm) {
+        if (!frm.doc.item) return;
+
+        // Reset dependent fields
+        frm.set_value("quantity", 0);
         frm.set_value("lenght", 0);
         frm.set_value("breath", 0);
+        frm.set_value("single_weight", 0);
         frm.set_value("total_weight", 0);
 
+        // Force UI refresh
+        frm.refresh_fields([
+            "quantity",
+            "lenght",
+            "breath",
+            "single_weight",
+            "total_weight"
+        ]);
+
+
+        reset_calculation_fields(frm);
         toggle_dimension_fields(frm);
         check_duplicate_item(frm);
-        calculate_total(frm);
+
+        // Final recalculation after everything
+        setTimeout(() => {
+            calculate_total(frm);
+        }, 300);
     }
 });
-        
+
+function reset_calculation_fields(frm) {
+
+    frm.set_value({
+        quantity: 0,
+        lenght: 0,
+        breath: 0,
+        single_weight: 0,
+        total_weight: 0
+    });
+
+}
+
+function refresh_calculation_fields(frm) {
+
+    let fields = [
+        "quantity",
+        "lenght",
+        "breath",
+        "single_weight",
+        "total_weight"
+    ];
+
+    frm.refresh_fields(fields);
+}
 
 function calculate_total(frm) {
-    let quantity = frm.doc.quantity || 0;
-    let lenght = frm.doc.lenght || 0;
-    let breath = frm.doc.breath || 0;
-    let single_weight = frm.doc.single_weight || 0;
+    //     let quantity = frm.doc.quantity || 0;
+    //     let lenght = frm.doc.lenght || 0;
+    //     let breath = frm.doc.breath || 0;
+    //     let single_weight = frm.doc.single_weight || 0;
+
+    let quantity = flt(frm.doc.quantity);
+    let lenght = flt(frm.doc.lenght);
+    let breath = flt(frm.doc.breath || 1);
+    let single_weight = flt(frm.doc.single_weight);
+
+    // Agar breath hidden hai to 1 consider hoga
+    if (!frm.fields_dict.breath.df.hidden && breath === 0) {
+        breath = 1;
+    }
 
     let total = quantity * lenght * breath * single_weight;
 
     frm.set_value("total_weight", total);
 }
-
 
 function set_item_filter(frm) {
 
@@ -125,7 +181,6 @@ function set_item_filter(frm) {
     });
 }
 
-
 // ✅ 2️⃣ Duplicate Check
 function check_duplicate_item(frm) {
 
@@ -163,7 +218,11 @@ function toggle_dimension_fields(frm) {
     frm.toggle_display("lenght", false);
     frm.toggle_display("breath", false);
 
-    if (!frm.doc.item) return;
+    // if (!frm.doc.item) return;
+    if (!frm.doc.item) {
+        calculate_total(frm);
+        return;
+    }
 
     frappe.db.get_value("FT Stock RM List", frm.doc.item, "section_type")
         .then(r => {
@@ -174,6 +233,7 @@ function toggle_dimension_fields(frm) {
                 frm.toggle_display("lenght", true);
                 frm.toggle_display("breath", false);
             }
+            calculate_total(frm);
         });
 }
 
@@ -207,12 +267,4 @@ function get_existing_items(frm) {
 
     return items;
 }
-
-
-
-
-
-
-
-    
 
