@@ -197,6 +197,13 @@
   {
    "color": "Grey",
    "doc_view": "List",
+   "label": "FT Drawing Part Report",
+   "link_to": "FT Drawing Part Report",
+   "type": "Report"
+  },
+  {
+   "color": "Grey",
+   "doc_view": "List",
    "label": "Project Year Report",
    "link_to": "FT Project Report",
    "type": "Report"
