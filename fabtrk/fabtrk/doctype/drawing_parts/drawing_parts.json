@@ -31,6 +31,7 @@
   {
    "fieldname": "item",
    "fieldtype": "Link",
+   "in_list_view": 1,
    "label": "Item",
    "options": "FT Stock RM List"
   },
@@ -75,7 +76,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-13 12:47:34.122274",
+ "modified": "2026-02-13 16:34:02.079304",
  "modified_by": "Administrator",
  "module": "Fabtrk",
  "name": "Drawing Parts",
