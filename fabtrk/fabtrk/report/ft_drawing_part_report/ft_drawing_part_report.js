@@ -36,7 +36,7 @@ frappe.query_reports["FT Drawing Part Report"] = {
                 }
                 return frappe.db.get_link_options("Add Drawing", txt, filters);
             }
-        },        
+        }, 
         {
             fieldname: "item",
             label: "Drawing Part",
@@ -45,10 +45,28 @@ frappe.query_reports["FT Drawing Part Report"] = {
 
                 let drawings = frappe.query_report.get_filter_value("drawing_number") || [];
 
+                // CASE 1: No drawing selected → show all parts
                 if (!drawings.length) {
-                    return [];
+                    return frappe.call({
+                        method: "frappe.client.get_list",
+                        args: {
+                            doctype: "FT Stock RM List",
+                            fields: ["name", "computed_name"],
+                            filters: [
+                                ["computed_name", "like", "%" + txt + "%"]
+                            ],
+                            // limit_page_length: 50
+                        }
+                    }).then(r => {
+                        return (r.message || []).map(d => ({
+                            value: d.name,
+                            label: `${d.computed_name}`,
+                            description: "",
+                        }));
+                    });
                 }
 
+                // CASE 2: Drawing selected → show only its parts
                 return frappe.call({
                     method: "frappe.client.get_list",
                     args: {
@@ -57,7 +75,7 @@ frappe.query_reports["FT Drawing Part Report"] = {
                         filters: [
                             ["drawing_number", "in", drawings]
                         ],
-                        // limit_page_length: 100
+                        // limit_page_length: 200
                     }
                 }).then(r => {
 
@@ -89,6 +107,7 @@ frappe.query_reports["FT Drawing Part Report"] = {
                 });
             }
         },
+
         {
             fieldname: "is_active",
             label: "Is Active",
