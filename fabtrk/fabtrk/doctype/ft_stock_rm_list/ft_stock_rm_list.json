@@ -19,7 +19,7 @@
   {
    "fieldname": "section_type",
    "fieldtype": "Select",
-   "label": "Section Type",
+   "label": "Grade for Section / Plate",
    "options": "\nPlate\nSection"
   },
   {
@@ -41,7 +41,6 @@
    "options": "FT Material Grade Catalogues"
   },
   {
-   "depends_on": "eval:(doc.section_type == 'Section')",
    "fieldname": "stock_rm_type",
    "fieldtype": "Link",
    "label": "Stock RM Type",
@@ -80,7 +79,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-11 17:34:25.718220",
+ "modified": "2026-02-17 17:56:16.747940",
  "modified_by": "Administrator",
  "module": "Fabtrk",
  "name": "FT Stock RM List",

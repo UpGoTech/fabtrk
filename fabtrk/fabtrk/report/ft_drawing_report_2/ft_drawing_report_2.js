@@ -95,6 +95,7 @@ frappe.query_reports["FT Drawing Report 2"] = {
 				}, 100);
 			}
 		},
+
 		{
 			fieldname: "drawing_number",
 			label: "Drawing Number",
@@ -140,6 +141,7 @@ frappe.query_reports["FT Drawing Report 2"] = {
 				frappe.query_report.refresh();
 			}
 		},
+		
 		{
 			fieldname: "is_active",
 			label: "Is Active",

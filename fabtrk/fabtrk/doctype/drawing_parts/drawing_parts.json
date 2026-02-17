@@ -5,13 +5,13 @@
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
-  "position_no",
   "project_number",
   "drawing_number",
+  "position_no",
   "item",
-  "quantity",
-  "breath",
   "lenght",
+  "width",
+  "quantity",
   "single_weight",
   "total_weight",
   "painted_surface_percentage"
@@ -20,17 +20,20 @@
   {
    "fieldname": "drawing_number",
    "fieldtype": "Link",
+   "in_list_view": 1,
    "label": "Drawing Number",
    "options": "Add Drawing"
   },
   {
    "fieldname": "quantity",
    "fieldtype": "Float",
+   "in_list_view": 1,
    "label": "Quantity  "
   },
   {
    "fieldname": "item",
    "fieldtype": "Link",
+   "in_list_view": 1,
    "label": "Item",
    "options": "FT Stock RM List"
   },
@@ -42,16 +45,19 @@
   {
    "fieldname": "single_weight",
    "fieldtype": "Float",
+   "in_list_view": 1,
    "label": "Single Weight"
   },
   {
    "fieldname": "total_weight",
    "fieldtype": "Float",
+   "in_list_view": 1,
    "label": "Total Weight"
   },
   {
    "fieldname": "project_number",
    "fieldtype": "Link",
+   "in_list_view": 1,
    "label": "Project Number",
    "options": "FT Project"
   },
@@ -63,20 +69,19 @@
    "label": "Painted surface Percentage "
   },
   {
-   "fieldname": "breath",
-   "fieldtype": "Float",
-   "label": "breath "
-  },
-  {
-   "fetch_from": "drawing_number.position_no",
    "fieldname": "position_no",
    "fieldtype": "Data",
    "label": "Position No"
+  },
+  {
+   "fieldname": "width",
+   "fieldtype": "Float",
+   "label": "Width"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-14 15:08:29.144045",
+ "modified": "2026-02-16 16:09:44.923240",
  "modified_by": "Administrator",
  "module": "Fabtrk",
  "name": "Drawing Parts",

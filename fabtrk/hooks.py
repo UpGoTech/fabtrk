@@ -5,6 +5,12 @@ app_description = "Fabrication Tracking Software simplifies end-to-end fabricati
 app_email = "info@upgotech.in"
 app_license = "mit"
 
+
+
+
+
+
+
 # Apps
 # ------------------
 
