@@ -135,20 +135,56 @@ def execute(filters=None):
     """
     total_weight_drawing = frappe.db.sql(drawing_weight_query, drawing_values)[0][0] or 0
 
-    report_summary = [
-        {"label": "Total Projects", "value": total_projects, "datatype": "Int"},
-        # {"label": "Total Weight as per Project", "value": project_total_weight, "datatype": "Float"},
-        
-        {"label": "Total No of Drawings", "value": total_drawings, "datatype": "Int"},
-        # {"label": "Total Weight as per Drawing", "value": total_weight_drawing, "datatype": "Float"},
-        
-        {"label": "Total No of Drawing Parts", "value": total_drawing_parts, "datatype": "Int"},
-        # {"label": "Total Weight as per Drawing Parts", "value": total_weight_parts, "datatype": "Float"},
+    # report_summary = [
+    #     {"label": "Total Projects", "value": total_projects, "datatype": "Int"},        
+    #     {"label": "Total No of Drawings", "value": total_drawings, "datatype": "Int"},        
+    #     {"label": "Total No of Drawing Parts", "value": total_drawing_parts, "datatype": "Int"},
     
-        {"label": "Total Weight as per Project", "value": project_total_weight, "datatype": "Float"},
-        {"label": "Total Weight as per Drawing", "value": total_weight_drawing, "datatype": "Float"},
-        {"label": "Total Weight as per Drawing Parts", "value": total_weight_parts, "datatype": "Float"},
+    #     {"label": "Total Weight as per Project", "value": project_total_weight, "datatype": "Float"},
+    #     {"label": "Total Weight as per Drawing", "value": total_weight_drawing, "datatype": "Float"},
+    #     {"label": "Total Weight as per Drawing Parts", "value": total_weight_parts, "datatype": "Float"},
+    # ]
+    report_summary = [
+        {
+            "label": "",
+            "value": f"""
+            <div class="summary-container">
+                <div class="summary-section">
+                    <div class="section-content-count">
+                        <h3>Total Projects</h3>
+                        <span>{total_projects}</span>                  
+                    </div>
+                    <div class="section-content-count">
+                        <h3>Total Weight as per Project(Kg)</h3>
+                        <span>{project_total_weight}</span>                    
+                    </div>
+                </div>
+                <div class="summary-section">
+                    <div class="section-content-count">
+                        <h3>Total No of Drawings</h3>
+                        <span>{total_drawings}</span>                    
+                    </div>
+                    <div class="section-content-count">
+                        <h3>Total Weight as per Drawing(Kg)</h3>
+                        <span>{total_weight_drawing}</span>                    
+                    </div>
+                </div>
+                <div class="summary-section">
+                    <div class="section-content-count">
+                        <h3>Total No of Drawing Parts</h3>
+                        <span>{total_drawing_parts}</span>                    
+                    </div>
+                    <div class="section-content-count">
+                        <h3>Total Weight as per Drawing Parts(Kg)</h3>
+                        <span>{total_weight_parts}</span>                    
+                    </div>
+                </div>
+            </div>
+            """,
+            "datatype": "HTML",
+        }
     ]
+
 
     return columns, data, None, None, report_summary
 

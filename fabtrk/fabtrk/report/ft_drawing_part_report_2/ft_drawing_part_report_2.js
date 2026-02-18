@@ -328,21 +328,55 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 
 
 
-
-
 $(`<style>
-	.summary-item{
-		width: 500px;
-		box-shadow: rgba(50, 50, 93, 0.25) 10px 0px 10px -10px,  
-    				rgba(50, 50, 93, 0.25) -10px 0px 10px -10px; 
+	.report-summary .summary-item{
+		max-width: 100% !important;
+		min-width: 100% !important;
+		height: 200px !important;
 	}
-    .datatable .dt-header .dt-cell--header .dt-cell__content {
+	.summary-container{
+		display: grid;
+		grid-template-columns: repeat(3, 1fr) !important;
+		grid-gap: 20px;
+	}
+	.report-summary .summary-value .summary-container {
+		padding: 25px;
+	}
+	.summary-section{
+		background: #fff;
+		padding: 25px;
+		border-radius: 10px;
 		text-align: center;
+		transition: all 0.2s ease;
+		border: 1px solid #eef0f4;
 	}
-
+	.section-content-count{
+		margin-bottom: 10px;
+	}
+	.section-content-count h3{
+		font-size: 14px;
+		font-weight: 400;
+		color: #525252;
+	}
+	.section-content-count span{
+		font-family: "Poppins", sans-serif;
+		font-size: 16px;
+		font-weight: 700;
+		line-height: 20px;
+		padding-top: 12px;
+		padding-bottom: 5px;
+		color: #000;
+	}
+	/* REMOVE DEFAULT FRAPPE OVERFLOW CUT */
+	.report-summary .summary-value,
+	.report-summary .summary-value div {
+		overflow: visible !important;
+	}
+	.report-summary{
+		display: grid;
+		justify-content: start;
+	}
 </style>`).appendTo("head");
-
-
 
 
 
