@@ -12,12 +12,13 @@
   {
    "fieldname": "project_type_name",
    "fieldtype": "Data",
+   "in_list_view": 1,
    "label": "Project Type Name"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-01-10 17:22:25.173136",
+ "modified": "2026-02-18 17:02:13.353686",
  "modified_by": "Administrator",
  "module": "Fabtrk",
  "name": "FT Project Type",

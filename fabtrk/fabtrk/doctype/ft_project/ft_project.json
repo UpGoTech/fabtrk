@@ -6,7 +6,6 @@
  "engine": "InnoDB",
  "field_order": [
   "project_details_section",
-  "naming_series",
   "project_name",
   "description",
   "is_active",
@@ -27,20 +26,9 @@
   "column_break_rhri",
   "bill_weight_by",
   "excepted_end_date",
-  "amended_from",
-  "section_break_kyml",
-  "add_drawings",
-  "stock_summary",
-  "total_weight_for_stock_item"
+  "amended_from"
  ],
  "fields": [
-  {
-   "fieldname": "naming_series",
-   "fieldtype": "Select",
-   "hidden": 1,
-   "label": "Naming series",
-   "options": "\nFXL-\nBSI-\nBABJ-"
-  },
   {
    "fieldname": "project_name",
    "fieldtype": "Data",
@@ -169,37 +157,12 @@
   {
    "fieldname": "column_break_prkk",
    "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "section_break_kyml",
-   "fieldtype": "Section Break",
-   "hidden": 1,
-   "label": "hidden"
-  },
-  {
-   "fieldname": "add_drawings",
-   "fieldtype": "Table",
-   "label": "Add Drawings",
-   "options": "FT Drawing Childtable Old"
-  },
-  {
-   "fieldname": "stock_summary",
-   "fieldtype": "Table",
-   "label": "Stock Summary",
-   "options": "FT Project Stock Summary",
-   "read_only": 1
-  },
-  {
-   "fieldname": "total_weight_for_stock_item",
-   "fieldtype": "Float",
-   "label": "Total Weight for Stock Item",
-   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-02-11 13:43:52.358855",
+ "modified": "2026-02-18 17:04:39.531642",
  "modified_by": "Administrator",
  "module": "Fabtrk",
  "name": "FT Project",

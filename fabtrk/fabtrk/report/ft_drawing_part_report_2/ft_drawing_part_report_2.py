@@ -6,10 +6,11 @@ def execute(filters=None):
 
     columns = [
         {"label": "Project", "fieldname": "project_name", "fieldtype": "Link", "options": "FT Project", "width": 150},
+        {"label": "Position No", "fieldname": "position_no", "fieldtype": "Data", "width": 150},
         {"label": "Item", "fieldname": "item_name", "width": 350},
         {"label": "Total Entries", "fieldname": "item_count", "fieldtype": "Int", "width": 150},
         {"label": "Total Weight", "fieldname": "total_weight", "fieldtype": "Float", "width": 150},
-        {"label": "View", "fieldname": "view", "fieldtype": "HTML", "width": 150},
+        {"label": "Details", "fieldname": "view", "fieldtype": "HTML", "width": 150},
     ]
 
     # Conditions for main query
@@ -43,6 +44,7 @@ def execute(filters=None):
     query = f"""
     SELECT
         p.name AS project_name,
+        dp.position_no AS position_no,
         dp.item AS item_id,
         rm.computed_name AS item_name,
         COUNT(dp.name) AS item_count,
@@ -53,7 +55,7 @@ def execute(filters=None):
     LEFT JOIN `tabFT Stock RM List` rm ON rm.name = dp.item
     WHERE 1=1
         {conditions}
-    GROUP BY p.name, dp.item, rm.computed_name
+    GROUP BY p.name, dp.item, rm.computed_name, dp.position_no
 	HAVING 
 		dp.item IS NOT NULL
 		OR (
@@ -71,7 +73,7 @@ def execute(filters=None):
 
     data = frappe.db.sql(query, values, as_dict=True) or []
 
-    # Add View Button and default values
+    # Add Details Button and default values
     for row in data:
         row["item_count"] = row.get("item_count") or 0
         row["total_weight"] = row.get("total_weight") or 0
@@ -82,7 +84,7 @@ def execute(filters=None):
             <button class="btn btn-xs btn-primary view-btn"
                 data-project="{row.get('project_name')}"
                 data-item="{row.get('item_id') or ''}">
-                View
+                Details
             </button>
         </div>
        
@@ -135,19 +137,53 @@ def execute(filters=None):
     """
     total_weight_drawing = frappe.db.sql(drawing_weight_query, drawing_values)[0][0] or 0
 
+    # report_summary = [
+    #     {"label": "Total Projects", "value": total_projects, "datatype": "Int"},
+    #     {"label": "Total No of Drawings", "value": total_drawings, "datatype": "Int"},
+    #     {"label": "Total No of Drawing Parts", "value": total_drawing_parts, "datatype": "Int"},
+    #     {"label": "Total Weight as per Project", "value": project_total_weight, "datatype": "Float"},
+    #     {"label": "Total Weight as per Drawing", "value": total_weight_drawing, "datatype": "Float"},
+    #     {"label": "Total Weight as per Drawing Parts", "value": total_weight_parts, "datatype": "Float"},
+    # ]
     report_summary = [
-        {"label": "Total Projects", "value": total_projects, "datatype": "Int"},
-        # {"label": "Total Weight as per Project", "value": project_total_weight, "datatype": "Float"},
-        
-        {"label": "Total No of Drawings", "value": total_drawings, "datatype": "Int"},
-        # {"label": "Total Weight as per Drawing", "value": total_weight_drawing, "datatype": "Float"},
-        
-        {"label": "Total No of Drawing Parts", "value": total_drawing_parts, "datatype": "Int"},
-        # {"label": "Total Weight as per Drawing Parts", "value": total_weight_parts, "datatype": "Float"},
-    
-        {"label": "Total Weight as per Project", "value": project_total_weight, "datatype": "Float"},
-        {"label": "Total Weight as per Drawing", "value": total_weight_drawing, "datatype": "Float"},
-        {"label": "Total Weight as per Drawing Parts", "value": total_weight_parts, "datatype": "Float"},
+        {
+            "label": "",
+            "value": f"""
+            <div class="summary-container">
+                <div class="summary-section">
+                    <div class="section-content-count">
+                        <h3>Total Projects</h3>
+                        <span>{total_projects}</span>                  
+                    </div>
+                    <div class="section-content-count">
+                        <h3>Total Weight as per Project(Kg)</h3>
+                        <span>{project_total_weight}</span>                    
+                    </div>
+                </div>
+                <div class="summary-section">
+                    <div class="section-content-count">
+                        <h3>Total No of Drawings</h3>
+                        <span>{total_drawings}</span>                    
+                    </div>
+                    <div class="section-content-count">
+                        <h3>Total Weight as per Drawing(Kg)</h3>
+                        <span>{total_weight_drawing}</span>                    
+                    </div>
+                </div>
+                <div class="summary-section">
+                    <div class="section-content-count">
+                        <h3>Total No of Drawing Parts</h3>
+                        <span>{total_drawing_parts}</span>                    
+                    </div>
+                    <div class="section-content-count">
+                        <h3>Total Weight as per Drawing Parts(Kg)</h3>
+                        <span>{total_weight_parts}</span>                    
+                    </div>
+                </div>
+            </div>
+            """,
+            "datatype": "HTML",
+        }
     ]
 
     return columns, data, None, None, report_summary

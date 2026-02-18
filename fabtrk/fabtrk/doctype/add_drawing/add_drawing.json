@@ -47,7 +47,8 @@
    "fieldname": "total_weight",
    "fieldtype": "Float",
    "in_list_view": 1,
-   "label": "Total Weight"
+   "label": "Total Weight",
+   "read_only": 1
   },
   {
    "fieldname": "column_break_mqgl",
@@ -69,7 +70,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-16 16:08:17.611011",
+ "modified": "2026-02-18 18:19:26.852083",
  "modified_by": "Administrator",
  "module": "Fabtrk",
  "name": "Add Drawing",

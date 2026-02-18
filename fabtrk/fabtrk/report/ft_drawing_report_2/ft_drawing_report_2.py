@@ -102,6 +102,7 @@ def execute(filters=None):
     columns = [
         {"label": "Project", "fieldname": "project_name", "fieldtype": "Link", "options": "FT Project", "width": 130},
         {"label": "Drawing Number", "fieldname": "drawing_number", "fieldtype": "Data","width": 200},
+        {"label": "PO Position No", "fieldname": "po_position_no", "fieldtype": "Data","width": 200},
         {"label": "Unit Weight", "fieldname": "unit_weight", "fieldtype": "Float", "width": 150},
         {"label": "Required Qty", "fieldname": "quantity", "fieldtype": "Int", "width": 120},
         {"label": "Total Weight", "fieldname": "total_weight", "fieldtype": "Float", "width": 150},
@@ -129,6 +130,7 @@ def execute(filters=None):
         SELECT
             p.name AS project_name,
             ad.drawing_number AS drawing_number,
+            ad.po_position_no AS po_position_no,
             IFNULL(ad.unit_weight, 0) AS unit_weight,
             IFNULL(ad.quantity, 0) AS quantity,
             IFNULL(ad.total_weight, 0) AS total_weight
@@ -160,11 +162,37 @@ def execute(filters=None):
 
     total_weight_as_per_drawing = sum(d.total_weight or 0 for d in raw_data)
 
+      
     report_summary = [
-        {"label": "Total Projects", "value": total_projects, "datatype": "Int"},
-        {"label": "Total No of Drawings", "value": total_no_of_drawings, "datatype": "Int"},
-        {"label": "Total Weight as per Project", "value": total_weight_as_per_project, "datatype": "Float"},
-        {"label": "Total Weight as per Drawing", "value": total_weight_as_per_drawing, "datatype": "Float"},
+        {
+            "label": "",
+            "value": f"""
+            <div class="summary-container">
+                <div class="summary-section">
+                    <div class="section-content-count">
+                        <h3>Total Projects</h3>
+                        <span>{total_projects}</span>                  
+                    </div>
+                    <div class="section-content-count">
+                        <h3>Total Weight as per Project(Kg)</h3>
+                        <span>{total_weight_as_per_project}</span>                    
+                    </div>
+                </div>
+                <div class="summary-section">
+                    <div class="section-content-count">
+                        <h3>Total No of Drawings</h3>
+                        <span>{total_no_of_drawings}</span>                    
+                    </div>
+                    <div class="section-content-count">
+                        <h3>Total Weight as per Drawing(Kg)</h3>
+                        <span>{total_weight_as_per_drawing}</span>                    
+                    </div>
+                </div>
+                
+            </div>
+            """,
+            "datatype": "HTML",
+        }
     ]
 
     return columns, raw_data, None, None, report_summary

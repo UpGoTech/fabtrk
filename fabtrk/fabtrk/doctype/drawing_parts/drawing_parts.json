@@ -71,6 +71,7 @@
   {
    "fieldname": "position_no",
    "fieldtype": "Data",
+   "in_list_view": 1,
    "label": "Position No"
   },
   {
@@ -81,7 +82,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-16 16:09:44.923240",
+ "modified": "2026-02-18 17:07:30.826239",
  "modified_by": "Administrator",
  "module": "Fabtrk",
  "name": "Drawing Parts",

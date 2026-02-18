@@ -172,3 +172,51 @@ frappe.query_reports["FT Drawing Report 2"] = {
 
 
 
+$(`<style>
+	.report-summary .summary-item{
+		max-width: 100% !important;
+		min-width: 100% !important;
+		height: 200px !important;
+	}
+	.summary-container{
+		display: grid;
+		grid-template-columns: repeat(2, 1fr) !important;
+		grid-gap: 60px;
+	}
+	.report-summary .summary-value .summary-container {
+		padding: 25px;
+	}
+	.summary-section{
+		background: #fff;
+		padding: 25px;
+		border-radius: 10px;
+		text-align: center;
+		transition: all 0.2s ease;
+		border: 2px solid #eef0f4;
+	}
+	.section-content-count{
+		margin-bottom: 10px;
+	}
+	.section-content-count h3{
+		font-size: 14px;
+		font-weight: 400;
+		color: #525252;
+	}
+	.section-content-count span{
+		font-size: 16px;
+		font-weight: 600;
+		line-height: 20px;
+		padding-top: 12px;
+		padding-bottom: 5px;
+		color: #000;
+	}
+	/* REMOVE DEFAULT FRAPPE OVERFLOW CUT */
+	.report-summary .summary-value,
+	.report-summary .summary-value div {
+		overflow: visible !important;
+	}
+	.report-summary{
+		display: grid;
+		justify-content: start;
+	}
+</style>`).appendTo("head");

@@ -1,6 +1,6 @@
 {
  "charts": [],
- "content": "[{\"id\":\"nODy7KBzB7\",\"type\":\"card\",\"data\":{\"card_name\":\"Customer Master \",\"col\":8}},{\"id\":\"tQ-xGQIfWi\",\"type\":\"card\",\"data\":{\"card_name\":\"Raw Material Master\",\"col\":7}},{\"id\":\"C-CdGnQA5C\",\"type\":\"card\",\"data\":{\"card_name\":\"Project Master\",\"col\":6}},{\"id\":\"UM6iMJgOWS\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Reports</b></span>\",\"col\":12}},{\"id\":\"iub-2ihvb9\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Drawing\",\"col\":7}},{\"id\":\"LRrdGYDR_v\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Drawing MRP\",\"col\":6}}]",
+ "content": "[{\"id\":\"nODy7KBzB7\",\"type\":\"card\",\"data\":{\"card_name\":\"Customer Master \",\"col\":4}},{\"id\":\"tQ-xGQIfWi\",\"type\":\"card\",\"data\":{\"card_name\":\"Raw Material Master\",\"col\":4}},{\"id\":\"C-CdGnQA5C\",\"type\":\"card\",\"data\":{\"card_name\":\"Project Master\",\"col\":4}},{\"id\":\"UM6iMJgOWS\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Reports</b></span>\",\"col\":12}},{\"id\":\"iub-2ihvb9\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Drawing\",\"col\":6}},{\"id\":\"LRrdGYDR_v\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Drawing MRP\",\"col\":7}}]",
  "creation": "2026-02-17 11:42:12.136765",
  "custom_blocks": [],
  "docstatus": 0,
@@ -131,7 +131,7 @@
    "type": "Link"
   }
  ],
- "modified": "2026-02-18 14:12:31.836702",
+ "modified": "2026-02-18 18:39:43.594723",
  "modified_by": "Administrator",
  "module": "Fabtrk",
  "name": "New Fabtrk",
