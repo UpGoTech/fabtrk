@@ -6,8 +6,8 @@
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
-  "position_no",
   "project_number",
+  "po_position_no",
   "drawing_number",
   "unit_weight",
   "quantity",
@@ -26,6 +26,7 @@
   {
    "fieldname": "drawing_number",
    "fieldtype": "Data",
+   "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Drawing Number"
   },
@@ -33,16 +34,19 @@
    "default": "1",
    "fieldname": "quantity",
    "fieldtype": "Int",
+   "in_list_view": 1,
    "label": "Required Qty"
   },
   {
    "fieldname": "unit_weight",
    "fieldtype": "Float",
+   "in_list_view": 1,
    "label": "Unit Weight"
   },
   {
    "fieldname": "total_weight",
    "fieldtype": "Float",
+   "in_list_view": 1,
    "label": "Total Weight"
   },
   {
@@ -57,14 +61,15 @@
    "read_only": 1
   },
   {
-   "fieldname": "position_no",
+   "fieldname": "po_position_no",
    "fieldtype": "Data",
-   "label": "Position No"
+   "in_list_view": 1,
+   "label": "PO Position No"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-12 17:34:04.362329",
+ "modified": "2026-02-16 16:08:17.611011",
  "modified_by": "Administrator",
  "module": "Fabtrk",
  "name": "Add Drawing",

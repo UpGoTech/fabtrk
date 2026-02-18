@@ -95,6 +95,7 @@ frappe.query_reports["FT Drawing Report 2"] = {
 				}, 100);
 			}
 		},
+
 		{
 			fieldname: "drawing_number",
 			label: "Drawing Number",
@@ -102,38 +103,45 @@ frappe.query_reports["FT Drawing Report 2"] = {
 			get_data: function (txt) {
 
 				let projects = frappe.query_report.get_filter_value("project_number");
-
 				let filters = {};
 
 				if (projects && projects.length > 0) {
 					filters.project_number = ["in", projects];
 				}
 
-				return frappe.db.get_link_options("Add Drawing", txt, filters);
-				// return frappe.call({
-				// 	method: "frappe.client.get_list",
-				// 	args: {
-				// 		doctype: "Add Drawing",
-				// 		filters: filters,
-				// 		fields: ["name", "drawing_number"],
-				// 		// limit_page_length: 20
-				// 	}
-				// }).then(r => {
-				// 	return (r.message || []).map(d => {
-				// 		return {
-				// 			value: d.name,                // 👈 actual ID (backend ke liye)
-				// 			description: d.drawing_number // 👈 jo user ko dikhana hai
-				// 		};
-				// 	});
-				// });
+				return frappe.call({
+					method: "frappe.client.get_list",
+					args: {
+						doctype: "Add Drawing",
+						filters: filters,
+						fields: ["name", "drawing_number"],
+						// limit_page_length: 500
+					}
+				}).then(r => {
 
+					let unique_map = {};
+					let result = [];
+
+					(r.message || []).forEach(d => {
+						if (!unique_map[d.drawing_number]) {
+							unique_map[d.drawing_number] = true;
+
+							result.push({
+								value: d.drawing_number,
+								label: d.drawing_number,       // sirf value show karega
+								description: ""                // undefined hatane ke liye
+							});
+						}
+					});
+
+					return result;
+				});
 			},
 			on_change() {
-				setTimeout(() => {
-					frappe.query_report.refresh();
-				}, 100);
+				frappe.query_report.refresh();
 			}
 		},
+		
 		{
 			fieldname: "is_active",
 			label: "Is Active",

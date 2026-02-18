@@ -6,7 +6,8 @@
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
-  "section_type_name"
+  "section_type_name",
+  "sort_key"
  ],
  "fields": [
   {
@@ -15,11 +16,16 @@
    "in_list_view": 1,
    "label": "Section Type Name",
    "unique": 1
+  },
+  {
+   "fieldname": "sort_key",
+   "fieldtype": "Data",
+   "label": "Sort Key"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-11 17:26:58.317077",
+ "modified": "2026-02-18 11:56:28.710623",
  "modified_by": "Administrator",
  "module": "Fabtrk",
  "name": "FT Section Type",
