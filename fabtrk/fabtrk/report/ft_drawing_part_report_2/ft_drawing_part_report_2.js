@@ -14,183 +14,8 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 		}, 100);
 	},
 
-	
-	// filters: [
-	// 	{
-	// 		fieldname: "project_number",
-	// 		label: "Project Number",
-	// 		fieldtype: "MultiSelectList",
-	// 		get_data: function (txt) {
-	// 			return frappe.db.get_link_options("FT Project", txt);
-	// 		}
-	// 	},
-
-	// 	// {
-	// 	// 	fieldname: "drawing_number",
-	// 	// 	label: "Drawing Number",
-	// 	// 	fieldtype: "MultiSelectList",
-	// 	// 	get_data: function (txt) {
-	// 	// 		let projects = frappe.query_report.get_filter_value("project_number") || [];
-	// 	// 		let filters = {};
-	// 	// 		if (projects.length) {
-	// 	// 			filters.project_number = ["in", projects];
-	// 	// 		}
-	// 	// 		return frappe.db.get_link_options("Add Drawing", txt, filters);
-	// 	// 	}
-	// 	// },
-	// 	{
-	// 		fieldname: "drawing_number",
-	// 		label: "Drawing Number",
-	// 		fieldtype: "MultiSelectList",
-	// 		get_data: function (txt) {
-
-	// 			let projects = frappe.query_report.get_filter_value("project_number");
-	// 			let filters = {};
-
-	// 			if (projects && projects.length > 0) {
-	// 				filters.project_number = ["in", projects];
-	// 			}
-
-	// 			return frappe.call({
-	// 				method: "frappe.client.get_list",
-	// 				args: {
-	// 					doctype: "Add Drawing",
-	// 					filters: filters,
-	// 					fields: ["name", "drawing_number"],
-	// 					// limit_page_length: 500
-	// 				}
-	// 			}).then(r => {
-
-	// 				let unique_map = {};
-	// 				let result = [];
-
-	// 				(r.message || []).forEach(d => {
-	// 					if (!unique_map[d.drawing_number]) {
-	// 						unique_map[d.drawing_number] = true;
-
-	// 						result.push({
-	// 							value: d.drawing_number,
-	// 							label: d.drawing_number,       // sirf value show karega
-	// 							description: ""                // undefined hatane ke liye
-	// 						});
-	// 					}
-	// 				});
-
-	// 				return result;
-	// 			});
-	// 		},
-	// 		on_change() {
-	// 			frappe.query_report.refresh();
-	// 		}
-	// 	},
-
-	// 	{
-	// 		fieldname: "item",
-	// 		label: "Drawing Part",
-	// 		fieldtype: "MultiSelectList",
-
-	// 		get_data: function (txt) {
-	// 			let projects = frappe.query_report.get_filter_value("project_number") || [];
-	// 			let drawings = frappe.query_report.get_filter_value("drawing_number") || [];
-
-	// 			// CASE 1: Nothing selected → show all items
-	// 			if (!projects.length && !drawings.length) {
-	// 				return frappe.call({
-	// 					method: "frappe.client.get_list",
-	// 					args: {
-	// 						doctype: "FT Stock RM List",
-	// 						fields: ["name", "computed_name"],
-	// 						filters: [["computed_name", "like", "%" + txt + "%"]],
-	// 					}
-	// 				}).then(r => {
-	// 					return (r.message || []).map(d => ({
-	// 						value: d.name,
-	// 						label: d.computed_name,
-	// 						description: ""
-	// 					}));
-	// 				});
-	// 			}
-
-	// 			// CASE 2: Project selected but no drawing → show nothing
-	// 			// if (projects.length && !drawings.length) {
-	// 			// 	return [];
-	// 			// }
-	// 			// CASE 2: Project selected but no drawing → filter items by project
-	// 			if (projects.length && !drawings.length) {
-	// 				return frappe.call({
-	// 					method: "frappe.client.get_list",
-	// 					args: {
-	// 						doctype: "Drawing Parts",
-	// 						fields: ["item"],
-	// 						filters: [["project_number", "in", projects]],
-	// 					}
-	// 				}).then(r => {
-
-	// 					let unique_items = [...new Set((r.message || []).map(d => d.item))];
-	// 					if (!unique_items.length) return [];
-
-	// 					return frappe.call({
-	// 						method: "frappe.client.get_list",
-	// 						args: {
-	// 							doctype: "FT Stock RM List",
-	// 							fields: ["name", "computed_name"],
-	// 							filters: [
-	// 								["name", "in", unique_items],
-	// 								["computed_name", "like", "%" + txt + "%"]
-	// 							]
-	// 						}
-	// 					}).then(res => {
-	// 						return (res.message || []).map(d => ({
-	// 							value: d.name,
-	// 							label: d.computed_name,
-	// 							description: ""
-	// 						}));
-	// 					});
-	// 				});
-	// 			}
 
 
-	// 			// CASE 3: Drawing selected → show only items of those drawings
-	// 			return frappe.call({
-	// 				method: "frappe.client.get_list",
-	// 				args: {
-	// 					doctype: "Drawing Parts",
-	// 					fields: ["item"],
-	// 					filters: [["drawing_number", "in", drawings]],
-	// 				}
-	// 			}).then(r => {
-	// 				let unique_items = [...new Set((r.message || []).map(d => d.item))];
-	// 				if (!unique_items.length) return [];
-
-	// 				return frappe.call({
-	// 					method: "frappe.client.get_list",
-	// 					args: {
-	// 						doctype: "FT Stock RM List",
-	// 						fields: ["name", "computed_name"],
-	// 						filters: [
-	// 							["name", "in", unique_items],
-	// 							["computed_name", "like", "%" + txt + "%"]
-	// 						]
-	// 					}
-	// 				}).then(res => {
-	// 					return (res.message || []).map(d => ({
-	// 						value: d.name,
-	// 						label: d.computed_name,
-	// 						description: ""
-	// 					}));
-	// 				});
-	// 			});
-	// 		}
-
-	// 	},
-
-	// 	{
-	// 		fieldname: "is_active",
-	// 		label: "Is Active",
-	// 		fieldtype: "Check",
-	// 		default: 1
-	// 	}
-	// ],
 	filters: [
 
 		// ---------------- PROJECT ----------------
@@ -384,6 +209,21 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 			}
 		},
 
+		// ----------------- Section Type 
+		{
+			fieldname: "stock_rm_type",
+			label: "Stock Rm Type",
+			fieldtype: "MultiSelectList",
+			get_data: function (txt) {
+				return frappe.db.get_link_options("FT Section Type", txt);
+			},
+			on_change() {
+				frappe.query_report.refresh();
+			}
+		},
+
+
+
 		// ---------------- IS ACTIVE ----------------
 		{
 			fieldname: "is_active",
@@ -485,4 +325,39 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 			});
 	}
 };
+
+
+
+
+
+$(`<style>
+	.summary-item{
+		width: 500px;
+		box-shadow: rgba(50, 50, 93, 0.25) 10px 0px 10px -10px,  
+    				rgba(50, 50, 93, 0.25) -10px 0px 10px -10px; 
+	}
+    .datatable .dt-header .dt-cell--header .dt-cell__content {
+		text-align: center;
+	}
+
+</style>`).appendTo("head");
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

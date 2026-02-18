@@ -92,6 +92,10 @@ function update_computed_name(frm) {
 
         base_name = "Plate";
 
+        if (frm.doc.stock_rm_type) {
+            base_name += "-" + frm.doc.stock_rm_type;
+        }
+        
         if (frm.doc.thickness_mm) {
             size_part = frm.doc.thickness_mm + " THK";
         }

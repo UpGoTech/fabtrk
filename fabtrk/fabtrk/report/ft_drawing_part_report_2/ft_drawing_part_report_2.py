@@ -9,7 +9,7 @@ def execute(filters=None):
         {"label": "Item", "fieldname": "item_name", "width": 350},
         {"label": "Total Entries", "fieldname": "item_count", "fieldtype": "Int", "width": 150},
         {"label": "Total Weight", "fieldname": "total_weight", "fieldtype": "Float", "width": 150},
-        {"label": "View", "fieldname": "view", "fieldtype": "HTML", "width": 120},
+        {"label": "View", "fieldname": "view", "fieldtype": "HTML", "width": 150},
     ]
 
     # Conditions for main query
@@ -25,10 +25,16 @@ def execute(filters=None):
         conditions += " AND ad.drawing_number IN %(drawing_number)s"
 
         values["drawing_number"] = tuple(filters.get("drawing_number"))
-
+        
     if filters.get("item"):
         conditions += " AND dp.item IN %(item)s"
         values["item"] = tuple(filters.get("item"))
+        
+        
+    # 🔽 YEH NAYA BLOCK ADD KARO
+    if filters.get("stock_rm_type"):
+        conditions += " AND rm.stock_rm_type IN %(stock_rm_type)s"
+        values["stock_rm_type"] = tuple(filters.get("stock_rm_type"))
 
     if filters.get("is_active"):
         conditions += " AND p.is_active = 1"
@@ -71,11 +77,15 @@ def execute(filters=None):
         row["total_weight"] = row.get("total_weight") or 0
         row["item_name"] = row.get("item_name") or "-"
         row["view"] = f"""
-        <button class="btn btn-xs btn-primary view-btn"
-            data-project="{row.get('project_name')}"
-            data-item="{row.get('item_id') or ''}">
-            View
-        </button>
+                
+        <div class="d-grid gap-2 col-6 mx-auto">
+            <button class="btn btn-xs btn-primary view-btn"
+                data-project="{row.get('project_name')}"
+                data-item="{row.get('item_id') or ''}">
+                View
+            </button>
+        </div>
+       
         """
 
     # ---------------- SUMMARY ----------------
@@ -127,9 +137,14 @@ def execute(filters=None):
 
     report_summary = [
         {"label": "Total Projects", "value": total_projects, "datatype": "Int"},
-        {"label": "Total No of Drawings", "value": total_drawings, "datatype": "Int"},
-        {"label": "Total No of Drawing Parts", "value": total_drawing_parts, "datatype": "Int"},
+        # {"label": "Total Weight as per Project", "value": project_total_weight, "datatype": "Float"},
         
+        {"label": "Total No of Drawings", "value": total_drawings, "datatype": "Int"},
+        # {"label": "Total Weight as per Drawing", "value": total_weight_drawing, "datatype": "Float"},
+        
+        {"label": "Total No of Drawing Parts", "value": total_drawing_parts, "datatype": "Int"},
+        # {"label": "Total Weight as per Drawing Parts", "value": total_weight_parts, "datatype": "Float"},
+    
         {"label": "Total Weight as per Project", "value": project_total_weight, "datatype": "Float"},
         {"label": "Total Weight as per Drawing", "value": total_weight_drawing, "datatype": "Float"},
         {"label": "Total Weight as per Drawing Parts", "value": total_weight_parts, "datatype": "Float"},
@@ -138,38 +153,6 @@ def execute(filters=None):
     return columns, data, None, None, report_summary
 
 
-# @frappe.whitelist()
-# def get_item_details(project, item):
-    # rows = frappe.db.sql(
-    #     """
-    #     SELECT
-    #         dp.drawing_number,
-    #         dp.quantity,
-    #         dp.lenght,
-    #         dp.width,
-    #         dp.single_weight,
-    #         dp.total_weight
-    #     FROM `tabDrawing Parts` dp
-    #     WHERE dp.project_number = %s
-    #     AND dp.item = %s
-    #     ORDER BY dp.drawing_number
-    #     """,
-    #     (project, item),
-    #     as_dict=True,
-    # )
-
-    # grand_total = sum(d.get("total_weight", 0) for d in rows)
-
-    # rows.append({
-    #     "drawing_number": "<b>Total</b>",
-    #     "quantity": "",
-    #     "lenght": "",
-    #     "width": "",
-    #     "single_weight": "",
-    #     "total_weight": f"<b>{grand_total}</b>"
-    # })
-
-    # return rows
 
 @frappe.whitelist()
 def get_item_details(project, item):
@@ -216,6 +199,31 @@ def get_item_details(project, item):
         "item_name": item_name,
         "data": rows
     }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
