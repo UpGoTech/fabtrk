@@ -107,7 +107,6 @@ frappe.query_reports["FT Drawing Part Report"] = {
                 });
             }
         },
-
         {
             fieldname: "is_active",
             label: "Is Active",
