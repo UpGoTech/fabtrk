@@ -10,6 +10,10 @@ class FTProject(Document):
 
 
 
+
+
+
+
 # #hidden hai    Add Drawings table ke liye  backend se Stock summnery me stock ke total show hoge with name
 # import frappe
 # from frappe.model.document import Document
