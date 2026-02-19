@@ -6,11 +6,11 @@ def execute(filters=None):
 
     columns = [
         {"label": "Project", "fieldname": "project_name", "fieldtype": "Link", "options": "FT Project", "width": 150},
-        {"label": "Position No", "fieldname": "position_no", "fieldtype": "Data", "width": 150},
+        {"label": "Position No", "fieldname": "position_no", "fieldtype": "Data", "width": 150, "align": "center"},
         {"label": "Item", "fieldname": "item_name", "width": 350},
-        {"label": "Total Entries", "fieldname": "item_count", "fieldtype": "Int", "width": 150},
-        {"label": "Total Weight", "fieldname": "total_weight", "fieldtype": "Float", "width": 150},
-        {"label": "Details", "fieldname": "view", "fieldtype": "HTML", "width": 150},
+        {"label": "Total Entries", "fieldname": "item_count", "fieldtype": "Int", "width": 150,"align": "center"},
+        {"label": "Total Weight", "fieldname": "total_weight", "fieldtype": "Float", "width": 150,"align": "center"},
+        {"label": "Details", "fieldname": "view", "fieldtype": "HTML", "width": 150,"align": "center"},
     ]
 
     # Conditions for main query
@@ -31,8 +31,6 @@ def execute(filters=None):
         conditions += " AND dp.item IN %(item)s"
         values["item"] = tuple(filters.get("item"))
         
-        
-    # 🔽 YEH NAYA BLOCK ADD KARO
     if filters.get("stock_rm_type"):
         conditions += " AND rm.stock_rm_type IN %(stock_rm_type)s"
         values["stock_rm_type"] = tuple(filters.get("stock_rm_type"))
@@ -47,15 +45,21 @@ def execute(filters=None):
         dp.position_no AS position_no,
         dp.item AS item_id,
         rm.computed_name AS item_name,
+        COALESCE(CAST(st.sort_key AS UNSIGNED), 9999) AS sort_key,
+        
         COUNT(dp.name) AS item_count,
         SUM(COALESCE(dp.total_weight, 0)) AS total_weight
     FROM `tabFT Project` p
     LEFT JOIN `tabAdd Drawing` ad ON ad.project_number = p.name
     LEFT JOIN `tabDrawing Parts` dp ON dp.drawing_number = ad.name
     LEFT JOIN `tabFT Stock RM List` rm ON rm.name = dp.item
+    LEFT JOIN `tabFT Section Type` st ON st.name = rm.stock_rm_type
+
     WHERE 1=1
         {conditions}
-    GROUP BY p.name, dp.item, rm.computed_name, dp.position_no
+    GROUP BY p.name, dp.item, rm.computed_name, dp.position_no,
+    st.sort_key
+    
 	HAVING 
 		dp.item IS NOT NULL
 		OR (
@@ -68,7 +72,8 @@ def execute(filters=None):
 				WHERE ad2.project_number = p.name
 			)
 		)
-    ORDER BY p.name, dp.item
+    ORDER BY p.name, 
+        sort_key ASC
     """
 
     data = frappe.db.sql(query, values, as_dict=True) or []
@@ -81,7 +86,7 @@ def execute(filters=None):
         row["view"] = f"""
                 
         <div class="d-grid gap-2 col-6 mx-auto">
-            <button class="btn btn-xs btn-primary view-btn"
+            <button class="btn btn-xs btn-info view-btn"
                 data-project="{row.get('project_name')}"
                 data-item="{row.get('item_id') or ''}">
                 Details
@@ -137,14 +142,7 @@ def execute(filters=None):
     """
     total_weight_drawing = frappe.db.sql(drawing_weight_query, drawing_values)[0][0] or 0
 
-    # report_summary = [
-    #     {"label": "Total Projects", "value": total_projects, "datatype": "Int"},
-    #     {"label": "Total No of Drawings", "value": total_drawings, "datatype": "Int"},
-    #     {"label": "Total No of Drawing Parts", "value": total_drawing_parts, "datatype": "Int"},
-    #     {"label": "Total Weight as per Project", "value": project_total_weight, "datatype": "Float"},
-    #     {"label": "Total Weight as per Drawing", "value": total_weight_drawing, "datatype": "Float"},
-    #     {"label": "Total Weight as per Drawing Parts", "value": total_weight_parts, "datatype": "Float"},
-    # ]
+    
     report_summary = [
         {
             "label": "",
@@ -235,31 +233,5 @@ def get_item_details(project, item):
         "item_name": item_name,
         "data": rows
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
