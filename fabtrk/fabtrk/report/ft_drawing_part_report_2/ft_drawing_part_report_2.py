@@ -135,15 +135,6 @@ def execute(filters=None):
     """
     total_weight_drawing = frappe.db.sql(drawing_weight_query, drawing_values)[0][0] or 0
 
-    # report_summary = [
-    #     {"label": "Total Projects", "value": total_projects, "datatype": "Int"},        
-    #     {"label": "Total No of Drawings", "value": total_drawings, "datatype": "Int"},        
-    #     {"label": "Total No of Drawing Parts", "value": total_drawing_parts, "datatype": "Int"},
-    
-    #     {"label": "Total Weight as per Project", "value": project_total_weight, "datatype": "Float"},
-    #     {"label": "Total Weight as per Drawing", "value": total_weight_drawing, "datatype": "Float"},
-    #     {"label": "Total Weight as per Drawing Parts", "value": total_weight_parts, "datatype": "Float"},
-    # ]
     report_summary = [
         {
             "label": "",
@@ -151,31 +142,31 @@ def execute(filters=None):
             <div class="summary-container">
                 <div class="summary-section">
                     <div class="section-content-count">
-                        <h3>Total Projects</h3>
+                        <p>Total Projects</p>
                         <span>{total_projects}</span>                  
                     </div>
                     <div class="section-content-count">
-                        <h3>Total Weight as per Project(Kg)</h3>
+                        <p>Total Weight as per Project(Kg)</p>
                         <span>{project_total_weight}</span>                    
                     </div>
                 </div>
                 <div class="summary-section">
                     <div class="section-content-count">
-                        <h3>Total No of Drawings</h3>
+                        <p>Total No of Drawings</p>
                         <span>{total_drawings}</span>                    
                     </div>
                     <div class="section-content-count">
-                        <h3>Total Weight as per Drawing(Kg)</h3>
+                        <p>Total Weight as per Drawing(Kg)</p>
                         <span>{total_weight_drawing}</span>                    
                     </div>
                 </div>
                 <div class="summary-section">
                     <div class="section-content-count">
-                        <h3>Total No of Drawing Parts</h3>
+                        <p>Total No of Drawing Parts</p>
                         <span>{total_drawing_parts}</span>                    
                     </div>
                     <div class="section-content-count">
-                        <h3>Total Weight as per Drawing Parts(Kg)</h3>
+                        <p>Total Weight as per Drawing Parts(Kg)</p>
                         <span>{total_weight_parts}</span>                    
                     </div>
                 </div>
@@ -185,10 +176,7 @@ def execute(filters=None):
         }
     ]
 
-
     return columns, data, None, None, report_summary
-
-
 
 @frappe.whitelist()
 def get_item_details(project, item):
@@ -235,31 +223,4 @@ def get_item_details(project, item):
         "item_name": item_name,
         "data": rows
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 

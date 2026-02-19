@@ -9,12 +9,19 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 		frappe.query_report.set_filter_value("item", []);
 		frappe.query_report.set_filter_value("is_active", 1);
 
+		// Add Buttons
+		report.page.add_inner_button("Download Summary", function () {
+			download_csv(report);
+		});
+
+		report.page.add_inner_button("Download Full Report", function () {
+			download_full_report(report);
+		});
+
 		setTimeout(() => {
 			frappe.query_report.refresh();
 		}, 100);
 	},
-
-
 
 	filters: [
 
@@ -237,7 +244,6 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 
 	],
 
-
 	after_datatable_render(report) {
 
 		$(report.wrapper)
@@ -286,7 +292,7 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 								</tr>
 							`;
 
-							totalWeight += parseFloat(d.total_weight) || 0; // calculate total
+							totalWeight += parseFloat(d.total_weight) || 0; 
 						});
 
 						let html = `
@@ -295,9 +301,14 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 
 								<div style="display:flex;justify-content:space-between;align-items:center;">
 									<h4>Item Details - ${r.message.item_name}</h4>
-									<button class="btn btn-xs btn-danger close-view">
-										Close
-									</button>
+									<div style="display:flex; gap:20px;">
+										<button class="btn btn-xs btn-primary summary-download">
+											Summary
+										</button>
+										<button class="btn btn-xs btn-danger close-view">
+											Close
+										</button>
+									</div>
 								</div>
 
 								<table class="table table-bordered" style="margin-top:15px;">
@@ -319,62 +330,219 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 						$(".close-view").on("click", function () {
 							$("#item-detail-container").remove();
 						});
+						// only summary table download
+						$(".summary-download").on("click", function () {
 
+							let rows = [];
+
+							// Get Title
+							let title = $("#item-detail-container h4").text().trim();
+							title = title.replace(/"/g, '""');
+
+							// Add title as first row
+							// rows.push(""); // blank line before title
+							rows.push(`"${title}"`);
+							// rows.push(""); // blank line after title
+
+							// Now extract table
+							$("#item-detail-container table tr").each(function () {
+
+								let cols = [];
+
+								$(this).find("th, td").each(function () {
+									let text = $(this).text().trim();
+									text = text.replace(/"/g, '""');
+									cols.push(`"${text}"`);
+								});
+
+								rows.push(cols.join(","));
+							});
+
+							if (!rows.length) {
+								frappe.msgprint("No data to export");
+								return;
+							}
+
+							let csv_content = rows.join("\n");
+
+							let blob = new Blob([csv_content], { type: "text/csv;charset=utf-8;" });
+							let url = URL.createObjectURL(blob);
+
+							let link = document.createElement("a");
+							link.href = url;
+
+							// Clean filename (replace spaces & special chars)
+							let clean_name = title.replace(/[^a-z0-9]/gi, "_").toLowerCase();
+
+							link.download = `${clean_name}.csv`;
+
+							document.body.appendChild(link);
+							link.click();
+							document.body.removeChild(link);
+						});						
 					}
 				});
 			});
 	}
 };
 
+function download_csv(report) {
 
+    if (!report.data || !report.data.length) {
+        frappe.msgprint("No data to export");
+        return;
+    }
+
+    let columns = report.columns
+        .filter(col => col.fieldname !== "view") // remove View button column
+        .map(col => `"${col.label}"`);
+
+    let rows = report.data.map(row => {
+        return report.columns
+            .filter(col => col.fieldname !== "view")
+            .map(col => {
+                let value = row[col.fieldname] ?? "";
+                value = String(value).replace(/"/g, '""'); // escape quotes
+                return `"${value}"`;
+            }).join(",");
+    });
+
+    let csv_content = columns.join(",") + "\n" + rows.join("\n");
+
+    let blob = new Blob([csv_content], { type: "text/csv;charset=utf-8;" });
+    let url = URL.createObjectURL(blob);
+
+    let link = document.createElement("a");
+    link.href = url;
+    link.download = "FT_Drawing_Part_Report.csv";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+function download_full_report(report) {
+
+    let rows = [];
+
+    rows.push("Main Summary Table");
+    // rows.push("");
+
+    // Remove unwanted columns (like View button)
+    let valid_columns = report.columns.filter(col => 
+        col.fieldname && col.fieldname !== "view"
+    );
+
+    // Header row
+    let headers = valid_columns.map(col => col.label);
+    rows.push(headers.join(","));
+
+    // Data rows (already filter based)
+    report.data.forEach(row => {
+        let rowData = valid_columns.map(col => {
+            let value = row[col.fieldname] || "";
+            return `"${String(value).replace(/"/g, '""')}"`;
+        });
+        rows.push(rowData.join(","));
+    });
+
+    rows.push("");
+    // rows.push("");
+
+    // ========================
+    // Detail Table
+    // ========================
+
+    let detailTitle = $("#item-detail-container h4").text().trim();
+    if (detailTitle) {
+        rows.push(detailTitle);
+        // rows.push("");
+    }
+
+    $("#item-detail-container table tr").each(function () {
+        let cols = [];
+        $(this).find("th, td").each(function () {
+            cols.push(`"${$(this).text().trim().replace(/"/g, '""')}"`);
+        });
+        if (cols.length) {
+            rows.push(cols.join(","));
+        }
+    });
+
+    let csvContent = rows.join("\n");
+
+    let blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    let url = URL.createObjectURL(blob);
+
+    let link = document.createElement("a");
+    link.href = url;
+    link.download = "full_report.csv";
+
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
 
 $(`<style>
 	.report-summary .summary-item{
-		max-width: 100% !important;
-		min-width: 100% !important;
-		height: 200px !important;
+		max-width: 100%;
+		min-width: 100%;
+		height: 100%;
+		display: block;
+		place-content: unset;
+		margin: 0;
 	}
 	.summary-container{
 		display: grid;
-		grid-template-columns: repeat(3, 1fr) !important;
-		grid-gap: 20px;
+		grid-template-columns: repeat(1, 1fr) !important;
+		place-items: center;
+		gap: 20px;
+	}
+	@media (min-width: 768px) and (max-width: 1023px) {
+		.summary-container{
+			grid-template-columns: repeat(2, 1fr) !important;
+		}
+	}
+	@media (min-width: 1024px) {
+		.summary-container{
+			grid-template-columns: repeat(3, 1fr) !important;
+		}
 	}
 	.report-summary .summary-value .summary-container {
-		padding: 25px;
+		padding: 20px;
 	}
 	.summary-section{
+		width: 100%;
 		background: #fff;
-		padding: 25px;
+		padding: 20px;
 		border-radius: 10px;
 		text-align: center;
 		transition: all 0.2s ease;
-		border: 1px solid #eef0f4;
+		border: 2px solid #eef0f4;
 	}
-	.section-content-count{
-		margin-bottom: 10px;
-	}
-	.section-content-count h3{
+	.section-content-count p{
 		font-size: 14px;
 		font-weight: 400;
 		color: #525252;
 	}
 	.section-content-count span{
-		font-family: "Poppins", sans-serif;
 		font-size: 16px;
-		font-weight: 700;
+		font-weight: 600;
 		line-height: 20px;
 		padding-top: 12px;
 		padding-bottom: 5px;
 		color: #000;
 	}
-	/* REMOVE DEFAULT FRAPPE OVERFLOW CUT */
-	.report-summary .summary-value,
-	.report-summary .summary-value div {
-		overflow: visible !important;
-	}
-	.report-summary{
-		display: grid;
-		justify-content: start;
+	.report-summary {
+		background-color: none;
+		border-radius: 0;
+		border-bottom: 0;
+		margin: 0;
+		padding: 0;
+		display: block;
+		flex-wrap: unset;
+		align-items: unset;
+		justify-content: unset;
+		gap: 0px;
 	}
 </style>`).appendTo("head");
 
