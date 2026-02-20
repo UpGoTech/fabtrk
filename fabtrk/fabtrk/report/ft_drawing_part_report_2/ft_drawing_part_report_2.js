@@ -1,5 +1,3 @@
-
-
 frappe.query_reports["FT Drawing Part Report 2"] = {
 
 	onload(report) {
@@ -9,11 +7,19 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 		frappe.query_report.set_filter_value("item", []);
 		frappe.query_report.set_filter_value("is_active", 1);
 
+		// Add Buttons
+		report.page.add_inner_button("Download Summary", function () {
+			download_csv(report);
+		});
+
+		report.page.add_inner_button("Download Full Report", function () {
+			download_full_report(report);
+		});
+
 		setTimeout(() => {
 			frappe.query_report.refresh();
 		}, 100);
 	},
-
 
 	filters: [
 
@@ -29,6 +35,8 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 				frappe.query_report.set_filter_value("drawing_number", []);
 				frappe.query_report.set_filter_value("item", []);
 				frappe.query_report.refresh();
+
+				clear_item_details();
 			}
 		},
 
@@ -41,10 +49,15 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 			get_data: function (txt) {
 
 				let projects = frappe.query_report.get_filter_value("project_number") || [];
-				let filters = {};
+				let filters = [];
+
+				// Search filter (IMPORTANT)
+				if (txt) {
+					filters.push(["drawing_number", "like", "%" + txt + "%"]);
+				}
 
 				if (projects.length) {
-					filters.project_number = ["in", projects];
+					filters.push(["project_number", "in", projects]);
 				}
 
 				return frappe.call({
@@ -52,7 +65,9 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 					args: {
 						doctype: "Add Drawing",
 						filters: filters,
-						fields: ["name", "drawing_number"]
+						fields: ["name", "drawing_number"],
+
+						filters: filters,
 					}
 				}).then(r => {
 
@@ -60,7 +75,7 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 					let result = [];
 
 					(r.message || []).forEach(d => {
-						if (!unique[d.drawing_number]) {
+						if (d.drawing_number && !unique[d.drawing_number]) {
 							unique[d.drawing_number] = true;
 
 							result.push({
@@ -78,8 +93,12 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 			on_change() {
 				frappe.query_report.set_filter_value("item", []);
 				frappe.query_report.refresh();
+
+				clear_item_details();
 			}
 		},
+
+
 
 		// ---------------- ITEM ----------------
 		// {
@@ -207,6 +226,8 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 		// 		}
 		// 	}
 		// },
+
+
 		// ---------------- ITEM ----------------
 		{
 			fieldname: "item",
@@ -350,6 +371,11 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 
 					});
 				}
+			},
+
+			on_change() {
+				clear_item_details();   // 👈 ADD THIS
+				frappe.query_report.refresh();
 			}
 		},
 
@@ -364,6 +390,7 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 			},
 			on_change() {
 				frappe.query_report.refresh();
+				clear_item_details();
 			}
 		},
 
@@ -375,11 +402,11 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 			default: 1,
 			on_change() {
 				frappe.query_report.refresh();
+				clear_item_details();
 			}
 		}
 
 	],
-
 
 	after_datatable_render(report) {
 
@@ -387,8 +414,21 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 			.off("click", ".view-btn")
 			.on("click", ".view-btn", function () {
 
+				// Remove active from all buttons
+				$(".view-btn").removeClass("active-detail");
+
+				// Add active to clicked button
+				$(this).addClass("active-detail");
+
+
 				let project = $(this).data("project");
 				let item = $(this).data("item");
+
+				 // ✅ GET SELECTED DRAWING
+				let drawings = frappe.query_report.get_filter_value("drawing_number") || [];
+
+				// // If only 1 drawing selected → pass it
+				// let drawing_number = drawings.length === 1 ? drawings[0] : null;
 
 				if (!project || !item) {
 					frappe.msgprint("No Data");
@@ -399,7 +439,9 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 					method: "fabtrk.fabtrk.report.ft_drawing_part_report_2.ft_drawing_part_report_2.get_item_details",
 					args: {
 						project: project,
-						item: item
+						item: item,
+						// drawing_number: drawing_number  
+						drawing_numbers: drawings.length ? JSON.stringify(drawings) : null
 					},
 					callback: function (r) {
 
@@ -414,22 +456,6 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 						let rows = "";
 						let totalWeight = 0;
 
-						// r.message.forEach(d => {
-						// r.message.data.forEach(d => {
-
-						// 	rows += `
-						// 		<tr>
-						// 			<td>${d.drawing_number}</td>
-						// 			<td>${d.quantity}</td>
-						// 			<td>${d.lenght}</td>
-						// 			<td>${d.width}</td>
-						// 			<td>${d.single_weight}</td>
-						// 			<td>${d.total_weight}</td>
-						// 		</tr>
-						// 	`;
-
-						// 	totalWeight += parseFloat(d.total_weight) || 0; // calculate total
-						// });
 						r.message.data.forEach(d => {
 							// Skip backend Total row from calculation
 							let is_total_row = String(d.drawing_number).toLowerCase().includes("total");
@@ -443,16 +469,24 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 							let single_weight = d.single_weight !== undefined && d.single_weight !== "" ? parseFloat(d.single_weight).toFixed(3) : "";
 							let total_weight = d.total_weight !== undefined && d.total_weight !== "" ? parseFloat(String(d.total_weight).replace(/<[^>]+>/g, '')).toFixed(3) : "";
 
+							let row_style = "";
+							let total_weight_style = "text-align:center;";
+
+							if (is_total_row) {
+								row_style = "background-color:#f8f9fa; font-weight:600;";
+								total_weight_style = "text-align:center; color:#000; font-weight:700; font-size:15px;";
+							}
+
 							rows += `
-									<tr>
-										<td>${d.drawing_number}</td>
-										<td style="text-align:center;">${qty}</td>
-										<td style="text-align:center;">${length}</td>
-										<td style="text-align:center;">${width}</td>
-										<td style="text-align:center;">${single_weight}</td>
-										<td style="text-align:center;">${total_weight}</td>
-									</tr>
-								`;
+								<tr style="${row_style}">
+									<td>${d.drawing_number}</td>
+									<td style="text-align:center;">${qty}</td>
+									<td style="text-align:center;">${length}</td>
+									<td style="text-align:center;">${width}</td>
+									<td style="text-align:center;">${single_weight}</td>
+									<td style="${total_weight_style}">${total_weight}</td>
+								</tr>
+							`;
 
 							// Total calculation (skip backend total row)
 							if (!is_total_row) {
@@ -469,9 +503,14 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 
 								<div style="display:flex;justify-content:space-between;align-items:center;">
 									<h4>Item Details - ${r.message.item_name}</h4>
-									<button class="btn btn-xs btn-danger close-view">
-										Close
-									</button>
+									<div style="display:flex; gap:20px;">
+										<button class="btn btn-xs btn-primary summary-download">
+											Summary
+										</button>
+										<button class="btn btn-xs btn-danger close-view">
+											Close
+										</button>
+									</div>
 								</div>
 
 								<table class="table table-bordered" style="margin-top:15px;">
@@ -492,44 +531,204 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 
 						$(".close-view").on("click", function () {
 							$("#item-detail-container").remove();
+							$(".view-btn").removeClass("active-detail");
 						});
+						// only summary table download
+						$(".summary-download").on("click", function () {
 
+							let rows = [];
+
+							// Get Title
+							let title = $("#item-detail-container h4").text().trim();
+							title = title.replace(/"/g, '""');
+
+							// Add title as first row
+							// rows.push(""); // blank line before title
+							rows.push(`"${title}"`);
+							// rows.push(""); // blank line after title
+
+							// Now extract table
+							$("#item-detail-container table tr").each(function () {
+
+								let cols = [];
+
+								$(this).find("th, td").each(function () {
+									let text = $(this).text().trim();
+									text = text.replace(/"/g, '""');
+									cols.push(`"${text}"`);
+								});
+
+								rows.push(cols.join(","));
+							});
+
+							if (!rows.length) {
+								frappe.msgprint("No data to export");
+								return;
+							}
+
+							let csv_content = rows.join("\n");
+
+							let blob = new Blob([csv_content], { type: "text/csv;charset=utf-8;" });
+							let url = URL.createObjectURL(blob);
+
+							let link = document.createElement("a");
+							link.href = url;
+
+							// Clean filename (replace spaces & special chars)
+							let clean_name = title.replace(/[^a-z0-9]/gi, "_").toLowerCase();
+
+							link.download = `${clean_name}.csv`;
+
+							document.body.appendChild(link);
+							link.click();
+							document.body.removeChild(link);
+						});
 					}
 				});
 			});
 	}
 };
 
+// table refresh
+function clear_item_details() {
+	$("#item-detail-container").remove();
+	$(".view-btn").removeClass("active-detail");
+}
 
+function download_csv(report) {
 
+	if (!report.data || !report.data.length) {
+		frappe.msgprint("No data to export");
+		return;
+	}
 
-// stype for card 
+	let columns = report.columns
+		.filter(col => col.fieldname !== "view") // remove View button column
+		.map(col => `"${col.label}"`);
+
+	let rows = report.data.map(row => {
+		return report.columns
+			.filter(col => col.fieldname !== "view")
+			.map(col => {
+				let value = row[col.fieldname] ?? "";
+				value = String(value).replace(/"/g, '""'); // escape quotes
+				return `"${value}"`;
+			}).join(",");
+	});
+
+	let csv_content = columns.join(",") + "\n" + rows.join("\n");
+
+	let blob = new Blob([csv_content], { type: "text/csv;charset=utf-8;" });
+	let url = URL.createObjectURL(blob);
+
+	let link = document.createElement("a");
+	link.href = url;
+	link.download = "FT_Drawing_Part_Report.csv";
+	document.body.appendChild(link);
+	link.click();
+	document.body.removeChild(link);
+}
+
+function download_full_report(report) {
+
+	let rows = [];
+
+	rows.push("Main Summary Table");
+	// rows.push("");
+
+	// Remove unwanted columns (like View button)
+	let valid_columns = report.columns.filter(col =>
+		col.fieldname && col.fieldname !== "view"
+	);
+
+	// Header row
+	let headers = valid_columns.map(col => col.label);
+	rows.push(headers.join(","));
+
+	// Data rows (already filter based)
+	report.data.forEach(row => {
+		let rowData = valid_columns.map(col => {
+			let value = row[col.fieldname] || "";
+			return `"${String(value).replace(/"/g, '""')}"`;
+		});
+		rows.push(rowData.join(","));
+	});
+
+	rows.push("");
+	// rows.push("");
+
+	// ========================
+	// Detail Table
+	// ========================
+
+	let detailTitle = $("#item-detail-container h4").text().trim();
+	if (detailTitle) {
+		rows.push(detailTitle);
+		// rows.push("");
+	}
+
+	$("#item-detail-container table tr").each(function () {
+		let cols = [];
+		$(this).find("th, td").each(function () {
+			cols.push(`"${$(this).text().trim().replace(/"/g, '""')}"`);
+		});
+		if (cols.length) {
+			rows.push(cols.join(","));
+		}
+	});
+
+	let csvContent = rows.join("\n");
+
+	let blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+	let url = URL.createObjectURL(blob);
+
+	let link = document.createElement("a");
+	link.href = url;
+	link.download = "full_report.csv";
+
+	document.body.appendChild(link);
+	link.click();
+	document.body.removeChild(link);
+}
+
 $(`<style>
 	.report-summary .summary-item{
-		max-width: 100% !important;
-		min-width: 100% !important;
-		height: 200px !important;
+		max-width: 100%;
+		min-width: 100%;
+		height: 100%;
+		display: block;
+		place-content: unset;
+		margin: 0;
 	}
 	.summary-container{
 		display: grid;
-		grid-template-columns: repeat(3, 1fr) !important;
-		grid-gap: 20px;
+		grid-template-columns: repeat(1, 1fr) !important;
+		place-items: center;
+		gap: 20px;
+	}
+	@media (min-width: 768px) and (max-width: 1023px) {
+		.summary-container{
+			grid-template-columns: repeat(2, 1fr) !important;
+		}
+	}
+	@media (min-width: 1024px) {
+		.summary-container{
+			grid-template-columns: repeat(3, 1fr) !important;
+		}
 	}
 	.report-summary .summary-value .summary-container {
-		padding: 25px;
+		padding: 20px;
 	}
 	.summary-section{
+		width: 100%;
 		background: #fff;
-		padding: 25px;
+		padding: 20px;
 		border-radius: 10px;
 		text-align: center;
 		transition: all 0.2s ease;
 		border: 2px solid #eef0f4;
 	}
-	.section-content-count{
-		margin-bottom: 10px;
-	}
-	.section-content-count h3{
+	.section-content-count p{
 		font-size: 14px;
 		font-weight: 400;
 		color: #525252;
@@ -542,15 +741,25 @@ $(`<style>
 		padding-bottom: 5px;
 		color: #000;
 	}
-	/* REMOVE DEFAULT FRAPPE OVERFLOW CUT */
-	.report-summary .summary-value,
-	.report-summary .summary-value div {
-		overflow: visible !important;
+	.report-summary {
+		background-color: none;
+		border-radius: 0;
+		border-bottom: 0;
+		margin: 0;
+		padding: 0;
+		display: block;
+		flex-wrap: unset;
+		align-items: unset;
+		justify-content: unset;
+		gap: 0px;
 	}
-	.report-summary{
-		display: grid;
-		justify-content: start;
+
+	/* button view active color*/
+	.view-btn.active-detail {
+		background-color: #0c5c70 !important;
+		color: #fff !important;
+		border-color: #0c5c70  !important;
+		box-shadow: 0 0 0 2px rgba(21, 54, 102, 0.25);
 	}
 </style>`).appendTo("head");
-
 

@@ -75,7 +75,7 @@ frappe.query_reports["FT Drawing Report 2"] = {
 				frappe.query_report.refresh();
 			}
 		},
-		
+
 		{
 			fieldname: "is_active",
 			label: "Is Active",
@@ -104,34 +104,39 @@ frappe.query_reports["FT Drawing Report 2"] = {
 	}
 };
 
-
-
 $(`<style>
 	.report-summary .summary-item{
-		max-width: 100% !important;
-		min-width: 100% !important;
-		height: 200px !important;
+		max-width: 100%;
+		min-width: 100%;
+		height: 100%;
+		display: block;
+		place-content: unset;
+		margin: 0;
 	}
 	.summary-container{
 		display: grid;
-		grid-template-columns: repeat(2, 1fr) !important;
-		grid-gap: 60px;
+		grid-template-columns: repeat(1, 1fr) !important;
+		place-items: center;
+		gap: 20px;
+	}
+	@media (min-width: 768px){
+		.summary-container{
+			grid-template-columns: repeat(2, 1fr) !important;
+		}
 	}
 	.report-summary .summary-value .summary-container {
-		padding: 25px;
+		padding: 20px;
 	}
 	.summary-section{
+		width: 90%;
 		background: #fff;
-		padding: 25px;
+		padding: 20px;
 		border-radius: 10px;
 		text-align: center;
 		transition: all 0.2s ease;
 		border: 2px solid #eef0f4;
 	}
-	.section-content-count{
-		margin-bottom: 10px;
-	}
-	.section-content-count h3{
+	.section-content-count p{
 		font-size: 14px;
 		font-weight: 400;
 		color: #525252;
@@ -144,13 +149,16 @@ $(`<style>
 		padding-bottom: 5px;
 		color: #000;
 	}
-	/* REMOVE DEFAULT FRAPPE OVERFLOW CUT */
-	.report-summary .summary-value,
-	.report-summary .summary-value div {
-		overflow: visible !important;
-	}
-	.report-summary{
-		display: grid;
-		justify-content: start;
+	.report-summary {
+		background-color: none;
+		border-radius: 0;
+		border-bottom: 0;
+		margin: 0;
+		padding: 0;
+		display: block;
+		flex-wrap: unset;
+		align-items: unset;
+		justify-content: unset;
+		gap: 0px;
 	}
 </style>`).appendTo("head");

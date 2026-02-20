@@ -77,21 +77,21 @@ def execute(filters=None):
             <div class="summary-container">
                 <div class="summary-section">
                     <div class="section-content-count">
-                        <h3>Total Projects</h3>
+                        <p>Total Projects</p>
                         <span>{total_projects}</span>                  
                     </div>
                     <div class="section-content-count">
-                        <h3>Total Weight as per Project(Kg)</h3>
+                        <p>Total Weight as per Project(Kg)</p>
                         <span>{total_weight_as_per_project}</span>                    
                     </div>
                 </div>
                 <div class="summary-section">
                     <div class="section-content-count">
-                        <h3>Total No of Drawings</h3>
+                        <p>Total No of Drawings</p>
                         <span>{total_no_of_drawings}</span>                    
                     </div>
                     <div class="section-content-count">
-                        <h3>Total Weight as per Drawing(Kg)</h3>
+                        <p>Total Weight as per Drawing(Kg)</p>
                         <span>{total_weight_as_per_drawing}</span>                    
                     </div>
                 </div>

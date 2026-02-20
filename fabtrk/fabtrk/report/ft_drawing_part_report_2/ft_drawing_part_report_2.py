@@ -22,9 +22,7 @@ def execute(filters=None):
         values["project_number"] = tuple(filters.get("project_number"))
 
     if filters.get("drawing_number"):
-        # conditions += " AND ad.name IN %(drawing_number)s"
         conditions += " AND ad.drawing_number IN %(drawing_number)s"
-
         values["drawing_number"] = tuple(filters.get("drawing_number"))
         
     if filters.get("item"):
@@ -105,7 +103,7 @@ def execute(filters=None):
     LEFT JOIN `tabAdd Drawing` ad ON ad.project_number = p.name
     WHERE 1=1
         {" AND p.name IN %(project_number)s" if filters.get("project_number") else ""}
-        {" AND ad.name IN %(drawing_number)s" if filters.get("drawing_number") else ""}
+        {" AND ad.drawing_number IN %(drawing_number)s" if filters.get("drawing_number") else ""}
         {" AND p.is_active = 1" if filters.get("is_active") else ""}
     """
     # Only pass project_number and drawing_number values
@@ -137,7 +135,7 @@ def execute(filters=None):
     LEFT JOIN `tabAdd Drawing` ad ON ad.project_number = p.name
     WHERE 1=1
         {" AND p.name IN %(project_number)s" if filters.get("project_number") else ""}
-        {" AND ad.name IN %(drawing_number)s" if filters.get("drawing_number") else ""}
+        {" AND ad.drawing_number IN %(drawing_number)s" if filters.get("drawing_number") else ""}
         {" AND p.is_active = 1" if filters.get("is_active") else ""}
     """
     total_weight_drawing = frappe.db.sql(drawing_weight_query, drawing_values)[0][0] or 0
@@ -150,31 +148,31 @@ def execute(filters=None):
             <div class="summary-container">
                 <div class="summary-section">
                     <div class="section-content-count">
-                        <h3>Total Projects</h3>
+                        <p>Total Projects</p>
                         <span>{total_projects}</span>                  
                     </div>
                     <div class="section-content-count">
-                        <h3>Total Weight as per Project(Kg)</h3>
+                        <p>Total Weight as per Project(Kg)</p>
                         <span>{project_total_weight}</span>                    
                     </div>
                 </div>
                 <div class="summary-section">
                     <div class="section-content-count">
-                        <h3>Total No of Drawings</h3>
+                        <p>Total No of Drawings</p>
                         <span>{total_drawings}</span>                    
                     </div>
                     <div class="section-content-count">
-                        <h3>Total Weight as per Drawing(Kg)</h3>
+                        <p>Total Weight as per Drawing(Kg)</p>
                         <span>{total_weight_drawing}</span>                    
                     </div>
                 </div>
                 <div class="summary-section">
                     <div class="section-content-count">
-                        <h3>Total No of Drawing Parts</h3>
+                        <p>Total No of Drawing Parts</p>
                         <span>{total_drawing_parts}</span>                    
                     </div>
                     <div class="section-content-count">
-                        <h3>Total Weight as per Drawing Parts(Kg)</h3>
+                        <p>Total Weight as per Drawing Parts(Kg)</p>
                         <span>{total_weight_parts}</span>                    
                     </div>
                 </div>
@@ -187,19 +185,130 @@ def execute(filters=None):
     return columns, data, None, None, report_summary
 
 
+#  isme drawing select pr table me drawing filter nhi hori baki correct hai 
+# @frappe.whitelist()
+# def get_item_details(project, item):
+
+#     # item ka computed_name
+#     item_name = frappe.db.get_value(
+#         "FT Stock RM List",
+#         item,
+#         "computed_name"
+#     ) or item
+
+#     rows = frappe.db.sql(
+#         """
+#         SELECT
+#             ad.drawing_number AS drawing_number,
+#             dp.quantity,
+#             dp.lenght,
+#             dp.width,
+#             dp.single_weight,
+#             dp.total_weight
+#         FROM `tabDrawing Parts` dp
+#         LEFT JOIN `tabAdd Drawing` ad 
+#             ON ad.name = dp.drawing_number
+#         WHERE dp.project_number = %s
+#         AND dp.item = %s
+#         ORDER BY ad.drawing_number
+#         """,
+#         (project, item),
+#         as_dict=True,
+#     )
+
+#     grand_total = sum(d.get("total_weight", 0) for d in rows)
+
+#     rows.append({
+#         "drawing_number": "<b>Total</b>",
+#         "quantity": "",
+#         "lenght": "",
+#         "width": "",
+#         "single_weight": "",
+#         "total_weight": f"<b>{grand_total}</b>"
+#     })
+
+#     return {
+#         "item_name": item_name,
+#         "data": rows
+#     }
+
+
+# only one drawing filter when click on detail button and fitering the table on after_datatable_render
+# @frappe.whitelist()
+# def get_item_details(project, item, drawing_number=None):
+
+#     item_name = frappe.db.get_value(
+#         "FT Stock RM List",
+#         item,
+#         "computed_name"
+#     ) or item
+
+#     conditions = " WHERE dp.project_number = %s AND dp.item = %s "
+#     values = [project, item]
+
+#     # ✅ Drawing filter added
+#     if drawing_number:
+#         conditions += " AND ad.drawing_number = %s "
+#         values.append(drawing_number)
+
+#     rows = frappe.db.sql(
+#         f"""
+#         SELECT
+#             ad.drawing_number AS drawing_number,
+#             dp.quantity,
+#             dp.lenght,
+#             dp.width,
+#             dp.single_weight,
+#             dp.total_weight
+#         FROM `tabDrawing Parts` dp
+#         LEFT JOIN `tabAdd Drawing` ad 
+#             ON ad.name = dp.drawing_number
+#         {conditions}
+#         ORDER BY ad.drawing_number
+#         """,
+#         tuple(values),
+#         as_dict=True,
+#     )
+
+#     grand_total = sum(d.get("total_weight", 0) for d in rows)
+
+#     rows.append({
+#         "drawing_number": "<b>Total</b>",
+#         "quantity": "",
+#         "lenght": "",
+#         "width": "",
+#         "single_weight": "",
+#         "total_weight": f"<b>{grand_total}</b>"
+#     })
+
+#     return {
+#         "item_name": item_name,
+#         "data": rows
+#     }
+
 
 @frappe.whitelist()
-def get_item_details(project, item):
+def get_item_details(project, item, drawing_numbers=None):
 
-    # item ka computed_name
     item_name = frappe.db.get_value(
         "FT Stock RM List",
         item,
         "computed_name"
     ) or item
 
+    conditions = " WHERE dp.project_number = %s AND dp.item = %s "
+    values = [project, item]
+
+    # ✅ If drawing filter exists (single or multiple)
+    if drawing_numbers:
+        drawing_numbers = frappe.parse_json(drawing_numbers)
+
+        if isinstance(drawing_numbers, list) and drawing_numbers:
+            conditions += " AND ad.drawing_number IN %s "
+            values.append(tuple(drawing_numbers))
+
     rows = frappe.db.sql(
-        """
+        f"""
         SELECT
             ad.drawing_number AS drawing_number,
             dp.quantity,
@@ -210,11 +319,10 @@ def get_item_details(project, item):
         FROM `tabDrawing Parts` dp
         LEFT JOIN `tabAdd Drawing` ad 
             ON ad.name = dp.drawing_number
-        WHERE dp.project_number = %s
-        AND dp.item = %s
+        {conditions}
         ORDER BY ad.drawing_number
         """,
-        (project, item),
+        tuple(values),
         as_dict=True,
     )
 
@@ -233,5 +341,4 @@ def get_item_details(project, item):
         "item_name": item_name,
         "data": rows
     }
-
 
