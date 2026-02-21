@@ -90,15 +90,13 @@ function update_computed_name(frm) {
     // 🔹 PLATE TYPE
     if (frm.doc.section_type === "Plate") {
 
-        base_name = "Plate";
+        base_name = frm.doc.stock_rm_type || "";
 
-        if (frm.doc.stock_rm_type) {
-            base_name += "-" + frm.doc.stock_rm_type;
+        if (frm.doc.thickness_mm !== undefined && frm.doc.thickness_mm !== null) {
+            let thickness = String(frm.doc.thickness_mm).padStart(2, "0");
+            size_part = thickness + " THK";
         }
-        
-        if (frm.doc.thickness_mm) {
-            size_part = frm.doc.thickness_mm + " THK";
-        }
+
     }
 
     // 🔹 If No Grade Selected → Simple Name
@@ -136,9 +134,7 @@ function update_computed_name(frm) {
                     type_bis = grade_doc.bis_plate || "";
                 }
 
-                // 🔥 FINAL ORDER
                 // Beam 5131THK IS808 IS2062 E350BR
-
                 let final_name = [
                     base_name,
                     size_part,

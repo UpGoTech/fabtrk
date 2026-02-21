@@ -1,5 +1,3 @@
-
-
 frappe.query_reports["FT Drawing Part Report 2"] = {
 
 	onload(report) {
@@ -37,6 +35,8 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 				frappe.query_report.set_filter_value("drawing_number", []);
 				frappe.query_report.set_filter_value("item", []);
 				frappe.query_report.refresh();
+
+				clear_item_details();
 			}
 		},
 
@@ -49,18 +49,25 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 			get_data: function (txt) {
 
 				let projects = frappe.query_report.get_filter_value("project_number") || [];
-				let filters = {};
+				let filters = [];
+
+				// Search filter (IMPORTANT)
+				if (txt) {
+					filters.push(["drawing_number", "like", "%" + txt + "%"]);
+				}
 
 				if (projects.length) {
-					filters.project_number = ["in", projects];
+					filters.push(["project_number", "in", projects]);
 				}
 
 				return frappe.call({
 					method: "frappe.client.get_list",
 					args: {
-						doctype: "Add Drawing",
+						doctype: "FT Add Drawing",
 						filters: filters,
-						fields: ["name", "drawing_number"]
+						fields: ["name", "drawing_number"],
+
+						filters: filters,
 					}
 				}).then(r => {
 
@@ -68,7 +75,7 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 					let result = [];
 
 					(r.message || []).forEach(d => {
-						if (!unique[d.drawing_number]) {
+						if (d.drawing_number && !unique[d.drawing_number]) {
 							unique[d.drawing_number] = true;
 
 							result.push({
@@ -86,8 +93,140 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 			on_change() {
 				frappe.query_report.set_filter_value("item", []);
 				frappe.query_report.refresh();
+
+				clear_item_details();
 			}
 		},
+
+
+
+		// ---------------- ITEM ----------------
+		// {
+		// 	fieldname: "item",
+		// 	label: "Drawing Part",
+		// 	fieldtype: "MultiSelectList",
+
+		// 	get_data: function (txt) {
+
+		// 		let projects = frappe.query_report.get_filter_value("project_number") || [];
+		// 		let drawings = frappe.query_report.get_filter_value("drawing_number") || [];
+
+		// 		// ---------------- CASE 1 ----------------
+		// 		// Nothing selected → show all items
+		// 		if (!projects.length && !drawings.length) {
+
+		// 			return frappe.call({
+		// 				method: "frappe.client.get_list",
+		// 				args: {
+		// 					doctype: "FT Stock RM List",
+		// 					fields: ["name", "computed_name"],
+		// 					filters: [["computed_name", "like", "%" + txt + "%"]]
+		// 				}
+		// 			}).then(r => {
+		// 				return (r.message || []).map(d => ({
+		// 					value: d.name,
+		// 					label: d.computed_name,
+		// 					description: ""
+		// 				}));
+		// 			});
+		// 		}
+
+		// 		// ---------------- CASE 2 ----------------
+		// 		// Project selected but no drawing
+		// 		if (projects.length && !drawings.length) {
+
+		// 			return frappe.call({
+		// 				method: "frappe.client.get_list",
+		// 				args: {
+		// 					doctype: "Drawing Parts",
+		// 					fields: ["item"],
+		// 					filters: [["project_number", "in", projects]]
+		// 				}
+		// 			}).then(r => {
+
+		// 				let unique_items = [...new Set((r.message || []).map(d => d.item))];
+		// 				if (!unique_items.length) return [];
+
+		// 				return frappe.call({
+		// 					method: "frappe.client.get_list",
+		// 					args: {
+		// 						doctype: "FT Stock RM List",
+		// 						fields: ["name", "computed_name"],
+		// 						filters: [
+		// 							["name", "in", unique_items],
+		// 							["computed_name", "like", "%" + txt + "%"]
+		// 						]
+		// 					}
+		// 				}).then(res => {
+		// 					return (res.message || []).map(d => ({
+		// 						value: d.name,
+		// 						label: d.computed_name,
+		// 						description: ""
+		// 					}));
+		// 				});
+
+		// 			});
+		// 		}
+
+		// 		// ---------------- CASE 3 ----------------
+		// 		// Drawing selected → PROPER FIX
+		// 		if (drawings.length) {
+
+		// 			// Step 1: Get FT Add Drawing document names
+		// 			return frappe.call({
+		// 				method: "frappe.client.get_list",
+		// 				args: {
+		// 					doctype: "FT Add Drawing",
+		// 					fields: ["name"],
+		// 					filters: [
+		// 						["drawing_number", "in", drawings]
+		// 					]
+		// 				}
+		// 			}).then(res => {
+
+		// 				let drawing_names = (res.message || []).map(d => d.name);
+		// 				if (!drawing_names.length) return [];
+
+		// 				// Step 2: Get items from Drawing Parts
+		// 				return frappe.call({
+		// 					method: "frappe.client.get_list",
+		// 					args: {
+		// 						doctype: "Drawing Parts",
+		// 						fields: ["item"],
+		// 						filters: [
+		// 							["drawing_number", "in", drawing_names]
+		// 						]
+		// 					}
+		// 				}).then(r => {
+
+		// 					let unique_items = [...new Set((r.message || []).map(d => d.item))];
+		// 					if (!unique_items.length) return [];
+
+		// 					return frappe.call({
+		// 						method: "frappe.client.get_list",
+		// 						args: {
+		// 							doctype: "FT Stock RM List",
+		// 							fields: ["name", "computed_name"],
+		// 							filters: [
+		// 								["name", "in", unique_items],
+		// 								["computed_name", "like", "%" + txt + "%"]
+		// 							]
+		// 						}
+		// 					}).then(res2 => {
+		// 						return (res2.message || []).map(d => ({
+		// 							value: d.name,
+		// 							label: d.computed_name,
+		// 							description: ""
+		// 						}));
+		// 					});
+
+		// 				});
+
+		// 			});
+		// 		}
+		// 	}
+		// },
+
 
 		// ---------------- ITEM ----------------
 		{
@@ -99,17 +238,24 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 
 				let projects = frappe.query_report.get_filter_value("project_number") || [];
 				let drawings = frappe.query_report.get_filter_value("drawing_number") || [];
+				let stock_types = frappe.query_report.get_filter_value("stock_rm_type") || [];
 
 				// ---------------- CASE 1 ----------------
 				// Nothing selected → show all items
 				if (!projects.length && !drawings.length) {
+
+					let filters = [["computed_name", "like", "%" + txt + "%"]];
+
+					if (stock_types.length) {
+						filters.push(["stock_rm_type", "in", stock_types]);
+					}
 
 					return frappe.call({
 						method: "frappe.client.get_list",
 						args: {
 							doctype: "FT Stock RM List",
 							fields: ["name", "computed_name"],
-							filters: [["computed_name", "like", "%" + txt + "%"]]
+							filters: filters
 						}
 					}).then(r => {
 						return (r.message || []).map(d => ({
@@ -136,15 +282,21 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 						let unique_items = [...new Set((r.message || []).map(d => d.item))];
 						if (!unique_items.length) return [];
 
+						let filters = [
+							["name", "in", unique_items],
+							["computed_name", "like", "%" + txt + "%"]
+						];
+
+						if (stock_types.length) {
+							filters.push(["stock_rm_type", "in", stock_types]);
+						}
+
 						return frappe.call({
 							method: "frappe.client.get_list",
 							args: {
 								doctype: "FT Stock RM List",
 								fields: ["name", "computed_name"],
-								filters: [
-									["name", "in", unique_items],
-									["computed_name", "like", "%" + txt + "%"]
-								]
+								filters: filters
 							}
 						}).then(res => {
 							return (res.message || []).map(d => ({
@@ -158,14 +310,14 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 				}
 
 				// ---------------- CASE 3 ----------------
-				// Drawing selected → PROPER FIX
+				// Drawing selected
 				if (drawings.length) {
 
-					// Step 1: Get Add Drawing document names
+					// Step 1: Get FT Add Drawing document names
 					return frappe.call({
 						method: "frappe.client.get_list",
 						args: {
-							doctype: "Add Drawing",
+							doctype: "FT Add Drawing",
 							fields: ["name"],
 							filters: [
 								["drawing_number", "in", drawings]
@@ -191,15 +343,21 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 							let unique_items = [...new Set((r.message || []).map(d => d.item))];
 							if (!unique_items.length) return [];
 
+							let filters = [
+								["name", "in", unique_items],
+								["computed_name", "like", "%" + txt + "%"]
+							];
+
+							if (stock_types.length) {
+								filters.push(["stock_rm_type", "in", stock_types]);
+							}
+
 							return frappe.call({
 								method: "frappe.client.get_list",
 								args: {
 									doctype: "FT Stock RM List",
 									fields: ["name", "computed_name"],
-									filters: [
-										["name", "in", unique_items],
-										["computed_name", "like", "%" + txt + "%"]
-									]
+									filters: filters
 								}
 							}).then(res2 => {
 								return (res2.message || []).map(d => ({
@@ -213,23 +371,28 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 
 					});
 				}
+			},
+
+			on_change() {
+				clear_item_details();   // 👈 ADD THIS
+				frappe.query_report.refresh();
 			}
 		},
+
 
 		// ----------------- Section Type 
 		{
 			fieldname: "stock_rm_type",
-			label: "Stock Rm Type",
+			label: "Section Type",
 			fieldtype: "MultiSelectList",
 			get_data: function (txt) {
 				return frappe.db.get_link_options("FT Section Type", txt);
 			},
 			on_change() {
 				frappe.query_report.refresh();
+				clear_item_details();
 			}
 		},
-
-
 
 		// ---------------- IS ACTIVE ----------------
 		{
@@ -239,6 +402,7 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 			default: 1,
 			on_change() {
 				frappe.query_report.refresh();
+				clear_item_details();
 			}
 		}
 
@@ -250,8 +414,21 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 			.off("click", ".view-btn")
 			.on("click", ".view-btn", function () {
 
+				// Remove active from all buttons
+				$(".view-btn").removeClass("active-detail");
+
+				// Add active to clicked button
+				$(this).addClass("active-detail");
+
+
 				let project = $(this).data("project");
 				let item = $(this).data("item");
+
+				 // ✅ GET SELECTED DRAWING
+				let drawings = frappe.query_report.get_filter_value("drawing_number") || [];
+
+				// // If only 1 drawing selected → pass it
+				// let drawing_number = drawings.length === 1 ? drawings[0] : null;
 
 				if (!project || !item) {
 					frappe.msgprint("No Data");
@@ -262,11 +439,12 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 					method: "fabtrk.fabtrk.report.ft_drawing_part_report_2.ft_drawing_part_report_2.get_item_details",
 					args: {
 						project: project,
-						item: item
+						item: item,
+						// drawing_number: drawing_number  
+						drawing_numbers: drawings.length ? JSON.stringify(drawings) : null
 					},
 					callback: function (r) {
 
-						// if (!r.message || !r.message.length) {
 						if (!r.message || !r.message.data || !r.message.data.length) {
 
 							frappe.msgprint("No Details Found");
@@ -278,22 +456,46 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 						let rows = "";
 						let totalWeight = 0;
 
-						// r.message.forEach(d => {
 						r.message.data.forEach(d => {
+							// Skip backend Total row from calculation
+							let is_total_row = String(d.drawing_number).toLowerCase().includes("total");
+
+							// Qty / Length / Width → 2 digit format
+							let qty = d.quantity !== undefined && d.quantity !== "" ? String(d.quantity).padStart(2, '0') : "";
+							let length = d.lenght !== undefined && d.lenght !== "" ? String(d.lenght).padStart(2, '0') : "";
+							let width = d.width !== undefined && d.width !== "" ? String(d.width).padStart(2, '0') : "";
+
+							// Weight → 3 decimal format
+							let single_weight = d.single_weight !== undefined && d.single_weight !== "" ? parseFloat(d.single_weight).toFixed(3) : "";
+							let total_weight = d.total_weight !== undefined && d.total_weight !== "" ? parseFloat(String(d.total_weight).replace(/<[^>]+>/g, '')).toFixed(3) : "";
+
+							let row_style = "";
+							let total_weight_style = "text-align:center;";
+
+							if (is_total_row) {
+								row_style = "background-color:#f8f9fa; font-weight:600;";
+								total_weight_style = "text-align:center; color:#000; font-weight:700; font-size:15px;";
+							}
 
 							rows += `
-								<tr>
+								<tr style="${row_style}">
 									<td>${d.drawing_number}</td>
-									<td>${d.quantity}</td>
-									<td>${d.lenght}</td>
-									<td>${d.width}</td>
-									<td>${d.single_weight}</td>
-									<td>${d.total_weight}</td>
+									<td style="text-align:center;">${qty}</td>
+									<td style="text-align:center;">${length}</td>
+									<td style="text-align:center;">${width}</td>
+									<td style="text-align:center;">${single_weight}</td>
+									<td style="${total_weight_style}">${total_weight}</td>
 								</tr>
 							`;
 
-							totalWeight += parseFloat(d.total_weight) || 0; 
+							// Total calculation (skip backend total row)
+							if (!is_total_row) {
+								totalWeight += parseFloat(
+									String(d.total_weight).replace(/<[^>]+>/g, '')
+								) || 0;
+							}
 						});
+
 
 						let html = `
 							<div id="item-detail-container"
@@ -313,12 +515,12 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 
 								<table class="table table-bordered" style="margin-top:15px;">
 									<tr>
-										<th>Drawing</th>
-										<th>Qty</th>
-										<th>Length</th>
-										<th>Width</th>
-										<th>Single Weight</th>
-										<th>Total Weight</th>
+										<th >Drawing</th>
+										<th style="text-align: center;">Qty</th>
+										<th style="text-align: center;">Length</th>
+										<th style="text-align: center;">Width</th>
+										<th style="text-align: center;">Single Weight</th>
+										<th style="text-align: center;">Total Weight</th>
 									</tr>
 									${rows}
 								</table>
@@ -329,6 +531,7 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 
 						$(".close-view").on("click", function () {
 							$("#item-detail-container").remove();
+							$(".view-btn").removeClass("active-detail");
 						});
 						// only summary table download
 						$(".summary-download").on("click", function () {
@@ -379,107 +582,113 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 							document.body.appendChild(link);
 							link.click();
 							document.body.removeChild(link);
-						});						
+						});
 					}
 				});
 			});
 	}
 };
-// simple CSV download for the main summary table (without details)
+
+// table refresh
+function clear_item_details() {
+	$("#item-detail-container").remove();
+	$(".view-btn").removeClass("active-detail");
+}
+
 function download_csv(report) {
 
-    if (!report.data || !report.data.length) {
-        frappe.msgprint("No data to export");
-        return;
-    }
+	if (!report.data || !report.data.length) {
+		frappe.msgprint("No data to export");
+		return;
+	}
 
-    let columns = report.columns
-        .filter(col => col.fieldname !== "view") // remove View button column
-        .map(col => `"${col.label}"`);
+	let columns = report.columns
+		.filter(col => col.fieldname !== "view") // remove View button column
+		.map(col => `"${col.label}"`);
 
-    let rows = report.data.map(row => {
-        return report.columns
-            .filter(col => col.fieldname !== "view")
-            .map(col => {
-                let value = row[col.fieldname] ?? "";
-                value = String(value).replace(/"/g, '""'); // escape quotes
-                return `"${value}"`;
-            }).join(",");
-    });
+	let rows = report.data.map(row => {
+		return report.columns
+			.filter(col => col.fieldname !== "view")
+			.map(col => {
+				let value = row[col.fieldname] ?? "";
+				value = String(value).replace(/"/g, '""'); // escape quotes
+				return `"${value}"`;
+			}).join(",");
+	});
 
-    let csv_content = columns.join(",") + "\n" + rows.join("\n");
+	let csv_content = columns.join(",") + "\n" + rows.join("\n");
 
-    let blob = new Blob([csv_content], { type: "text/csv;charset=utf-8;" });
-    let url = URL.createObjectURL(blob);
+	let blob = new Blob([csv_content], { type: "text/csv;charset=utf-8;" });
+	let url = URL.createObjectURL(blob);
 
-    let link = document.createElement("a");
-    link.href = url;
-    link.download = "FT_Drawing_Part_Report.csv";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+	let link = document.createElement("a");
+	link.href = url;
+	link.download = "FT_Drawing_Part_Report.csv";
+	document.body.appendChild(link);
+	link.click();
+	document.body.removeChild(link);
 }
 // download both summary and detail tables in one CSV with clear separation and titles for each section
 function download_full_report(report) {
 
-    let rows = [];
+	let rows = [];
 
-    rows.push("Main Summary Table");
-    // rows.push("");
+	rows.push("Main Summary Table");
+	// rows.push("");
 
-    // Remove unwanted columns (like View button)
-    let valid_columns = report.columns.filter(col => 
-        col.fieldname && col.fieldname !== "view"
-    );
+	// Remove unwanted columns (like View button)
+	let valid_columns = report.columns.filter(col =>
+		col.fieldname && col.fieldname !== "view"
+	);
 
-    // Header row
-    let headers = valid_columns.map(col => col.label);
-    rows.push(headers.join(","));
+	// Header row
+	let headers = valid_columns.map(col => col.label);
+	rows.push(headers.join(","));
 
-    // Data rows (already filter based)
-    report.data.forEach(row => {
-        let rowData = valid_columns.map(col => {
-            let value = row[col.fieldname] || "";
-            return `"${String(value).replace(/"/g, '""')}"`;
-        });
-        rows.push(rowData.join(","));
-    });
+	// Data rows (already filter based)
+	report.data.forEach(row => {
+		let rowData = valid_columns.map(col => {
+			let value = row[col.fieldname] || "";
+			return `"${String(value).replace(/"/g, '""')}"`;
+		});
+		rows.push(rowData.join(","));
+	});
 
-    rows.push("");
-    // rows.push("");
+	rows.push("");
+	// rows.push("");
 
-    // ========================
-    // Detail Table
-    // ========================
+	// ========================
+	// Detail Table
+	// ========================
 
-    let detailTitle = $("#item-detail-container h4").text().trim();
-    if (detailTitle) {
-        rows.push(detailTitle);
-        // rows.push("");
-    }
+	let detailTitle = $("#item-detail-container h4").text().trim();
+	if (detailTitle) {
+		rows.push(detailTitle);
+		// rows.push("");
+	}
 
-    $("#item-detail-container table tr").each(function () {
-        let cols = [];
-        $(this).find("th, td").each(function () {
-            cols.push(`"${$(this).text().trim().replace(/"/g, '""')}"`);
-        });
-        if (cols.length) {
-            rows.push(cols.join(","));
-        }
-    });
+	$("#item-detail-container table tr").each(function () {
+		let cols = [];
+		$(this).find("th, td").each(function () {
+			cols.push(`"${$(this).text().trim().replace(/"/g, '""')}"`);
+		});
+		if (cols.length) {
+			rows.push(cols.join(","));
+		}
+	});
 
-    let csvContent = rows.join("\n");
+	let csvContent = rows.join("\n");
 
-    let blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    let url = URL.createObjectURL(blob);
+	let blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+	let url = URL.createObjectURL(blob);
 
-    let link = document.createElement("a");
-    link.href = url;
-    link.download = "full_report.csv";
+	let link = document.createElement("a");
+	link.href = url;
+	link.download = "full_report.csv";
 
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+	document.body.appendChild(link);
+	link.click();
+	document.body.removeChild(link);
 }
 
 $(`<style>
@@ -544,22 +753,13 @@ $(`<style>
 		justify-content: unset;
 		gap: 0px;
 	}
+
+	/* button view active color*/
+	.view-btn.active-detail {
+		background-color: #0c5c70 !important;
+		color: #fff !important;
+		border-color: #0c5c70  !important;
+		box-shadow: 0 0 0 2px rgba(21, 54, 102, 0.25);
+	}
 </style>`).appendTo("head");
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 

@@ -1,7 +1,7 @@
 // Copyright (c) 2026, UpGo Technologies and contributors
 // For license information, please see license.txt
 
-frappe.ui.form.on("Drawing Parts", {
+frappe.ui.form.on("FT Drawing Parts", {
     quantity(frm) {
         calculate_total(frm);
         refresh_calculation_fields(frm);
@@ -143,7 +143,7 @@ function calculate_total(frm) {
 //     frappe.call({
 //         method: "frappe.client.get_list",
 //         args: {
-//             doctype: "Drawing Parts",
+//             doctype: "FT Drawing Parts",
 //             filters: {
 //                 project_number: frm.doc.project_number,
 //                 drawing_number: frm.doc.drawing_number,
@@ -192,7 +192,7 @@ function calculate_total(frm) {
 //     frappe.call({
 //         method: "frappe.client.get_list",
 //         args: {
-//             doctype: "Drawing Parts",
+//             doctype: "FT Drawing Parts",
 //             filters: {
 //                 project_number: frm.doc.project_number,
 //                 drawing_number: frm.doc.drawing_number,
@@ -245,7 +245,7 @@ function get_existing_items(frm) {
     frappe.call({
         method: "frappe.client.get_list",
         args: {
-            doctype: "Drawing Parts",
+            doctype: "FT Drawing Parts",
             filters: {
                 project_number: frm.doc.project_number,
                 drawing_number: frm.doc.drawing_number,

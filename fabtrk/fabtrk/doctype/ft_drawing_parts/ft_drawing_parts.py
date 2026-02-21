@@ -5,5 +5,5 @@
 from frappe.model.document import Document
 
 
-class DrawingParts(Document):
+class FTDrawingParts(Document):
 	pass

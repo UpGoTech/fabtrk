@@ -5,11 +5,11 @@ import frappe
 from frappe.model.document import Document
 
 
-# class AddDrawing(Document):
+# class FTAddDrawing(Document):
 # 	pass
 
 
-class AddDrawing(Document):
+class FTAddDrawing(Document):
     def validate(self):
         self.validate_duplicate_drawing_per_project()
 

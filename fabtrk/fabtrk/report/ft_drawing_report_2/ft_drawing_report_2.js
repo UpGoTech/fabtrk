@@ -1,7 +1,3 @@
-// // Copyright (c) 2026, UpGo Technologies and contributors
-// // For license information, please see license.txt
-
-
 // # this code for multi select filter filed
 frappe.query_reports["FT Drawing Report 2"] = {
 
@@ -53,7 +49,7 @@ frappe.query_reports["FT Drawing Report 2"] = {
 				return frappe.call({
 					method: "frappe.client.get_list",
 					args: {
-						doctype: "Add Drawing",
+						doctype: "FT Add Drawing",
 						filters: filters,
 						fields: ["name", "drawing_number"],
 						// limit_page_length: 500
@@ -82,7 +78,7 @@ frappe.query_reports["FT Drawing Report 2"] = {
 				frappe.query_report.refresh();
 			}
 		},
-		
+
 		{
 			fieldname: "is_active",
 			label: "Is Active",

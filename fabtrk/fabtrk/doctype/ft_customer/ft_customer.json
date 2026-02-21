@@ -12,13 +12,14 @@
   {
    "fieldname": "customer_name",
    "fieldtype": "Data",
+   "in_list_view": 1,
    "label": "Customer Name",
    "unique": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-01-29 17:36:35.700425",
+ "modified": "2026-02-18 16:48:04.933713",
  "modified_by": "Administrator",
  "module": "Fabtrk",
  "name": "FT Customer",

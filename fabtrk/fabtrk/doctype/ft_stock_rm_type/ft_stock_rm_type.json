@@ -12,13 +12,14 @@
   {
    "fieldname": "stock_rm_type",
    "fieldtype": "Data",
+   "in_list_view": 1,
    "label": "Stock RM Type",
    "unique": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-03 12:13:54.724393",
+ "modified": "2026-02-18 16:49:11.525757",
  "modified_by": "Administrator",
  "module": "Fabtrk",
  "name": "FT Stock RM Type",

@@ -5,5 +5,5 @@
 from frappe.tests.utils import FrappeTestCase
 
 
-class TestFTDrawingMaster(FrappeTestCase):
+class TestFTAddDrawing(FrappeTestCase):
 	pass

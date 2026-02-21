@@ -20,12 +20,13 @@
   {
    "fieldname": "sort_key",
    "fieldtype": "Data",
+   "in_list_view": 1,
    "label": "Sort Key"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-18 11:56:28.710623",
+ "modified": "2026-02-18 16:55:31.055495",
  "modified_by": "Administrator",
  "module": "Fabtrk",
  "name": "FT Section Type",
