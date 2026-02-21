@@ -10,7 +10,7 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 		frappe.query_report.set_filter_value("is_active", 1);
 
 		// Add Buttons
-		report.page.add_inner_button("Download Summary", function () {
+		report.page.add_inner_button("Download Drawing Parts", function () {
 			download_csv(report);
 		});
 
@@ -303,7 +303,7 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 									<h4>Item Details - ${r.message.item_name}</h4>
 									<div style="display:flex; gap:20px;">
 										<button class="btn btn-xs btn-primary summary-download">
-											Summary
+											Download List
 										</button>
 										<button class="btn btn-xs btn-danger close-view">
 											Close
