@@ -6,11 +6,10 @@ def execute(filters=None):
 
     columns = [
         {"label": "Project", "fieldname": "project_name", "fieldtype": "Link", "options": "FT Project", "width": 150},
-        {"label": "Position No", "fieldname": "position_no", "fieldtype": "Data", "width": 150, "align": "center"},
         {"label": "Item", "fieldname": "item_name", "width": 350},
         {"label": "Total Entries", "fieldname": "item_count", "fieldtype": "Int", "width": 150,"align": "center"},
         {"label": "Total Weight", "fieldname": "total_weight", "fieldtype": "Float", "width": 150,"align": "center"},
-        {"label": "Details", "fieldname": "view", "fieldtype": "HTML", "width": 150,"align": "center"},
+        {"label": "Details", "fieldname": "view", "fieldtype": "HTML", "width":200,"align": "center"},
     ]
 
     # Conditions for main query
@@ -40,11 +39,10 @@ def execute(filters=None):
     query = f"""
     SELECT
         p.name AS project_name,
-        dp.position_no AS position_no,
+        
         dp.item AS item_id,
         rm.computed_name AS item_name,
         COALESCE(CAST(st.sort_key AS UNSIGNED), 9999) AS sort_key,
-        
         COUNT(dp.name) AS item_count,
         SUM(COALESCE(dp.total_weight, 0)) AS total_weight
     FROM `tabFT Project` p
@@ -55,8 +53,7 @@ def execute(filters=None):
 
     WHERE 1=1
         {conditions}
-    GROUP BY p.name, dp.item, rm.computed_name, dp.position_no,
-    st.sort_key
+    GROUP BY p.name, dp.item, rm.computed_name,st.sort_key
     
 	HAVING 
 		dp.item IS NOT NULL
@@ -140,6 +137,10 @@ def execute(filters=None):
     """
     total_weight_drawing = frappe.db.sql(drawing_weight_query, drawing_values)[0][0] or 0
 
+    # isse card me kg ki value .000 me ari hai 
+    formatted_project_total_weight = "{:,.3f}".format(project_total_weight)
+    formatted_total_weight_drawing = "{:,.3f}".format(total_weight_drawing)
+    formatted_total_weight_parts = "{:,.3f}".format(total_weight_parts)
     
     report_summary = [
         {
@@ -153,7 +154,7 @@ def execute(filters=None):
                     </div>
                     <div class="section-content-count">
                         <p>Total Weight as per Project(Kg)</p>
-                        <span>{project_total_weight}</span>                    
+                        <span>{formatted_project_total_weight}</span>                   
                     </div>
                 </div>
                 <div class="summary-section">
@@ -163,7 +164,7 @@ def execute(filters=None):
                     </div>
                     <div class="section-content-count">
                         <p>Total Weight as per Drawing(Kg)</p>
-                        <span>{total_weight_drawing}</span>                    
+                        <span>{formatted_total_weight_drawing}</span>                   
                     </div>
                 </div>
                 <div class="summary-section">
@@ -173,7 +174,7 @@ def execute(filters=None):
                     </div>
                     <div class="section-content-count">
                         <p>Total Weight as per Drawing Parts(Kg)</p>
-                        <span>{total_weight_parts}</span>                    
+                        <span>{formatted_total_weight_parts}</span>                    
                     </div>
                 </div>
             </div>
@@ -311,6 +312,9 @@ def get_item_details(project, item, drawing_numbers=None):
         f"""
         SELECT
             ad.drawing_number AS drawing_number,
+            
+            dp.position_no AS position_no,
+            
             dp.quantity,
             dp.lenght,
             dp.width,
@@ -330,6 +334,9 @@ def get_item_details(project, item, drawing_numbers=None):
 
     rows.append({
         "drawing_number": "<b>Total</b>",
+        
+        "position_no": "",
+        
         "quantity": "",
         "lenght": "",
         "width": "",

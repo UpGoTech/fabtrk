@@ -3,13 +3,15 @@
 # this code for multi select filter filed
 import frappe
 
+from frappe.utils import fmt_money
+
 def execute(filters=None):
     filters = filters or {}
 
     columns = [
         {"label": "Project", "fieldname": "project_name", "fieldtype": "Link", "options": "FT Project", "width": 130},
         {"label": "Drawing Number", "fieldname": "drawing_number", "fieldtype": "Data","width": 200,"align": "center"},
-        {"label": "PO Position No", "fieldname": "po_position_no", "fieldtype": "Data","width": 200,"align": "center"},
+        {"label": "PO Serial No", "fieldname": "po_serial_no", "fieldtype": "Data","width": 200,"align": "center"},
         {"label": "Unit Weight", "fieldname": "unit_weight", "fieldtype": "Float", "width": 150,"align": "center"},
         {"label": "Required Qty", "fieldname": "quantity", "fieldtype": "Int", "width": 120,"align": "center"},
         {"label": "Total Weight", "fieldname": "total_weight", "fieldtype": "Float", "width": 150,"align": "center"},
@@ -27,27 +29,37 @@ def execute(filters=None):
     if filters.get("drawing_number"):
         conditions += " AND ad.drawing_number IN %(drawing_number)s"
         values["drawing_number"] = tuple(filters.get("drawing_number"))
+        conditions += " AND pod.drawing_number = ad.name"
+        
+        
+    # PO Serial Filter
+    if filters.get("po_serial_no"):
+        conditions += " AND pod.po_serial_no IN %(po_serial_no)s"
+        values["po_serial_no"] = tuple(filters.get("po_serial_no"))
+
 
     # Project Is Active Filter
     if filters.get("is_active"):
         conditions += " AND p.is_active = 1"
 
    # MAIN QUERY (PROJECT BASED)
-    query = f"""
+    query = """
         SELECT
             p.name AS project_name,
             ad.drawing_number AS drawing_number,
-            ad.po_position_no AS po_position_no,
+            pod.po_serial_no AS po_serial_no,
             IFNULL(ad.unit_weight, 0) AS unit_weight,
             IFNULL(ad.quantity, 0) AS quantity,
             IFNULL(ad.total_weight, 0) AS total_weight
         FROM `tabFT Project` p
         LEFT JOIN `tabFT Add Drawing` ad
             ON ad.project_number = p.name
-        WHERE 1=1
-        {conditions}
-        ORDER BY p.name, ad.name
+        LEFT JOIN `tabFT Po Drawing` pod
+            ON pod.drawing_number = ad.name
+        ORDER BY CAST(pod.po_serial_no AS UNSIGNED) ASC
     """
+
+    data = frappe.db.sql(query, as_dict=1)
 
     raw_data = frappe.db.sql(query, values, as_dict=1) or []
 
@@ -68,7 +80,12 @@ def execute(filters=None):
         total_weight_as_per_project = 0
 
     total_weight_as_per_drawing = sum(d.total_weight or 0 for d in raw_data)
+    
+    
 
+    #   isse card me kg ki value 00.000 show hori hai
+    formatted_total_weight_as_per_project = "{:,.3f}".format(total_weight_as_per_project)
+    formatted_total_weight_as_per_drawing = "{:,.3f}".format(total_weight_as_per_drawing)
       
     report_summary = [
         {
@@ -82,7 +99,7 @@ def execute(filters=None):
                     </div>
                     <div class="section-content-count">
                         <p>Total Weight as per Project(Kg)</p>
-                        <span>{total_weight_as_per_project}</span>                    
+                        <span>{formatted_total_weight_as_per_project}</span>                   
                     </div>
                 </div>
                 <div class="summary-section">
@@ -90,9 +107,12 @@ def execute(filters=None):
                         <p>Total No of Drawings</p>
                         <span>{total_no_of_drawings}</span>                    
                     </div>
+                </div>
+                
+                <div class="summary-section">
                     <div class="section-content-count">
-                        <p>Total Weight as per Drawing(Kg)</p>
-                        <span>{total_weight_as_per_drawing}</span>                    
+                        <p>Total No of PO Drawings</p>
+                        <span>{total_no_of_drawings}</span>                    
                     </div>
                 </div>
                 
@@ -101,8 +121,8 @@ def execute(filters=None):
             "datatype": "HTML",
         }
     ]
+    
 
     return columns, raw_data, None, None, report_summary
-
 
 

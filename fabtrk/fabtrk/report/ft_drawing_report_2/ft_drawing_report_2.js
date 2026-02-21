@@ -76,6 +76,7 @@ frappe.query_reports["FT Drawing Report 2"] = {
 			}
 		},
 
+
 		{
 			fieldname: "is_active",
 			label: "Is Active",
@@ -105,6 +106,9 @@ frappe.query_reports["FT Drawing Report 2"] = {
 };
 
 $(`<style>
+
+
+	
 	.report-summary .summary-item{
 		max-width: 100%;
 		min-width: 100%;
