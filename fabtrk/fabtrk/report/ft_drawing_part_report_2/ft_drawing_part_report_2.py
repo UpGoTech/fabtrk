@@ -5,12 +5,12 @@ def execute(filters=None):
     filters = filters or {}
 
     columns = [
-        {"label": "Project", "fieldname": "project_name", "fieldtype": "Link", "options": "FT Project", "width": 150},
+        {"label": "Project", "fieldname": "project_name", "fieldtype": "Link", "options": "FT Project", "width": 160},
         {"label": "Position No", "fieldname": "position_no", "fieldtype": "Data", "width": 150, "align": "center"},
-        {"label": "Item", "fieldname": "item_name", "width": 350},
+        {"label": "Item", "fieldname": "item_name", "width": 400},
         {"label": "Total Entries", "fieldname": "item_count", "fieldtype": "Int", "width": 150,"align": "center"},
         {"label": "Total Weight", "fieldname": "total_weight", "fieldtype": "Float", "width": 150,"align": "center"},
-        {"label": "Details", "fieldname": "view", "fieldtype": "HTML", "width": 150,"align": "center"},
+        {"label": "Details", "fieldname": "view", "fieldtype": "HTML", "width": 200,"align": "center"},
     ]
 
     # Conditions for main query
@@ -184,58 +184,8 @@ def execute(filters=None):
 
     return columns, data, None, None, report_summary
 
-
-#  isme drawing select pr table me drawing filter nhi hori baki correct hai 
 # @frappe.whitelist()
-# def get_item_details(project, item):
-
-#     # item ka computed_name
-#     item_name = frappe.db.get_value(
-#         "FT Stock RM List",
-#         item,
-#         "computed_name"
-#     ) or item
-
-#     rows = frappe.db.sql(
-#         """
-#         SELECT
-#             ad.drawing_number AS drawing_number,
-#             dp.quantity,
-#             dp.lenght,
-#             dp.width,
-#             dp.single_weight,
-#             dp.total_weight
-#         FROM `tabFT Drawing Parts` dp
-#         LEFT JOIN `tabFT Add Drawing` ad 
-#             ON ad.name = dp.drawing_number
-#         WHERE dp.project_number = %s
-#         AND dp.item = %s
-#         ORDER BY ad.drawing_number
-#         """,
-#         (project, item),
-#         as_dict=True,
-#     )
-
-#     grand_total = sum(d.get("total_weight", 0) for d in rows)
-
-#     rows.append({
-#         "drawing_number": "<b>Total</b>",
-#         "quantity": "",
-#         "lenght": "",
-#         "width": "",
-#         "single_weight": "",
-#         "total_weight": f"<b>{grand_total}</b>"
-#     })
-
-#     return {
-#         "item_name": item_name,
-#         "data": rows
-#     }
-
-
-# only one drawing filter when click on detail button and fitering the table on after_datatable_render
-# @frappe.whitelist()
-# def get_item_details(project, item, drawing_number=None):
+# def get_item_details(project, item, drawing_numbers=None):
 
 #     item_name = frappe.db.get_value(
 #         "FT Stock RM List",
@@ -246,10 +196,13 @@ def execute(filters=None):
 #     conditions = " WHERE dp.project_number = %s AND dp.item = %s "
 #     values = [project, item]
 
-#     # ✅ Drawing filter added
-#     if drawing_number:
-#         conditions += " AND ad.drawing_number = %s "
-#         values.append(drawing_number)
+#     # ✅ If drawing filter exists (single or multiple)
+#     if drawing_numbers:
+#         drawing_numbers = frappe.parse_json(drawing_numbers)
+
+#         if isinstance(drawing_numbers, list) and drawing_numbers:
+#             conditions += " AND ad.drawing_number IN %s "
+#             values.append(tuple(drawing_numbers))
 
 #     rows = frappe.db.sql(
 #         f"""
@@ -290,55 +243,88 @@ def execute(filters=None):
 @frappe.whitelist()
 def get_item_details(project, item, drawing_numbers=None):
 
-    item_name = frappe.db.get_value(
-        "FT Stock RM List",
-        item,
-        "computed_name"
-    ) or item
-
-    conditions = " WHERE dp.project_number = %s AND dp.item = %s "
+    conditions = " WHERE p.name = %s AND dp.item = %s "
     values = [project, item]
 
-    # ✅ If drawing filter exists (single or multiple)
     if drawing_numbers:
         drawing_numbers = frappe.parse_json(drawing_numbers)
-
-        if isinstance(drawing_numbers, list) and drawing_numbers:
+        if drawing_numbers:
             conditions += " AND ad.drawing_number IN %s "
             values.append(tuple(drawing_numbers))
 
-    rows = frappe.db.sql(
-        f"""
+    rows = frappe.db.sql(f"""
         SELECT
-            ad.drawing_number AS drawing_number,
+            ad.drawing_number,
             dp.quantity,
             dp.lenght,
             dp.width,
             dp.single_weight,
             dp.total_weight
         FROM `tabFT Drawing Parts` dp
-        LEFT JOIN `tabFT Add Drawing` ad 
-            ON ad.name = dp.drawing_number
+        LEFT JOIN `tabFT Add Drawing` ad ON ad.name = dp.drawing_number
+        LEFT JOIN `tabFT Project` p ON p.name = ad.project_number
         {conditions}
         ORDER BY ad.drawing_number
-        """,
-        tuple(values),
-        as_dict=True,
-    )
+    """, tuple(values), as_dict=True)
 
     grand_total = sum(d.get("total_weight", 0) for d in rows)
 
     rows.append({
-        "drawing_number": "<b>Total</b>",
+        "drawing_number": "Total",
         "quantity": "",
         "lenght": "",
         "width": "",
         "single_weight": "",
-        "total_weight": f"<b>{grand_total}</b>"
+        "total_weight": grand_total
     })
+
+    item_name = frappe.db.get_value(
+        "FT Stock RM List", item, "computed_name"
+    ) or item
 
     return {
         "item_name": item_name,
         "data": rows
     }
 
+
+# ---------------- EXCEL EXPORT ALL DETAILS ----------------
+
+@frappe.whitelist()
+def get_all_details_for_export(filters):
+
+    filters = frappe.parse_json(filters)
+    conditions = ""
+    values = {}
+
+    if filters.get("project_number"):
+        conditions += " AND p.name IN %(project_number)s"
+        values["project_number"] = tuple(filters.get("project_number"))
+
+    if filters.get("drawing_number"):
+        conditions += " AND ad.drawing_number IN %(drawing_number)s"
+        values["drawing_number"] = tuple(filters.get("drawing_number"))
+
+    if filters.get("item"):
+        conditions += " AND dp.item IN %(item)s"
+        values["item"] = tuple(filters.get("item"))
+
+    data = frappe.db.sql(f"""
+        SELECT
+            p.name as project,
+            rm.computed_name as item_name,
+            ad.drawing_number,
+            dp.quantity,
+            dp.lenght,
+            dp.width,
+            dp.single_weight,
+            dp.total_weight
+        FROM `tabFT Drawing Parts` dp
+        LEFT JOIN `tabFT Add Drawing` ad ON ad.name = dp.drawing_number
+        LEFT JOIN `tabFT Project` p ON p.name = ad.project_number
+        LEFT JOIN `tabFT Stock RM List` rm ON rm.name = dp.item
+        WHERE 1=1 {conditions}
+        ORDER BY p.name, ad.drawing_number
+    """, values, as_dict=True)
+
+    return data

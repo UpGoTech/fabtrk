@@ -97,141 +97,10 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 				clear_item_details();
 			}
 		},
-
-
-
-		// ---------------- ITEM ----------------
-		// {
-		// 	fieldname: "item",
-		// 	label: "Drawing Part",
-		// 	fieldtype: "MultiSelectList",
-
-		// 	get_data: function (txt) {
-
-		// 		let projects = frappe.query_report.get_filter_value("project_number") || [];
-		// 		let drawings = frappe.query_report.get_filter_value("drawing_number") || [];
-
-		// 		// ---------------- CASE 1 ----------------
-		// 		// Nothing selected → show all items
-		// 		if (!projects.length && !drawings.length) {
-
-		// 			return frappe.call({
-		// 				method: "frappe.client.get_list",
-		// 				args: {
-		// 					doctype: "FT Stock RM List",
-		// 					fields: ["name", "computed_name"],
-		// 					filters: [["computed_name", "like", "%" + txt + "%"]]
-		// 				}
-		// 			}).then(r => {
-		// 				return (r.message || []).map(d => ({
-		// 					value: d.name,
-		// 					label: d.computed_name,
-		// 					description: ""
-		// 				}));
-		// 			});
-		// 		}
-
-		// 		// ---------------- CASE 2 ----------------
-		// 		// Project selected but no drawing
-		// 		if (projects.length && !drawings.length) {
-
-		// 			return frappe.call({
-		// 				method: "frappe.client.get_list",
-		// 				args: {
-		// 					doctype: "Drawing Parts",
-		// 					fields: ["item"],
-		// 					filters: [["project_number", "in", projects]]
-		// 				}
-		// 			}).then(r => {
-
-		// 				let unique_items = [...new Set((r.message || []).map(d => d.item))];
-		// 				if (!unique_items.length) return [];
-
-		// 				return frappe.call({
-		// 					method: "frappe.client.get_list",
-		// 					args: {
-		// 						doctype: "FT Stock RM List",
-		// 						fields: ["name", "computed_name"],
-		// 						filters: [
-		// 							["name", "in", unique_items],
-		// 							["computed_name", "like", "%" + txt + "%"]
-		// 						]
-		// 					}
-		// 				}).then(res => {
-		// 					return (res.message || []).map(d => ({
-		// 						value: d.name,
-		// 						label: d.computed_name,
-		// 						description: ""
-		// 					}));
-		// 				});
-
-		// 			});
-		// 		}
-
-		// 		// ---------------- CASE 3 ----------------
-		// 		// Drawing selected → PROPER FIX
-		// 		if (drawings.length) {
-
-		// 			// Step 1: Get FT Add Drawing document names
-		// 			return frappe.call({
-		// 				method: "frappe.client.get_list",
-		// 				args: {
-		// 					doctype: "FT Add Drawing",
-		// 					fields: ["name"],
-		// 					filters: [
-		// 						["drawing_number", "in", drawings]
-		// 					]
-		// 				}
-		// 			}).then(res => {
-
-		// 				let drawing_names = (res.message || []).map(d => d.name);
-		// 				if (!drawing_names.length) return [];
-
-		// 				// Step 2: Get items from Drawing Parts
-		// 				return frappe.call({
-		// 					method: "frappe.client.get_list",
-		// 					args: {
-		// 						doctype: "Drawing Parts",
-		// 						fields: ["item"],
-		// 						filters: [
-		// 							["drawing_number", "in", drawing_names]
-		// 						]
-		// 					}
-		// 				}).then(r => {
-
-		// 					let unique_items = [...new Set((r.message || []).map(d => d.item))];
-		// 					if (!unique_items.length) return [];
-
-		// 					return frappe.call({
-		// 						method: "frappe.client.get_list",
-		// 						args: {
-		// 							doctype: "FT Stock RM List",
-		// 							fields: ["name", "computed_name"],
-		// 							filters: [
-		// 								["name", "in", unique_items],
-		// 								["computed_name", "like", "%" + txt + "%"]
-		// 							]
-		// 						}
-		// 					}).then(res2 => {
-		// 						return (res2.message || []).map(d => ({
-		// 							value: d.name,
-		// 							label: d.computed_name,
-		// 							description: ""
-		// 						}));
-		// 					});
-
-		// 				});
-
-		// 			});
-		// 		}
-		// 	}
-		// },
-
-
 		// ---------------- ITEM ----------------
 		{
 			fieldname: "item",
-			label: "Drawing Part",
+			label: "Drawing Parts",
 			fieldtype: "MultiSelectList",
 
 			get_data: function (txt) {
@@ -273,7 +142,7 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 					return frappe.call({
 						method: "frappe.client.get_list",
 						args: {
-							doctype: "Drawing Parts",
+							doctype: "FT Drawing Parts",
 							fields: ["item"],
 							filters: [["project_number", "in", projects]]
 						}
@@ -332,7 +201,7 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 						return frappe.call({
 							method: "frappe.client.get_list",
 							args: {
-								doctype: "Drawing Parts",
+								doctype: "FT Drawing Parts",
 								fields: ["item"],
 								filters: [
 									["drawing_number", "in", drawing_names]
@@ -378,7 +247,6 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 				frappe.query_report.refresh();
 			}
 		},
-
 
 		// ----------------- Section Type 
 		{
@@ -628,69 +496,100 @@ function download_csv(report) {
 	link.click();
 	document.body.removeChild(link);
 }
-// download both summary and detail tables in one CSV with clear separation and titles for each section
+// download both summary and detail tables in Excel with two defferent sheet for detail and summary
 function download_full_report(report) {
 
-	let rows = [];
+	if (!report.data || !report.data.length) {
+		frappe.msgprint("No data to export");
+		return;
+	}
 
-	rows.push("Main Summary Table");
-	// rows.push("");
+	if (!window.XLSX) {
+		frappe.msgprint("Excel library loading... try again");
+		return;
+	}
 
-	// Remove unwanted columns (like View button)
+	// -----------------------
+	// SHEET 1 → SUMMARY TABLE
+	// -----------------------
+
+	let summary_data = [];
+
 	let valid_columns = report.columns.filter(col =>
 		col.fieldname && col.fieldname !== "view"
 	);
 
 	// Header row
-	let headers = valid_columns.map(col => col.label);
-	rows.push(headers.join(","));
+	summary_data.push(valid_columns.map(col => col.label));
 
-	// Data rows (already filter based)
+	// Data rows
 	report.data.forEach(row => {
-		let rowData = valid_columns.map(col => {
-			let value = row[col.fieldname] || "";
-			return `"${String(value).replace(/"/g, '""')}"`;
-		});
-		rows.push(rowData.join(","));
+		summary_data.push(
+			valid_columns.map(col => row[col.fieldname] ?? "")
+		);
 	});
 
-	rows.push("");
-	// rows.push("");
+	let summary_ws = XLSX.utils.aoa_to_sheet(summary_data);
 
-	// ========================
-	// Detail Table
-	// ========================
 
-	let detailTitle = $("#item-detail-container h4").text().trim();
-	if (detailTitle) {
-		rows.push(detailTitle);
-		// rows.push("");
-	}
+	// -----------------------
+	// SHEET 2 → ALL DETAILS
+	// -----------------------
 
-	$("#item-detail-container table tr").each(function () {
-		let cols = [];
-		$(this).find("th, td").each(function () {
-			cols.push(`"${$(this).text().trim().replace(/"/g, '""')}"`);
-		});
-		if (cols.length) {
-			rows.push(cols.join(","));
+	let detail_data = [];
+	detail_data.push([
+		"Project",
+		"Item",
+		"Drawing",
+		"Qty",
+		"Length",
+		"Width",
+		"Single Weight",
+		"Total Weight"
+	]);
+
+	let filters = frappe.query_report.get_filter_values();
+
+	frappe.call({
+		method: "fabtrk.fabtrk.report.ft_drawing_part_report_2.ft_drawing_part_report_2.get_all_details_for_export",
+		args: {
+			filters: filters
+		},
+		async: false,
+		callback: function (r) {
+
+			(r.message || []).forEach(d => {
+				detail_data.push([
+					d.project,
+					d.item_name,
+					d.drawing_number,
+					d.quantity,
+					d.lenght,
+					d.width,
+					d.single_weight,
+					d.total_weight
+				]);
+			});
 		}
 	});
 
-	let csvContent = rows.join("\n");
+	let detail_ws = XLSX.utils.aoa_to_sheet(detail_data);
 
-	let blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-	let url = URL.createObjectURL(blob);
+	// -----------------------
+	// CREATE WORKBOOK
+	// -----------------------
 
-	let link = document.createElement("a");
-	link.href = url;
-	link.download = "full_report.csv";
+	let wb = XLSX.utils.book_new();
+	XLSX.utils.book_append_sheet(wb, summary_ws, "Summary");
+	XLSX.utils.book_append_sheet(wb, detail_ws, "Details");
 
-	document.body.appendChild(link);
-	link.click();
-	document.body.removeChild(link);
+	XLSX.writeFile(wb, "FT_Drawing_Part_Report.xlsx");
 }
-
+if (!window.XLSX) {
+	let script = document.createElement("script");
+	script.src = "https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js";
+	document.head.appendChild(script);
+}
 $(`<style>
 	.report-summary .summary-item{
 		max-width: 100%;
@@ -753,7 +652,9 @@ $(`<style>
 		justify-content: unset;
 		gap: 0px;
 	}
-
+	.table{
+		width: 100% !important;
+	}
 	/* button view active color*/
 	.view-btn.active-detail {
 		background-color: #0c5c70 !important;
