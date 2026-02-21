@@ -46,7 +46,7 @@ frappe.query_reports["FT Drawing Report 2"] = {
 				return frappe.call({
 					method: "frappe.client.get_list",
 					args: {
-						doctype: "Add Drawing",
+						doctype: "FT Add Drawing",
 						filters: filters,
 						fields: ["name", "drawing_number"],
 						// limit_page_length: 500

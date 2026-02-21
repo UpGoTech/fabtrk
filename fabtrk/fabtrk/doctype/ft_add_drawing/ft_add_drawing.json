@@ -72,7 +72,7 @@
  "modified": "2026-02-19 16:32:56.477676",
  "modified_by": "Administrator",
  "module": "Fabtrk",
- "name": "Add Drawing",
+ "name": "FT Add Drawing",
  "naming_rule": "Expression",
  "owner": "Administrator",
  "permissions": [

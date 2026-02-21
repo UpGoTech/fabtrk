@@ -48,8 +48,8 @@ def execute(filters=None):
         COUNT(dp.name) AS item_count,
         SUM(COALESCE(dp.total_weight, 0)) AS total_weight
     FROM `tabFT Project` p
-    LEFT JOIN `tabAdd Drawing` ad ON ad.project_number = p.name
-    LEFT JOIN `tabDrawing Parts` dp ON dp.drawing_number = ad.name
+    LEFT JOIN `tabFT Add Drawing` ad ON ad.project_number = p.name
+    LEFT JOIN `tabFT Drawing Parts` dp ON dp.drawing_number = ad.name
     LEFT JOIN `tabFT Stock RM List` rm ON rm.name = dp.item
     LEFT JOIN `tabFT Section Type` st ON st.name = rm.stock_rm_type
 
@@ -64,8 +64,8 @@ def execute(filters=None):
 			dp.item IS NULL 
 			AND NOT EXISTS (
 				SELECT 1 
-				FROM `tabAdd Drawing` ad2
-				INNER JOIN `tabDrawing Parts` dp2 
+				FROM `tabFT Add Drawing` ad2
+				INNER JOIN `tabFT Drawing Parts` dp2 
 					ON dp2.drawing_number = ad2.name
 				WHERE ad2.project_number = p.name
 			)
@@ -96,11 +96,11 @@ def execute(filters=None):
     # ---------------- SUMMARY ----------------
     total_projects = len({d["project_name"] for d in data if d.get("project_name")})
 
-    # Total Drawings query – only join tabAdd Drawing, do NOT include dp.item
+    # Total Drawings query – only join tabFT Add Drawing, do NOT include dp.item
     drawing_query = f"""
     SELECT COUNT(DISTINCT ad.name)
     FROM `tabFT Project` p
-    LEFT JOIN `tabAdd Drawing` ad ON ad.project_number = p.name
+    LEFT JOIN `tabFT Add Drawing` ad ON ad.project_number = p.name
     WHERE 1=1
         {" AND p.name IN %(project_number)s" if filters.get("project_number") else ""}
         {" AND ad.drawing_number IN %(drawing_number)s" if filters.get("drawing_number") else ""}
@@ -132,7 +132,7 @@ def execute(filters=None):
     drawing_weight_query = f"""
     SELECT SUM(COALESCE(ad.total_weight, 0))
     FROM `tabFT Project` p
-    LEFT JOIN `tabAdd Drawing` ad ON ad.project_number = p.name
+    LEFT JOIN `tabFT Add Drawing` ad ON ad.project_number = p.name
     WHERE 1=1
         {" AND p.name IN %(project_number)s" if filters.get("project_number") else ""}
         {" AND ad.drawing_number IN %(drawing_number)s" if filters.get("drawing_number") else ""}
@@ -205,8 +205,8 @@ def execute(filters=None):
 #             dp.width,
 #             dp.single_weight,
 #             dp.total_weight
-#         FROM `tabDrawing Parts` dp
-#         LEFT JOIN `tabAdd Drawing` ad 
+#         FROM `tabFT Drawing Parts` dp
+#         LEFT JOIN `tabFT Add Drawing` ad 
 #             ON ad.name = dp.drawing_number
 #         WHERE dp.project_number = %s
 #         AND dp.item = %s
@@ -260,8 +260,8 @@ def execute(filters=None):
 #             dp.width,
 #             dp.single_weight,
 #             dp.total_weight
-#         FROM `tabDrawing Parts` dp
-#         LEFT JOIN `tabAdd Drawing` ad 
+#         FROM `tabFT Drawing Parts` dp
+#         LEFT JOIN `tabFT Add Drawing` ad 
 #             ON ad.name = dp.drawing_number
 #         {conditions}
 #         ORDER BY ad.drawing_number
@@ -316,8 +316,8 @@ def get_item_details(project, item, drawing_numbers=None):
             dp.width,
             dp.single_weight,
             dp.total_weight
-        FROM `tabDrawing Parts` dp
-        LEFT JOIN `tabAdd Drawing` ad 
+        FROM `tabFT Drawing Parts` dp
+        LEFT JOIN `tabFT Add Drawing` ad 
             ON ad.name = dp.drawing_number
         {conditions}
         ORDER BY ad.drawing_number

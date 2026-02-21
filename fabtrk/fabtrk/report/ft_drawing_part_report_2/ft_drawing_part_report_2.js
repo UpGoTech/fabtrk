@@ -63,7 +63,7 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 				return frappe.call({
 					method: "frappe.client.get_list",
 					args: {
-						doctype: "Add Drawing",
+						doctype: "FT Add Drawing",
 						filters: filters,
 						fields: ["name", "drawing_number"],
 
@@ -172,11 +172,11 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 		// 		// Drawing selected → PROPER FIX
 		// 		if (drawings.length) {
 
-		// 			// Step 1: Get Add Drawing document names
+		// 			// Step 1: Get FT Add Drawing document names
 		// 			return frappe.call({
 		// 				method: "frappe.client.get_list",
 		// 				args: {
-		// 					doctype: "Add Drawing",
+		// 					doctype: "FT Add Drawing",
 		// 					fields: ["name"],
 		// 					filters: [
 		// 						["drawing_number", "in", drawings]
@@ -313,11 +313,11 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 				// Drawing selected
 				if (drawings.length) {
 
-					// Step 1: Get Add Drawing document names
+					// Step 1: Get FT Add Drawing document names
 					return frappe.call({
 						method: "frappe.client.get_list",
 						args: {
-							doctype: "Add Drawing",
+							doctype: "FT Add Drawing",
 							fields: ["name"],
 							filters: [
 								["drawing_number", "in", drawings]

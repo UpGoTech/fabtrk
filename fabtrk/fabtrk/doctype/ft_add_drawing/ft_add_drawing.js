@@ -1,7 +1,7 @@
 // Copyright (c) 2026, UpGo Technologies and contributors
 // For license information, please see license.txt
 
-frappe.ui.form.on("Add Drawing", {
+frappe.ui.form.on("FT Add Drawing", {
     unit_weight(frm) {
         calculate_total_weight(frm);
     },
@@ -32,7 +32,7 @@ function set_drawing_filter(frm) {
     frappe.call({
         method: "frappe.client.get_list",
         args: {
-            doctype: "Add Drawing",
+            doctype: "FT Add Drawing",
             // filters: {
             //     project_number: frm.doc.project_number
             // },

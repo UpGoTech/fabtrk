@@ -42,7 +42,7 @@ def execute(filters=None):
             IFNULL(ad.quantity, 0) AS quantity,
             IFNULL(ad.total_weight, 0) AS total_weight
         FROM `tabFT Project` p
-        LEFT JOIN `tabAdd Drawing` ad
+        LEFT JOIN `tabFT Add Drawing` ad
             ON ad.project_number = p.name
         WHERE 1=1
         {conditions}
