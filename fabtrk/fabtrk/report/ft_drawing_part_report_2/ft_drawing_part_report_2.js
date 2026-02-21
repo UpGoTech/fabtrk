@@ -385,7 +385,7 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 			});
 	}
 };
-
+// simple CSV download for the main summary table (without details)
 function download_csv(report) {
 
     if (!report.data || !report.data.length) {
@@ -419,7 +419,7 @@ function download_csv(report) {
     link.click();
     document.body.removeChild(link);
 }
-
+// download both summary and detail tables in one CSV with clear separation and titles for each section
 function download_full_report(report) {
 
     let rows = [];
