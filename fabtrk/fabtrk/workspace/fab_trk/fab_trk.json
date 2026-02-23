@@ -85,7 +85,7 @@
    "hidden": 0,
    "is_query_report": 0,
    "label": "Project Master",
-   "link_count": 4,
+   "link_count": 5,
    "link_type": "DocType",
    "onboard": 0,
    "type": "Card Break"
@@ -115,7 +115,17 @@
    "is_query_report": 0,
    "label": "Project Drawings ",
    "link_count": 0,
-   "link_to": "Add Drawing",
+   "link_to": "FT Add Drawing",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": " Po Drawing",
+   "link_count": 0,
+   "link_to": "FT Po Drawing",
    "link_type": "DocType",
    "onboard": 0,
    "type": "Link"
@@ -125,13 +135,13 @@
    "is_query_report": 0,
    "label": "Project Drawing Parts",
    "link_count": 0,
-   "link_to": "Drawing Parts",
+   "link_to": "FT Drawing Parts",
    "link_type": "DocType",
    "onboard": 0,
    "type": "Link"
   }
  ],
- "modified": "2026-02-21 13:49:45.303840",
+ "modified": "2026-02-23 16:01:15.501480",
  "modified_by": "Administrator",
  "module": "Fabtrk",
  "name": "Fab Trk",
