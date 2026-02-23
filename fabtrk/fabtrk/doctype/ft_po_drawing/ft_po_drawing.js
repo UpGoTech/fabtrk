@@ -2,12 +2,7 @@
 // For license information, please see license.txt
 
 frappe.ui.form.on("FT Po Drawing", {
-    unit_weight(frm) {
-        calculate_total_weight(frm);
-    },
-    required_qty(frm) {
-        calculate_total_weight(frm);
-    },
+
     refresh(frm) {
         set_drawing_filter(frm);
     },
@@ -15,8 +10,28 @@ frappe.ui.form.on("FT Po Drawing", {
     project_number(frm) {
         frm.set_value("drawing_number", null);
         set_drawing_filter(frm);
+    },
+
+    unit_weight(frm) {
+        calculate_total_weight(frm);
+    },
+
+    required_qty(frm) {
+        calculate_total_weight(frm);
     }
 });
+
+
+function set_drawing_filter(frm) {
+    frm.set_query("drawing_number", function () {
+        return {
+            filters: {
+                project_number: frm.doc.project_number
+            }
+        };
+    });
+}
+
 
 function calculate_total_weight(frm) {
     let unit_weight = frm.doc.unit_weight || 0;

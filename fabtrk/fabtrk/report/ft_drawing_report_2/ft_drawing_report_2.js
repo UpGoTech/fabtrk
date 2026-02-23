@@ -105,64 +105,268 @@ frappe.query_reports["FT Drawing Report 2"] = {
 	}
 };
 
-$(`<style>
+// $(`<style>
 
 
 	
-	.report-summary .summary-item{
-		max-width: 100%;
-		min-width: 100%;
-		height: 100%;
-		display: block;
-		place-content: unset;
-		margin: 0;
-	}
-	.summary-container{
-		display: grid;
-		grid-template-columns: repeat(1, 1fr) !important;
-		place-items: center;
-		gap: 20px;
-	}
-	@media (min-width: 768px){
-		.summary-container{
-			grid-template-columns: repeat(2, 1fr) !important;
-		}
-	}
-	.report-summary .summary-value .summary-container {
-		padding: 20px;
-	}
-	.summary-section{
-		width: 90%;
-		background: #fff;
-		padding: 20px;
-		border-radius: 10px;
-		text-align: center;
-		transition: all 0.2s ease;
-		border: 2px solid #eef0f4;
-	}
-	.section-content-count p{
-		font-size: 14px;
-		font-weight: 400;
-		color: #525252;
-	}
-	.section-content-count span{
-		font-size: 16px;
-		font-weight: 600;
-		line-height: 20px;
-		padding-top: 12px;
-		padding-bottom: 5px;
-		color: #000;
-	}
-	.report-summary {
-		background-color: none;
-		border-radius: 0;
-		border-bottom: 0;
-		margin: 0;
-		padding: 0;
-		display: block;
-		flex-wrap: unset;
-		align-items: unset;
-		justify-content: unset;
-		gap: 0px;
-	}
+// 	.report-summary .summary-item{
+// 		max-width: 100%;
+// 		min-width: 100%;
+// 		height: 100%;
+// 		display: block;
+// 		place-content: unset;
+// 		margin: 0;
+// 	}
+// 	.summary-container{
+// 		display: grid;
+// 		grid-template-columns: repeat(1, 1fr) !important;
+// 		place-items: center;
+// 		gap: 20px;
+// 	}
+// 	@media (min-width: 768px){
+// 		.summary-container{
+// 			grid-template-columns: repeat(2, 1fr) !important;
+// 		}
+// 	}
+// 	.report-summary .summary-value .summary-container {
+// 		padding: 20px;
+// 	}
+// 	.summary-section{
+// 		width: 90%;
+// 		background: #fff;
+// 		padding: 20px;
+// 		border-radius: 10px;
+// 		text-align: center;
+// 		transition: all 0.2s ease;
+// 		border: 2px solid #eef0f4;
+// 	}
+// 	.section-content-count p{
+// 		font-size: 14px;
+// 		font-weight: 400;
+// 		color: #525252;
+// 	}
+// 	.section-content-count span{
+// 		font-size: 16px;
+// 		font-weight: 600;
+// 		line-height: 20px;
+// 		padding-top: 12px;
+// 		padding-bottom: 5px;
+// 		color: #000;
+// 	}
+// 	.report-summary {
+// 		background-color: none;
+// 		border-radius: 0;
+// 		border-bottom: 0;
+// 		margin: 0;
+// 		padding: 0;
+// 		display: block;
+// 		flex-wrap: unset;
+// 		align-items: unset;
+// 		justify-content: unset;
+// 		gap: 0px;
+// 	}
+// </style>`).appendTo("head");
+
+
+
+
+$(`<style>
+
+.report-wrapper,
+.datatable,
+.datatable-container {
+    width: 100% !important;
+}
+
+.datatable .dt-scrollable {
+    overflow-x: auto !important;
+}
+
+.datatable table {
+    width: 100% !important;
+    table-layout: auto !important;
+}
+
+.datatable .dt-cell {
+    white-space: nowrap !important;
+}
+
+.datatable .dt-cell__content {
+    overflow: visible !important;
+    text-overflow: unset !important;
+}
+
+.datatable .dt-row {
+    width: 100% !important;
+}
+
+/* Make numeric columns properly spaced */
+.datatable .dt-cell--col-3,
+.datatable .dt-cell--col-4,
+.datatable .dt-cell--col-5,
+.datatable .dt-cell--col-6 {
+    text-align: center !important;
+}
+
+/* ===== SUMMARY CARDS ===== */
+
+.report-summary .summary-item{
+    max-width: 100%;
+    min-width: 100%;
+    height: 100%;
+    display: block;
+    margin: 0;
+}
+
+.summary-container {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 20px;
+    place-items: center;
+    width: 100%;
+}
+
+@media (max-width: 768px) {
+    .summary-container {
+        grid-template-columns: repeat(1, 1fr) !important;
+    }
+
+    /* Scroll horizontal for table wrapper on small screens */
+    .datatable .dt-scrollable {
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch; /* smooth scrolling on iOS */
+    }
+}
+
+.report-summary .summary-value .summary-container {
+    padding: 20px;
+}
+
+.summary-section{
+    width: 95%;
+    background: #fff;
+    padding: 20px;
+    border-radius: 10px;
+    text-align: center;
+    border: 2px solid #eef0f4;
+}
+
+.section-content-count p{
+    font-size: 14px;
+    font-weight: 400;
+    color: #525252;
+}
+
+.section-content-count span{
+    font-size: 16px;
+    font-weight: 600;
+    line-height: 20px;
+    padding-top: 12px;
+    padding-bottom: 5px;
+    color: #000;
+}
+
+.report-summary {
+    margin: 0;
+    padding: 0;
+}
+
 </style>`).appendTo("head");
+
+// $(`<style>
+
+// .report-wrapper,
+// .datatable,
+// .datatable-container {
+//     width: 100% !important;
+// }
+
+// .datatable .dt-scrollable {
+//     overflow-x: auto !important;
+// }
+
+// .datatable table {
+//     width: 100% !important;
+//     table-layout: auto !important;
+// }
+
+// .datatable .dt-cell {
+//     white-space: nowrap !important;
+// }
+
+// .datatable .dt-cell__content {
+//     overflow: visible !important;
+//     text-overflow: unset !important;
+// }
+
+// .datatable .dt-row {
+//     width: 100% !important;
+// }
+
+// /* Make numeric columns properly spaced */
+// .datatable .dt-cell--col-3,
+// .datatable .dt-cell--col-4,
+// .datatable .dt-cell--col-5,
+// .datatable .dt-cell--col-6 {
+//     text-align: center !important;
+// }
+
+// /* ===== SUMMARY CARDS ===== */
+
+// .report-summary .summary-item{
+//     max-width: 100%;
+//     min-width: 100%;
+//     height: 100%;
+//     display: block;
+//     margin: 0;
+// }
+
+// .summary-container {
+//     display: grid;
+//     grid-template-columns: repeat(3, 1fr) !important;
+//     gap: 20px;
+//     place-items: center;
+//     width: 100%;
+// }
+
+// @media (max-width: 768px) {
+//     .summary-container {
+//         grid-template-columns: repeat(1, 1fr) !important;
+//     }
+// }
+
+// .report-summary .summary-value .summary-container {
+//     padding: 20px;
+// }
+
+// .summary-section{
+//     width: 95%;
+//     background: #fff;
+//     padding: 20px;
+//     border-radius: 10px;
+//     text-align: center;
+//     border: 2px solid #eef0f4;
+// }
+
+// .section-content-count p{
+//     font-size: 14px;
+//     font-weight: 400;
+//     color: #525252;
+// }
+
+// .section-content-count span{
+//     font-size: 16px;
+//     font-weight: 600;
+//     line-height: 20px;
+//     padding-top: 12px;
+//     padding-bottom: 5px;
+//     color: #000;
+// }
+
+// .report-summary {
+//     margin: 0;
+//     padding: 0;
+// }
+
+// </style>`).appendTo("head");
+

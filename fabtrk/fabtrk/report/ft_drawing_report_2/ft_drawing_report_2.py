@@ -1,92 +1,205 @@
 
 
-# this code for multi select filter filed
-import frappe
+### this code for multi select filter filed
+# import frappe
 
+# from frappe.utils import fmt_money
+
+# def execute(filters=None):
+#     filters = filters or {}
+
+#     columns = [
+#         {"label": "Project", "fieldname": "project_name", "fieldtype": "Link", "options": "FT Project", "width": 130},
+#         {"label": "Drawing Number", "fieldname": "drawing_number", "fieldtype": "Data","width": 200,"align": "center"},
+#         {"label": "PO Serial No", "fieldname": "po_serial_no", "fieldtype": "Data","width": 200,"align": "center"},
+#         {"label": "Unit Weight", "fieldname": "unit_weight", "fieldtype": "Float", "width": 150,"align": "center"},
+#         {"label": "Required Qty", "fieldname": "quantity", "fieldtype": "Int", "width": 120,"align": "center"},
+#         {"label": "Total Weight", "fieldname": "total_weight", "fieldtype": "Float", "width": 150,"align": "center"},
+#     ]
+
+#     conditions = ""
+#     values = {}
+
+#     # Multi Project Filter
+#     if filters.get("project_number"):
+#         conditions += " AND p.name IN %(project_number)s"
+#         values["project_number"] = tuple(filters.get("project_number"))
+
+#     # Multi Drawing Filter
+#     if filters.get("drawing_number"):
+#         conditions += " AND ad.drawing_number IN %(drawing_number)s"
+#         values["drawing_number"] = tuple(filters.get("drawing_number"))
+#         conditions += " AND pod.drawing_number = ad.name"
+        
+        
+#     # PO Serial Filter
+#     if filters.get("po_serial_no"):
+#         conditions += " AND pod.po_serial_no IN %(po_serial_no)s"
+#         values["po_serial_no"] = tuple(filters.get("po_serial_no"))
+
+
+#     # Project Is Active Filter
+#     if filters.get("is_active"):
+#         conditions += " AND p.is_active = 1"
+
+#    # MAIN QUERY (PROJECT BASED)
+#     query = """
+#         SELECT
+#             p.name AS project_name,
+#             ad.drawing_number AS drawing_number,
+#             pod.po_serial_no AS po_serial_no,
+#             IFNULL(ad.unit_weight, 0) AS unit_weight,
+#             IFNULL(ad.quantity, 0) AS quantity,
+#             IFNULL(ad.total_weight, 0) AS total_weight
+#         FROM `tabFT Project` p
+#         LEFT JOIN `tabFT Add Drawing` ad
+#             ON ad.project_number = p.name
+#         LEFT JOIN `tabFT Po Drawing` pod
+#             ON pod.drawing_number = ad.name
+#         ORDER BY CAST(pod.po_serial_no AS UNSIGNED) ASC
+#     """
+
+#     data = frappe.db.sql(query, as_dict=1)
+
+#     raw_data = frappe.db.sql(query, values, as_dict=1) or []
+
+#     # SUMMARY CALCULATIONS
+#     project_names = {d.project_name for d in raw_data if d.project_name}
+#     drawing_names = {d.drawing_number for d in raw_data if d.drawing_number}
+
+#     total_projects = len(project_names)
+#     total_no_of_drawings = len(drawing_names)
+
+#     if project_names:
+#         total_weight_as_per_project = frappe.db.sql("""
+#             SELECT SUM(total_weight)
+#             FROM `tabFT Project`
+#             WHERE name IN %(projects)s
+#         """, {"projects": tuple(project_names)}, as_list=1)[0][0] or 0
+#     else:
+#         total_weight_as_per_project = 0
+
+#     total_weight_as_per_drawing = sum(d.total_weight or 0 for d in raw_data)
+    
+    
+
+#     #   isse card me kg ki value 00.000 show hori hai
+#     formatted_total_weight_as_per_project = "{:,.3f}".format(total_weight_as_per_project)
+#     formatted_total_weight_as_per_drawing = "{:,.3f}".format(total_weight_as_per_drawing)
+      
+#     report_summary = [
+#         {
+#             "label": "",
+#             "value": f"""
+#             <div class="summary-container">
+#                 <div class="summary-section">
+#                     <div class="section-content-count">
+#                         <p>Total Projects</p>
+#                         <span>{total_projects}</span>                  
+#                     </div>
+#                     <div class="section-content-count">
+#                         <p>Total Weight as per Project(Kg)</p>
+#                         <span>{formatted_total_weight_as_per_project}</span>                   
+#                     </div>
+#                 </div>
+#                 <div class="summary-section">
+#                     <div class="section-content-count">
+#                         <p>Total No of Drawings</p>
+#                         <span>{total_no_of_drawings}</span>                    
+#                     </div>
+#                 </div>
+                
+#                 <div class="summary-section">
+#                     <div class="section-content-count">
+#                         <p>Total No of PO Drawings</p>
+#                         <span>{total_no_of_drawings}</span>                    
+#                     </div>
+#                 </div>
+                
+#             </div>
+#             """,
+#             "datatype": "HTML",
+#         }
+#     ]
+    
+
+#     return columns, raw_data, None, None, report_summary
+
+
+
+import frappe
 from frappe.utils import fmt_money
 
 def execute(filters=None):
     filters = filters or {}
 
     columns = [
-        {"label": "Project", "fieldname": "project_name", "fieldtype": "Link", "options": "FT Project", "width": 130},
+        {"label": "Project", "fieldname": "project_name", "fieldtype": "Link", "options": "FT Project", "width": 200},
         {"label": "Drawing Number", "fieldname": "drawing_number", "fieldtype": "Data","width": 200,"align": "center"},
         {"label": "PO Serial No", "fieldname": "po_serial_no", "fieldtype": "Data","width": 200,"align": "center"},
-        {"label": "Unit Weight", "fieldname": "unit_weight", "fieldtype": "Float", "width": 150,"align": "center"},
-        {"label": "Required Qty", "fieldname": "quantity", "fieldtype": "Int", "width": 120,"align": "center"},
-        {"label": "Total Weight", "fieldname": "total_weight", "fieldtype": "Float", "width": 150,"align": "center"},
+        {"label": "Unit Weight", "fieldname": "unit_weight", "fieldtype": "Float", "width": 200,"align": "center"},
+        {"label": "Required Qty", "fieldname": "quantity", "fieldtype": "Int", "width": 200,"align": "center"},
+        {"label": "Total Weight", "fieldname": "total_weight", "fieldtype": "Float", "width": 200,"align": "center"},
     ]
 
     conditions = ""
     values = {}
 
-    # Multi Project Filter
     if filters.get("project_number"):
         conditions += " AND p.name IN %(project_number)s"
         values["project_number"] = tuple(filters.get("project_number"))
 
-    # Multi Drawing Filter
     if filters.get("drawing_number"):
         conditions += " AND ad.drawing_number IN %(drawing_number)s"
         values["drawing_number"] = tuple(filters.get("drawing_number"))
-        conditions += " AND pod.drawing_number = ad.name"
-        
-        
-    # PO Serial Filter
-    if filters.get("po_serial_no"):
-        conditions += " AND pod.po_serial_no IN %(po_serial_no)s"
-        values["po_serial_no"] = tuple(filters.get("po_serial_no"))
 
-
-    # Project Is Active Filter
     if filters.get("is_active"):
         conditions += " AND p.is_active = 1"
 
-   # MAIN QUERY (PROJECT BASED)
-    query = """
+    query = f"""
         SELECT
             p.name AS project_name,
+            ad.name as drawing_id,
             ad.drawing_number AS drawing_number,
             pod.po_serial_no AS po_serial_no,
             IFNULL(ad.unit_weight, 0) AS unit_weight,
             IFNULL(ad.quantity, 0) AS quantity,
-            IFNULL(ad.total_weight, 0) AS total_weight
+            (IFNULL(ad.unit_weight,0) * IFNULL(ad.quantity,0)) AS total_weight
         FROM `tabFT Project` p
         LEFT JOIN `tabFT Add Drawing` ad
             ON ad.project_number = p.name
         LEFT JOIN `tabFT Po Drawing` pod
             ON pod.drawing_number = ad.name
+        WHERE 1=1 {conditions}
         ORDER BY CAST(pod.po_serial_no AS UNSIGNED) ASC
     """
 
-    data = frappe.db.sql(query, as_dict=1)
-
     raw_data = frappe.db.sql(query, values, as_dict=1) or []
 
-    # SUMMARY CALCULATIONS
+    # ================= SUMMARY =================
+
     project_names = {d.project_name for d in raw_data if d.project_name}
-    drawing_names = {d.drawing_number for d in raw_data if d.drawing_number}
+    drawing_ids = {d.drawing_id for d in raw_data if d.drawing_id}
+    po_rows = [d for d in raw_data if d.po_serial_no]
 
     total_projects = len(project_names)
-    total_no_of_drawings = len(drawing_names)
+    total_no_of_drawings = len(drawing_ids)
+    total_po_drawings = len(po_rows)
 
-    if project_names:
-        total_weight_as_per_project = frappe.db.sql("""
-            SELECT SUM(total_weight)
-            FROM `tabFT Project`
-            WHERE name IN %(projects)s
-        """, {"projects": tuple(project_names)}, as_list=1)[0][0] or 0
-    else:
-        total_weight_as_per_project = 0
+    # Project total weight
+    total_weight_as_per_project = sum(d.total_weight for d in raw_data)
 
-    total_weight_as_per_drawing = sum(d.total_weight or 0 for d in raw_data)
-    
-    
+    # Drawing total weight (unique drawing wise)
+    drawing_weight_map = {}
+    for d in raw_data:
+        if d.drawing_id:
+            drawing_weight_map[d.drawing_id] = d.total_weight
 
-    #   isse card me kg ki value 00.000 show hori hai
+    total_weight_as_per_drawing = sum(drawing_weight_map.values())
+
     formatted_total_weight_as_per_project = "{:,.3f}".format(total_weight_as_per_project)
     formatted_total_weight_as_per_drawing = "{:,.3f}".format(total_weight_as_per_drawing)
-      
+
     report_summary = [
         {
             "label": "",
@@ -102,17 +215,22 @@ def execute(filters=None):
                         <span>{formatted_total_weight_as_per_project}</span>                   
                     </div>
                 </div>
+
                 <div class="summary-section">
                     <div class="section-content-count">
                         <p>Total No of Drawings</p>
                         <span>{total_no_of_drawings}</span>                    
+                    </div>
+                    <div class="section-content-count">
+                        <p>Total Weight as per Drawings(Kg)</p>
+                        <span>{formatted_total_weight_as_per_drawing}</span>                   
                     </div>
                 </div>
                 
                 <div class="summary-section">
                     <div class="section-content-count">
                         <p>Total No of PO Drawings</p>
-                        <span>{total_no_of_drawings}</span>                    
+                        <span>{total_po_drawings}</span>                    
                     </div>
                 </div>
                 
@@ -121,8 +239,9 @@ def execute(filters=None):
             "datatype": "HTML",
         }
     ]
-    
 
     return columns, raw_data, None, None, report_summary
+
+
 
 
