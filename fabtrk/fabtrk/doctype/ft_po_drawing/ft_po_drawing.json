@@ -1,0 +1,97 @@
+{
+ "actions": [],
+ "allow_import": 1,
+ "allow_rename": 1,
+ "autoname": "format:{drawing_number}-{po_serial_no}",
+ "creation": "2026-02-21 15:57:54.827534",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "project_number",
+  "drawing_number",
+  "po_serial_no",
+  "po_description",
+  "unit_weight",
+  "required_qty",
+  "total_weight"
+ ],
+ "fields": [
+  {
+   "fieldname": "po_serial_no",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Po Serial No "
+  },
+  {
+   "fetch_from": "drawing_number.unit_weight",
+   "fieldname": "unit_weight",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Unit Weight",
+   "read_only": 1
+  },
+  {
+   "default": "1",
+   "fieldname": "required_qty",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Required Qty"
+  },
+  {
+   "fieldname": "total_weight",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Total Weight",
+   "read_only": 1
+  },
+  {
+   "fieldname": "project_number",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Project Number",
+   "options": "FT Project"
+  },
+  {
+   "fieldname": "drawing_number",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Drawing Number",
+   "options": "FT Add Drawing"
+  },
+  {
+   "fieldname": "po_description",
+   "fieldtype": "Small Text",
+   "in_list_view": 1,
+   "label": "PO Description "
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-02-23 11:36:41.770376",
+ "modified_by": "Administrator",
+ "module": "Fabtrk",
+ "name": "FT Po Drawing",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "show_title_field_in_link": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "po_description",
+ "track_changes": 1,
+ "track_views": 1
+}

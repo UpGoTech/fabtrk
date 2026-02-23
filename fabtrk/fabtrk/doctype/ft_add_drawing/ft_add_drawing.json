@@ -7,11 +7,9 @@
  "engine": "InnoDB",
  "field_order": [
   "project_number",
-  "po_position_no",
   "drawing_number",
+  "drawing_description",
   "unit_weight",
-  "quantity",
-  "total_weight",
   "column_break_mqgl",
   "customer_name"
  ],
@@ -30,24 +28,10 @@
    "label": "Drawing Number"
   },
   {
-   "default": "1",
-   "fieldname": "quantity",
-   "fieldtype": "Int",
-   "in_list_view": 1,
-   "label": "Required Qty"
-  },
-  {
    "fieldname": "unit_weight",
    "fieldtype": "Float",
    "in_list_view": 1,
    "label": "Unit Weight"
-  },
-  {
-   "fieldname": "total_weight",
-   "fieldtype": "Float",
-   "in_list_view": 1,
-   "label": "Total Weight",
-   "read_only": 1
   },
   {
    "fieldname": "column_break_mqgl",
@@ -61,15 +45,14 @@
    "read_only": 1
   },
   {
-   "fieldname": "po_position_no",
-   "fieldtype": "Data",
-   "in_list_view": 1,
-   "label": "PO Position No"
+   "fieldname": "drawing_description",
+   "fieldtype": "Small Text",
+   "label": "Drawing Description"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-19 16:32:56.477676",
+ "modified": "2026-02-21 15:57:15.418991",
  "modified_by": "Administrator",
  "module": "Fabtrk",
  "name": "FT Add Drawing",

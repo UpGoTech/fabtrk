@@ -5,12 +5,11 @@ def execute(filters=None):
     filters = filters or {}
 
     columns = [
-        {"label": "Project", "fieldname": "project_name", "fieldtype": "Link", "options": "FT Project", "width": 160},
-        {"label": "Position No", "fieldname": "position_no", "fieldtype": "Data", "width": 150, "align": "center"},
+        {"label": "Project", "fieldname": "project_name", "fieldtype": "Link", "options": "FT Project", "width": 200},
         {"label": "Item", "fieldname": "item_name", "width": 400},
-        {"label": "Total Entries", "fieldname": "item_count", "fieldtype": "Int", "width": 150,"align": "center"},
-        {"label": "Total Weight", "fieldname": "total_weight", "fieldtype": "Float", "width": 150,"align": "center"},
-        {"label": "Details", "fieldname": "view", "fieldtype": "HTML", "width": 200,"align": "center"},
+        {"label": "Total Entries", "fieldname": "item_count", "fieldtype": "Int", "width": 200,"align": "center"},
+        {"label": "Total Weight", "fieldname": "total_weight", "fieldtype": "Float", "width": 200,"align": "center"},
+        {"label": "Details", "fieldname": "view", "fieldtype": "HTML", "width":210,"align": "center"},
     ]
 
     # Conditions for main query
@@ -40,11 +39,10 @@ def execute(filters=None):
     query = f"""
     SELECT
         p.name AS project_name,
-        dp.position_no AS position_no,
+        
         dp.item AS item_id,
         rm.computed_name AS item_name,
         COALESCE(CAST(st.sort_key AS UNSIGNED), 9999) AS sort_key,
-        
         COUNT(dp.name) AS item_count,
         SUM(COALESCE(dp.total_weight, 0)) AS total_weight
     FROM `tabFT Project` p
@@ -55,8 +53,7 @@ def execute(filters=None):
 
     WHERE 1=1
         {conditions}
-    GROUP BY p.name, dp.item, rm.computed_name, dp.position_no,
-    st.sort_key
+    GROUP BY p.name, dp.item, rm.computed_name,st.sort_key
     
 	HAVING 
 		dp.item IS NOT NULL
@@ -140,6 +137,10 @@ def execute(filters=None):
     """
     total_weight_drawing = frappe.db.sql(drawing_weight_query, drawing_values)[0][0] or 0
 
+    # isse card me kg ki value .000 me ari hai 
+    formatted_project_total_weight = "{:,.3f}".format(project_total_weight)
+    formatted_total_weight_drawing = "{:,.3f}".format(total_weight_drawing)
+    formatted_total_weight_parts = "{:,.3f}".format(total_weight_parts)
     
     report_summary = [
         {
@@ -153,7 +154,7 @@ def execute(filters=None):
                     </div>
                     <div class="section-content-count">
                         <p>Total Weight as per Project(Kg)</p>
-                        <span>{project_total_weight}</span>                    
+                        <span>{formatted_project_total_weight}</span>                   
                     </div>
                 </div>
                 <div class="summary-section">
@@ -163,7 +164,7 @@ def execute(filters=None):
                     </div>
                     <div class="section-content-count">
                         <p>Total Weight as per Drawing(Kg)</p>
-                        <span>{total_weight_drawing}</span>                    
+                        <span>{formatted_total_weight_drawing}</span>                   
                     </div>
                 </div>
                 <div class="summary-section">
@@ -173,7 +174,7 @@ def execute(filters=None):
                     </div>
                     <div class="section-content-count">
                         <p>Total Weight as per Drawing Parts(Kg)</p>
-                        <span>{total_weight_parts}</span>                    
+                        <span>{formatted_total_weight_parts}</span>                    
                     </div>
                 </div>
             </div>
@@ -183,62 +184,6 @@ def execute(filters=None):
     ]
 
     return columns, data, None, None, report_summary
-
-# @frappe.whitelist()
-# def get_item_details(project, item, drawing_numbers=None):
-
-#     item_name = frappe.db.get_value(
-#         "FT Stock RM List",
-#         item,
-#         "computed_name"
-#     ) or item
-
-#     conditions = " WHERE dp.project_number = %s AND dp.item = %s "
-#     values = [project, item]
-
-#     # ✅ If drawing filter exists (single or multiple)
-#     if drawing_numbers:
-#         drawing_numbers = frappe.parse_json(drawing_numbers)
-
-#         if isinstance(drawing_numbers, list) and drawing_numbers:
-#             conditions += " AND ad.drawing_number IN %s "
-#             values.append(tuple(drawing_numbers))
-
-#     rows = frappe.db.sql(
-#         f"""
-#         SELECT
-#             ad.drawing_number AS drawing_number,
-#             dp.quantity,
-#             dp.lenght,
-#             dp.width,
-#             dp.single_weight,
-#             dp.total_weight
-#         FROM `tabFT Drawing Parts` dp
-#         LEFT JOIN `tabFT Add Drawing` ad 
-#             ON ad.name = dp.drawing_number
-#         {conditions}
-#         ORDER BY ad.drawing_number
-#         """,
-#         tuple(values),
-#         as_dict=True,
-#     )
-
-#     grand_total = sum(d.get("total_weight", 0) for d in rows)
-
-#     rows.append({
-#         "drawing_number": "<b>Total</b>",
-#         "quantity": "",
-#         "lenght": "",
-#         "width": "",
-#         "single_weight": "",
-#         "total_weight": f"<b>{grand_total}</b>"
-#     })
-
-#     return {
-#         "item_name": item_name,
-#         "data": rows
-#     }
-
 
 @frappe.whitelist()
 def get_item_details(project, item, drawing_numbers=None):
@@ -254,7 +199,10 @@ def get_item_details(project, item, drawing_numbers=None):
 
     rows = frappe.db.sql(f"""
         SELECT
-            ad.drawing_number,
+            ad.drawing_number AS drawing_number,
+            
+            dp.position_no AS position_no,
+            
             dp.quantity,
             dp.lenght,
             dp.width,
@@ -270,7 +218,8 @@ def get_item_details(project, item, drawing_numbers=None):
     grand_total = sum(d.get("total_weight", 0) for d in rows)
 
     rows.append({
-        "drawing_number": "Total",
+        "drawing_number": "<b>Total</b>",        
+        "position_no": "",        
         "quantity": "",
         "lenght": "",
         "width": "",

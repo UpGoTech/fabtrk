@@ -97,6 +97,137 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 				clear_item_details();
 			}
 		},
+
+
+
+		// ---------------- ITEM ----------------
+		// {
+		// 	fieldname: "item",
+		// 	label: "Drawing Part",
+		// 	fieldtype: "MultiSelectList",
+
+		// 	get_data: function (txt) {
+
+		// 		let projects = frappe.query_report.get_filter_value("project_number") || [];
+		// 		let drawings = frappe.query_report.get_filter_value("drawing_number") || [];
+
+		// 		// ---------------- CASE 1 ----------------
+		// 		// Nothing selected → show all items
+		// 		if (!projects.length && !drawings.length) {
+
+		// 			return frappe.call({
+		// 				method: "frappe.client.get_list",
+		// 				args: {
+		// 					doctype: "FT Stock RM List",
+		// 					fields: ["name", "computed_name"],
+		// 					filters: [["computed_name", "like", "%" + txt + "%"]]
+		// 				}
+		// 			}).then(r => {
+		// 				return (r.message || []).map(d => ({
+		// 					value: d.name,
+		// 					label: d.computed_name,
+		// 					description: ""
+		// 				}));
+		// 			});
+		// 		}
+
+		// 		// ---------------- CASE 2 ----------------
+		// 		// Project selected but no drawing
+		// 		if (projects.length && !drawings.length) {
+
+		// 			return frappe.call({
+		// 				method: "frappe.client.get_list",
+		// 				args: {
+		// 					doctype: "FT Drawing Parts",
+		// 					fields: ["item"],
+		// 					filters: [["project_number", "in", projects]]
+		// 				}
+		// 			}).then(r => {
+
+		// 				let unique_items = [...new Set((r.message || []).map(d => d.item))];
+		// 				if (!unique_items.length) return [];
+
+		// 				return frappe.call({
+		// 					method: "frappe.client.get_list",
+		// 					args: {
+		// 						doctype: "FT Stock RM List",
+		// 						fields: ["name", "computed_name"],
+		// 						filters: [
+		// 							["name", "in", unique_items],
+		// 							["computed_name", "like", "%" + txt + "%"]
+		// 						]
+		// 					}
+		// 				}).then(res => {
+		// 					return (res.message || []).map(d => ({
+		// 						value: d.name,
+		// 						label: d.computed_name,
+		// 						description: ""
+		// 					}));
+		// 				});
+
+		// 			});
+		// 		}
+
+		// 		// ---------------- CASE 3 ----------------
+		// 		// Drawing selected → PROPER FIX
+		// 		if (drawings.length) {
+
+		// 			// Step 1: Get FT Add Drawing document names
+		// 			return frappe.call({
+		// 				method: "frappe.client.get_list",
+		// 				args: {
+		// 					doctype: "FT Add Drawing",
+		// 					fields: ["name"],
+		// 					filters: [
+		// 						["drawing_number", "in", drawings]
+		// 					]
+		// 				}
+		// 			}).then(res => {
+
+		// 				let drawing_names = (res.message || []).map(d => d.name);
+		// 				if (!drawing_names.length) return [];
+
+		// 				// Step 2: Get items from FT Drawing Parts
+		// 				return frappe.call({
+		// 					method: "frappe.client.get_list",
+		// 					args: {
+		// 						doctype: "FT Drawing Parts",
+		// 						fields: ["item"],
+		// 						filters: [
+		// 							["drawing_number", "in", drawing_names]
+		// 						]
+		// 					}
+		// 				}).then(r => {
+
+		// 					let unique_items = [...new Set((r.message || []).map(d => d.item))];
+		// 					if (!unique_items.length) return [];
+
+		// 					return frappe.call({
+		// 						method: "frappe.client.get_list",
+		// 						args: {
+		// 							doctype: "FT Stock RM List",
+		// 							fields: ["name", "computed_name"],
+		// 							filters: [
+		// 								["name", "in", unique_items],
+		// 								["computed_name", "like", "%" + txt + "%"]
+		// 							]
+		// 						}
+		// 					}).then(res2 => {
+		// 						return (res2.message || []).map(d => ({
+		// 							value: d.name,
+		// 							label: d.computed_name,
+		// 							description: ""
+		// 						}));
+		// 					});
+
+		// 				});
+
+		// 			});
+		// 		}
+		// 	}
+		// },
+
+
 		// ---------------- ITEM ----------------
 		{
 			fieldname: "item",
@@ -197,7 +328,7 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 						let drawing_names = (res.message || []).map(d => d.name);
 						if (!drawing_names.length) return [];
 
-						// Step 2: Get items from Drawing Parts
+						// Step 2: Get items from FT Drawing Parts
 						return frappe.call({
 							method: "frappe.client.get_list",
 							args: {
@@ -292,7 +423,7 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 				let project = $(this).data("project");
 				let item = $(this).data("item");
 
-				 // ✅ GET SELECTED DRAWING
+				// ✅ GET SELECTED DRAWING
 				let drawings = frappe.query_report.get_filter_value("drawing_number") || [];
 
 				// // If only 1 drawing selected → pass it
@@ -348,6 +479,7 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 							rows += `
 								<tr style="${row_style}">
 									<td>${d.drawing_number}</td>
+									<td style="text-align:center;">${d.position_no || ""}</td>
 									<td style="text-align:center;">${qty}</td>
 									<td style="text-align:center;">${length}</td>
 									<td style="text-align:center;">${width}</td>
@@ -384,6 +516,7 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 								<table class="table table-bordered" style="margin-top:15px;">
 									<tr>
 										<th >Drawing</th>
+										<th style="text-align: center;">Position No</th>
 										<th style="text-align: center;">Qty</th>
 										<th style="text-align: center;">Length</th>
 										<th style="text-align: center;">Width</th>
@@ -591,6 +724,21 @@ if (!window.XLSX) {
 	document.head.appendChild(script);
 }
 $(`<style>
+	.datatable {
+    width: 100% !important;
+}
+
+.datatable .dt-scrollable {
+    overflow-x: auto !important;
+}
+
+.datatable-wrapper {
+    width: 100% !important;
+}
+
+.report-wrapper {
+    max-width: 100% !important;
+}
 	.report-summary .summary-item{
 		max-width: 100%;
 		min-width: 100%;

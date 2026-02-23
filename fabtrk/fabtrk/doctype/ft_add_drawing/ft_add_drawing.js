@@ -33,11 +33,8 @@ function set_drawing_filter(frm) {
         method: "frappe.client.get_list",
         args: {
             doctype: "FT Add Drawing",
-            // filters: {
-            //     project_number: frm.doc.project_number
-            // },
             fields: ["drawing_number"],
-            // limit: 1000
+            
         },
         callback(r) {
             let used_drawings = [];
