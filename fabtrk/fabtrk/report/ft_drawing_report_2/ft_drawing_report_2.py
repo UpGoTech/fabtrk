@@ -1,6 +1,3 @@
-
-
-
 import frappe
 from frappe.utils import fmt_money
 
@@ -74,27 +71,28 @@ def execute(filters=None):
     total_no_of_drawings = len(drawing_ids)
     total_po_drawings = len(po_rows)
 
-    total_weight_as_per_project = sum(d.get("total_weight", 0) for d in raw_data if d.get("project_name") != "TOTAL")
+    # Total Weight as per Project
+    project_conditions = ""
+    project_values = {}
+    if filters.get("project_number"):
+        project_conditions += " AND name IN %(project_number)s"
+        project_values["project_number"] = tuple(filters.get("project_number"))
+    if filters.get("is_active"):
+        project_conditions += " AND is_active = 1"
+
+    project_total_weight = frappe.db.sql(
+        f"SELECT SUM(total_weight) FROM `tabFT Project` WHERE 1=1 {project_conditions}",
+        project_values,
+    )
+    project_total_weight = project_total_weight[0][0] if project_total_weight and project_total_weight[0][0] else 0
+    
     total_weight_po_items = sum(d.get("total_weight", 0) for d in po_rows)
 
-    # project_names = {d.project_name for d in raw_data if d.project_name}
-    # drawing_ids = {d.drawing_id for d in raw_data if d.drawing_id}
-    # po_rows = [d for d in raw_data if d.po_serial_no]
-
-    # total_projects = len(project_names)
-    # total_no_of_drawings = len(drawing_ids)
-    # total_po_drawings = len(po_rows)
-
-    # # Project total weight
-    # total_weight_as_per_project = sum(d.total_weight for d in raw_data)
-
-    # # PO Line Items total weight
-    # total_weight_po_items = sum(d.total_weight for d in po_rows)
-
+    
     # Drawing balance for customer = project total - PO items total
-    drawing_balance_for_customer = total_weight_as_per_project - total_weight_po_items
+    drawing_balance_for_customer = project_total_weight - total_weight_po_items
 
-    formatted_total_weight_as_per_project = "{:,.3f}".format(total_weight_as_per_project)
+    formatted_total_weight_as_per_project = "{:,.3f}".format(project_total_weight)
     formatted_total_weight_po_items = "{:,.3f}".format(total_weight_po_items)
     formatted_drawing_balance_for_customer = "{:,.3f}".format(drawing_balance_for_customer)
 

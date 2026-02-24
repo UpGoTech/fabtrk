@@ -1,5 +1,3 @@
-
-
 // # this code for multi select filter filed
 frappe.query_reports["FT Drawing Report 2"] = {
 
@@ -8,6 +6,11 @@ frappe.query_reports["FT Drawing Report 2"] = {
 		frappe.query_report.set_filter_value("project_number", []);
 		frappe.query_report.set_filter_value("drawing_number", []);
 		frappe.query_report.set_filter_value("is_active", 1);
+
+		// Add Buttons
+		report.page.add_inner_button("Download Drawings", function () {
+			download_csv(report);
+		});
 
 		setTimeout(() => {
 			frappe.query_report.refresh();
@@ -102,24 +105,56 @@ frappe.query_reports["FT Drawing Report 2"] = {
 				report.datatable.hideColumn(field);
 			}
 		});
+	}, 
+	formatter: function (value, row, column, data, default_formatter) {
+
+		value = default_formatter(value, row, column, data);
+
+		if (data && data.project_name === "TOTAL") {
+			value = `<span style="font-weight:bold; background-color:#f5f5f5;">
+                        ${value}
+                     </span>`;
+		}
+
+		return value;
 	}
 };
 
-frappe.query_reports["FT Drawing Report 2"] = {
-    formatter: function (value, row, column, data, default_formatter) {
 
-        value = default_formatter(value, row, column, data);
 
-        if (data && data.project_name === "TOTAL") {
-            value = `<span style="font-weight:bold; background-color:#f5f5f5;">
-                        ${value}
-                     </span>`;
-        }
+function download_csv(report) {
 
-        return value;
-    }
-};
+	if (!report.data || !report.data.length) {
+		frappe.msgprint("No data to export");
+		return;
+	}
 
+	let columns = report.columns
+		.filter(col => col.fieldname !== "view")
+		.map(col => `"${col.label}"`);
+
+	let rows = report.data.map(row => {
+		return report.columns
+			.filter(col => col.fieldname !== "view")
+			.map(col => {
+				let value = row[col.fieldname] ?? "";
+				value = String(value).replace(/"/g, '""');
+				return `"${value}"`;
+			}).join(",");
+	});
+
+	let csv_content = columns.join(",") + "\n" + rows.join("\n");
+
+	let blob = new Blob([csv_content], { type: "text/csv;charset=utf-8;" });
+	let url = URL.createObjectURL(blob);
+
+	let link = document.createElement("a");
+	link.href = url;
+	link.download = "FT_Drawing_Report.csv";
+	document.body.appendChild(link);
+	link.click();
+	document.body.removeChild(link);
+}
 
 $(`<style>
 
@@ -246,4 +281,3 @@ $(`<style>
 }
 
 </style>`).appendTo("head");
-
