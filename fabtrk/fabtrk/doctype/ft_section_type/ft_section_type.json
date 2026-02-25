@@ -19,14 +19,14 @@
   },
   {
    "fieldname": "sort_key",
-   "fieldtype": "Data",
+   "fieldtype": "Int",
    "in_list_view": 1,
    "label": "Sort Key"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-18 16:55:31.055495",
+ "modified": "2026-02-25 16:41:57.749155",
  "modified_by": "Administrator",
  "module": "Fabtrk",
  "name": "FT Section Type",

@@ -585,6 +585,28 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 					}
 				});
 			});
+
+
+		setTimeout(() => {
+
+			// Loop all rows
+			$(report.wrapper).find(".datatable .dt-row").each(function () {
+
+				let project_cell = $(this).find(".dt-cell").eq(1);
+				// eq(0) = row number
+				// eq(1) = first visible column (Project)
+
+				if (project_cell.text().trim() === "TOTAL") {
+
+					// Hide row number cell
+					$(this).find(".dt-cell").eq(0).html("");
+
+					// Optional: make TOTAL bold
+					$(this).css("font-weight", "600");
+				}
+			});
+
+		}, 100);
 	}
 };
 

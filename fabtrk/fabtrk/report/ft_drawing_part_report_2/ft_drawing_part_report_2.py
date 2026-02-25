@@ -105,7 +105,6 @@ def execute(filters=None):
             </button>
         </div>
         """
-
     # ---------------- SUMMARY ----------------
     # total_projects = len({d["project_name"] for d in data if d.get("project_name")})
     # ✅ FIXED: Total Projects (works even if drawing parts = 0)
@@ -254,6 +253,23 @@ def execute(filters=None):
             "datatype": "HTML",
         }
     ]
+    
+     # =====================================================
+    # ✅ ADD GRAND TOTAL ROW (After Summary Calculation)
+    # =====================================================
+
+    if data:
+        grand_total_weight = sum(d["total_weight"] for d in data)
+        # grand_total_weight = sum(float(d.get("total_weight") or 0) for d in data)
+
+        data.append({
+            "project_name": "TOTAL",
+            "item_name": "",
+            "item_count": None,
+            "total_weight": grand_total_weight,
+            "view": ""
+        })
+
 
     return columns, data, None, None, report_summary  
 
@@ -340,3 +356,6 @@ def get_all_details_for_export(filters):
     """, values, as_dict=True)
 
     return data
+
+    
+    

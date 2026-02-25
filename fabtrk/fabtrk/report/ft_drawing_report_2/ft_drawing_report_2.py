@@ -55,7 +55,7 @@ def execute(filters=None):
         "drawing_number": "",
         "po_serial_no": "",
         "unit_weight": total_unit_weight,
-        "quantity": "",
+        "quantity": None,
         "total_weight": total_total_weight
     })
 
