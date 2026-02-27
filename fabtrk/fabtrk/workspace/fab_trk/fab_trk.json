@@ -1,7 +1,7 @@
 {
  "charts": [],
  "content": "[{\"id\":\"nODy7KBzB7\",\"type\":\"card\",\"data\":{\"card_name\":\"Customer Master \",\"col\":4}},{\"id\":\"tQ-xGQIfWi\",\"type\":\"card\",\"data\":{\"card_name\":\"Raw Material Master\",\"col\":4}},{\"id\":\"C-CdGnQA5C\",\"type\":\"card\",\"data\":{\"card_name\":\"Project Master\",\"col\":4}},{\"id\":\"UM6iMJgOWS\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Reports</b></span>\",\"col\":12}},{\"id\":\"4yf-S8zJPU\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Drawings\",\"col\":7}},{\"id\":\"ia3Yl3cnx2\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Drawings MRP\",\"col\":7}}]",
- "creation": "2026-02-17 11:42:12.136765",
+ "creation": "2026-02-27 12:41:37.808567",
  "custom_blocks": [],
  "docstatus": 0,
  "doctype": "Workspace",
@@ -85,7 +85,7 @@
    "hidden": 0,
    "is_query_report": 0,
    "label": "Project Master",
-   "link_count": 4,
+   "link_count": 5,
    "link_type": "DocType",
    "onboard": 0,
    "type": "Card Break"
@@ -115,7 +115,17 @@
    "is_query_report": 0,
    "label": "Project Drawings ",
    "link_count": 0,
-   "link_to": "Add Drawing",
+   "link_to": "FT Add Drawing",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": " Po Drawing",
+   "link_count": 0,
+   "link_to": "FT Po Drawing",
    "link_type": "DocType",
    "onboard": 0,
    "type": "Link"
@@ -125,13 +135,13 @@
    "is_query_report": 0,
    "label": "Project Drawing Parts",
    "link_count": 0,
-   "link_to": "Drawing Parts",
+   "link_to": "FT Drawing Parts",
    "link_type": "DocType",
    "onboard": 0,
    "type": "Link"
   }
  ],
- "modified": "2026-02-21 13:49:45.303840",
+ "modified": "2026-02-27 12:41:37.808567",
  "modified_by": "Administrator",
  "module": "Fabtrk",
  "name": "Fab Trk",

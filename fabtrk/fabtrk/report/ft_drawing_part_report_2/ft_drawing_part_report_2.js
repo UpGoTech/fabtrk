@@ -111,9 +111,7 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 					method: "frappe.client.get_list",
 					args: {
 						doctype: "FT Add Drawing",
-						filters: filters,
 						fields: ["name", "drawing_number"],
-
 						filters: filters,
 					}
 				}).then(r => {
@@ -474,6 +472,28 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 				// window.open(url);
 				window.location.href = url;
 			});
+
+
+		setTimeout(() => {
+
+			// Loop all rows
+			$(report.wrapper).find(".datatable .dt-row").each(function () {
+
+				let project_cell = $(this).find(".dt-cell").eq(1);
+				// eq(0) = row number
+				// eq(1) = first visible column (Project)
+
+				if (project_cell.text().trim() === "TOTAL") {
+
+					// Hide row number cell
+					$(this).find(".dt-cell").eq(0).html("");
+
+					// Optional: make TOTAL bold
+					$(this).css("font-weight", "600");
+				}
+			});
+
+		}, 100);
 	}
 };
 
@@ -595,6 +615,7 @@ if (!window.XLSX) {
 	script.src = "https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js";
 	document.head.appendChild(script);
 }
+
 $(`<style>
 	.datatable {
     width: 100% !important;
@@ -622,7 +643,7 @@ $(`<style>
 	.summary-container{
 		display: grid;
 		grid-template-columns: repeat(1, 1fr) !important;
-		place-items: center;
+		// place-items: center;
 		gap: 20px;
 	}
 	@media (min-width: 768px) and (max-width: 1023px) {
@@ -632,7 +653,7 @@ $(`<style>
 	}
 	@media (min-width: 1024px) {
 		.summary-container{
-			grid-template-columns: repeat(3, 1fr) !important;
+			grid-template-columns: repeat(5, 1fr) !important;
 		}
 	}
 	.report-summary .summary-value .summary-container {

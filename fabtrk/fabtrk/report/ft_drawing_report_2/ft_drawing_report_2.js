@@ -6,7 +6,18 @@ frappe.query_reports["FT Drawing Report 2"] = {
 		frappe.query_report.set_filter_value("project_number", []);
 		frappe.query_report.set_filter_value("drawing_number", []);
 		frappe.query_report.set_filter_value("is_active", 1);
-		
+
+		report.page.add_inner_button("Download Drawing Excel", function () {
+
+			let filters = report.get_values();
+
+			let url = "/api/method/fabtrk.fabtrk.report.ft_drawing_report_2.ft_drawing_report_2.download_drawing_excel"
+				+ "?filters=" + encodeURIComponent(JSON.stringify(filters));
+
+			window.location.href = url;
+
+		});
+
 		setTimeout(() => {
 			frappe.query_report.refresh();
 		}, 100);
@@ -72,8 +83,6 @@ frappe.query_reports["FT Drawing Report 2"] = {
 				frappe.query_report.refresh();
 			}
 		},
-
-
 		{
 			fieldname: "is_active",
 			label: "Is Active",
@@ -99,9 +108,20 @@ frappe.query_reports["FT Drawing Report 2"] = {
 				report.datatable.hideColumn(field);
 			}
 		});
+	},
+	formatter: function (value, row, column, data, default_formatter) {
+
+		value = default_formatter(value, row, column, data);
+
+		if (data && data.project_name === "TOTAL") {
+			value = `<span style="font-weight:bold; background-color:#f5f5f5;">
+                        ${value}
+                     </span>`;
+		}
+
+		return value;
 	}
 };
-
 
 $(`<style>
 
@@ -153,7 +173,7 @@ $(`<style>
 
 .summary-container {
     display: grid;
-    grid-template-columns: repeat(3, 1fr) !important;
+    grid-template-columns: repeat(4, 1fr) !important;
     gap: 20px;
     place-items: center;
     width: 100%;
@@ -182,7 +202,30 @@ $(`<style>
     border-radius: 10px;
     text-align: center;
     border: 2px solid #eef0f4;
+
+	
 }
+
+
+
+/* Starting 2 cards - waise ke waise */
+.summary-section:first-child,
+.summary-section:nth-child(2) {
+    width: 100%;
+    min-height: auto; /* default height */
+}
+
+/* Last 2 cards - equalize width & height with first 2 cards */
+.summary-section:nth-child(3),
+.summary-section:nth-child(4) {
+    width: 100%;
+    min-height: 135px;   /* same height as first 2 cards */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+
 
 .section-content-count p{
     font-size: 14px;

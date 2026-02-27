@@ -1,5 +1,7 @@
 {
  "actions": [],
+ "allow_import": 1,
+ "autoname": "format:{computed_name}",
  "creation": "2026-02-02 13:45:33.871896",
  "doctype": "DocType",
  "engine": "InnoDB",
@@ -27,6 +29,7 @@
    "fieldname": "computed_name",
    "fieldtype": "Data",
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Computed Name",
    "unique": 1
   },
@@ -46,6 +49,7 @@
    "fieldname": "stock_rm_type",
    "fieldtype": "Link",
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Stock RM Type",
    "options": "FT Section Type"
   },
@@ -82,10 +86,11 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-18 16:57:29.470852",
+ "modified": "2026-02-25 18:21:07.035673",
  "modified_by": "Administrator",
  "module": "Fabtrk",
  "name": "FT Stock RM List",
+ "naming_rule": "Expression",
  "owner": "Administrator",
  "permissions": [
   {

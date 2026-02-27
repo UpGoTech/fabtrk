@@ -92,8 +92,25 @@ function update_computed_name(frm) {
 
         base_name = frm.doc.stock_rm_type || "";
 
+        // if (frm.doc.thickness_mm !== undefined && frm.doc.thickness_mm !== null) {
+        //     let thickness = String(frm.doc.thickness_mm).padStart(2, "0");
+        //     size_part = thickness + " THK";
+        // }
         if (frm.doc.thickness_mm !== undefined && frm.doc.thickness_mm !== null) {
-            let thickness = String(frm.doc.thickness_mm).padStart(2, "0");
+
+            let thickness = String(frm.doc.thickness_mm);
+
+            // Agar decimal hai (3.56 type)
+            if (thickness.includes(".")) {
+                let parts = thickness.split(".");
+                let intPart = parts[0].padStart(2, "0");
+                thickness = intPart + "." + parts[1];
+            }
+            else {
+                // Agar sirf integer hai (3 type)
+                thickness = thickness.padStart(2, "0");
+            }
+
             size_part = thickness + " THK";
         }
 
