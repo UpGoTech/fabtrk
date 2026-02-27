@@ -1,27 +1,8 @@
-frappe.listview_settings["FT Add Drawing"] = {
-    formatters: {
-        unit_weight(value) {
-            if (value !== undefined && value !== null) {
-                return Number(value).toFixed(3);
-            }
-            return value;
-        },
-        total_weight(value) {
-            if (value !== undefined && value !== null) {
-                return Number(value).toFixed(3);
-            }
-            return value;
-        }
-    },
-    // onload(listview) {
-    //     listview.page.add_inner_button("Export", function() {
-    //         window.open("/app/data-export/new-data-export?reference_doctype=FT Add Drawing");
-    //     });
-    // }
+frappe.listview_settings["FT Stock RM List"] = {
     onload(listview) {
 
         let btn = listview.page.add_inner_button("Export", function() {
-            window.open("/app/data-export/new-data-export?reference_doctype=FT Drawing Parts");
+            window.open("/app/data-export/new-data-export?reference_doctype=FT Stock RM List");
         });
 
         btn.removeClass("btn-default");
