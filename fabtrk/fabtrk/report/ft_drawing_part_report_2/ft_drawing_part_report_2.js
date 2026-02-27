@@ -1,21 +1,68 @@
 frappe.query_reports["FT Drawing Part Report 2"] = {
 
 	onload(report) {
-
+		// Set default filters
 		frappe.query_report.set_filter_value("project_number", []);
 		frappe.query_report.set_filter_value("drawing_number", []);
 		frappe.query_report.set_filter_value("item", []);
 		frappe.query_report.set_filter_value("is_active", 1);
 
-		// Add Buttons
-		report.page.add_inner_button("Download Drawing Parts", function () {
-			download_csv(report);
-		});
+		// report.page.add_inner_button("Download Item Excel", function () {
 
+		// 	let filters = report.get_values();
+
+		// 	let url = "/api/method/fabtrk.fabtrk.report.ft_drawing_part_report_2.ft_drawing_part_report_2.download_item_excel"
+		// 		+ "?filters=" + encodeURIComponent(JSON.stringify(filters));
+
+		// 	let link = document.createElement("a");
+		// 	link.href = url;
+		// 	link.download = "Item_Report.xlsx";
+		// 	document.body.appendChild(link);
+		// 	link.click();
+		// 	document.body.removeChild(link);
+
+		// });
+
+		// ===============================
+		// Download Summary Excel
+		// ===============================
+		report.page.add_inner_button("Download Item Excel", function () {
+
+			let filters = report.get_values();
+
+			let url = "/api/method/fabtrk.fabtrk.report.ft_drawing_part_report_2.ft_drawing_part_report_2.download_item_excel"
+				+ "?filters=" + encodeURIComponent(JSON.stringify(filters));
+
+			let link = document.createElement("a");
+			link.href = url;
+			link.download = "Item_Report.xlsx";
+			document.body.appendChild(link);
+			link.click();
+			document.body.removeChild(link);
+
+		});
+		// Add download full report button to both summary and detail tables in Excel with two different sheets for detail and summary
+		// report.page.add_inner_button("Download Full Report", function () {
+		// 	download_full_report(report);
+		// });
 		report.page.add_inner_button("Download Full Report", function () {
-			download_full_report(report);
-		});
 
+			frappe.call({
+				method: "fabtrk.fabtrk.report.ft_drawing_part_report_2.ft_drawing_part_report_2.get_all_details_for_export",
+				args: { filters: report.get_values() },
+				callback: function (r) {
+					if (r.message) {
+						const link = document.createElement("a");
+						link.href = r.message;
+						link.download = "FT_Drawing_Part_Report.xlsx";
+						document.body.appendChild(link);
+						link.click();
+						document.body.removeChild(link);
+					}
+				}
+			});
+
+		});
 		setTimeout(() => {
 			frappe.query_report.refresh();
 		}, 100);
@@ -97,136 +144,6 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 				clear_item_details();
 			}
 		},
-
-
-
-		// ---------------- ITEM ----------------
-		// {
-		// 	fieldname: "item",
-		// 	label: "Drawing Part",
-		// 	fieldtype: "MultiSelectList",
-
-		// 	get_data: function (txt) {
-
-		// 		let projects = frappe.query_report.get_filter_value("project_number") || [];
-		// 		let drawings = frappe.query_report.get_filter_value("drawing_number") || [];
-
-		// 		// ---------------- CASE 1 ----------------
-		// 		// Nothing selected → show all items
-		// 		if (!projects.length && !drawings.length) {
-
-		// 			return frappe.call({
-		// 				method: "frappe.client.get_list",
-		// 				args: {
-		// 					doctype: "FT Stock RM List",
-		// 					fields: ["name", "computed_name"],
-		// 					filters: [["computed_name", "like", "%" + txt + "%"]]
-		// 				}
-		// 			}).then(r => {
-		// 				return (r.message || []).map(d => ({
-		// 					value: d.name,
-		// 					label: d.computed_name,
-		// 					description: ""
-		// 				}));
-		// 			});
-		// 		}
-
-		// 		// ---------------- CASE 2 ----------------
-		// 		// Project selected but no drawing
-		// 		if (projects.length && !drawings.length) {
-
-		// 			return frappe.call({
-		// 				method: "frappe.client.get_list",
-		// 				args: {
-		// 					doctype: "FT Drawing Parts",
-		// 					fields: ["item"],
-		// 					filters: [["project_number", "in", projects]]
-		// 				}
-		// 			}).then(r => {
-
-		// 				let unique_items = [...new Set((r.message || []).map(d => d.item))];
-		// 				if (!unique_items.length) return [];
-
-		// 				return frappe.call({
-		// 					method: "frappe.client.get_list",
-		// 					args: {
-		// 						doctype: "FT Stock RM List",
-		// 						fields: ["name", "computed_name"],
-		// 						filters: [
-		// 							["name", "in", unique_items],
-		// 							["computed_name", "like", "%" + txt + "%"]
-		// 						]
-		// 					}
-		// 				}).then(res => {
-		// 					return (res.message || []).map(d => ({
-		// 						value: d.name,
-		// 						label: d.computed_name,
-		// 						description: ""
-		// 					}));
-		// 				});
-
-		// 			});
-		// 		}
-
-		// 		// ---------------- CASE 3 ----------------
-		// 		// Drawing selected → PROPER FIX
-		// 		if (drawings.length) {
-
-		// 			// Step 1: Get FT Add Drawing document names
-		// 			return frappe.call({
-		// 				method: "frappe.client.get_list",
-		// 				args: {
-		// 					doctype: "FT Add Drawing",
-		// 					fields: ["name"],
-		// 					filters: [
-		// 						["drawing_number", "in", drawings]
-		// 					]
-		// 				}
-		// 			}).then(res => {
-
-		// 				let drawing_names = (res.message || []).map(d => d.name);
-		// 				if (!drawing_names.length) return [];
-
-		// 				// Step 2: Get items from FT Drawing Parts
-		// 				return frappe.call({
-		// 					method: "frappe.client.get_list",
-		// 					args: {
-		// 						doctype: "FT Drawing Parts",
-		// 						fields: ["item"],
-		// 						filters: [
-		// 							["drawing_number", "in", drawing_names]
-		// 						]
-		// 					}
-		// 				}).then(r => {
-
-		// 					let unique_items = [...new Set((r.message || []).map(d => d.item))];
-		// 					if (!unique_items.length) return [];
-
-		// 					return frappe.call({
-		// 						method: "frappe.client.get_list",
-		// 						args: {
-		// 							doctype: "FT Stock RM List",
-		// 							fields: ["name", "computed_name"],
-		// 							filters: [
-		// 								["name", "in", unique_items],
-		// 								["computed_name", "like", "%" + txt + "%"]
-		// 							]
-		// 						}
-		// 					}).then(res2 => {
-		// 						return (res2.message || []).map(d => ({
-		// 							value: d.name,
-		// 							label: d.computed_name,
-		// 							description: ""
-		// 						}));
-		// 					});
-
-		// 				});
-
-		// 			});
-		// 		}
-		// 	}
-		// },
-
 
 		// ---------------- ITEM ----------------
 		{
@@ -496,7 +413,6 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 							}
 						});
 
-
 						let html = `
 							<div id="item-detail-container"
 								style="margin-top:20px; padding:20px; border:1px solid #ddd;">
@@ -504,7 +420,10 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 								<div style="display:flex;justify-content:space-between;align-items:center;">
 									<h4>Item Details - ${r.message.item_name}</h4>
 									<div style="display:flex; gap:20px;">
-										<button class="btn btn-xs btn-primary summary-download">
+										
+										<button class="btn btn-xs btn-primary summary-download"
+											data-item="${item}"
+											data-project="${project}">
 											Download List
 										</button>
 										<button class="btn btn-xs btn-danger close-view">
@@ -534,58 +453,26 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 							$("#item-detail-container").remove();
 							$(".view-btn").removeClass("active-detail");
 						});
-						// only summary table download
-						$(".summary-download").on("click", function () {
-
-							let rows = [];
-
-							// Get Title
-							let title = $("#item-detail-container h4").text().trim();
-							title = title.replace(/"/g, '""');
-
-							// Add title as first row
-							// rows.push(""); // blank line before title
-							rows.push(`"${title}"`);
-							// rows.push(""); // blank line after title
-
-							// Now extract table
-							$("#item-detail-container table tr").each(function () {
-
-								let cols = [];
-
-								$(this).find("th, td").each(function () {
-									let text = $(this).text().trim();
-									text = text.replace(/"/g, '""');
-									cols.push(`"${text}"`);
-								});
-
-								rows.push(cols.join(","));
-							});
-
-							if (!rows.length) {
-								frappe.msgprint("No data to export");
-								return;
-							}
-
-							let csv_content = rows.join("\n");
-
-							let blob = new Blob([csv_content], { type: "text/csv;charset=utf-8;" });
-							let url = URL.createObjectURL(blob);
-
-							let link = document.createElement("a");
-							link.href = url;
-
-							// Clean filename (replace spaces & special chars)
-							let clean_name = title.replace(/[^a-z0-9]/gi, "_").toLowerCase();
-
-							link.download = `${clean_name}.csv`;
-
-							document.body.appendChild(link);
-							link.click();
-							document.body.removeChild(link);
-						});
 					}
 				});
+			});
+		// Dynamic button click
+		$(document).off("click", ".summary-download")
+			.on("click", ".summary-download", function () {
+
+				let item_name = $(this).data("item");
+				let project_name = $(this).data("project");
+
+				let filters = {
+					item: item_name,
+					project: project_name
+				};
+
+				let url = "/api/method/fabtrk.fabtrk.report.ft_drawing_part_report_2.ft_drawing_part_report_2.download_item_details_excel"
+					+ "?filters=" + encodeURIComponent(JSON.stringify(filters));
+
+				// window.open(url);
+				window.location.href = url;
 			});
 	}
 };
@@ -595,40 +482,25 @@ function clear_item_details() {
 	$("#item-detail-container").remove();
 	$(".view-btn").removeClass("active-detail");
 }
+// download current item details in Excel
+function download_item_details(item_name, project_name) {
 
-function download_csv(report) {
+	let filters = {
+		item: item_name,
+		project: project_name
+	};
 
-	if (!report.data || !report.data.length) {
-		frappe.msgprint("No data to export");
-		return;
-	}
-
-	let columns = report.columns
-		.filter(col => col.fieldname !== "view") // remove View button column
-		.map(col => `"${col.label}"`);
-
-	let rows = report.data.map(row => {
-		return report.columns
-			.filter(col => col.fieldname !== "view")
-			.map(col => {
-				let value = row[col.fieldname] ?? "";
-				value = String(value).replace(/"/g, '""'); // escape quotes
-				return `"${value}"`;
-			}).join(",");
-	});
-
-	let csv_content = columns.join(",") + "\n" + rows.join("\n");
-
-	let blob = new Blob([csv_content], { type: "text/csv;charset=utf-8;" });
-	let url = URL.createObjectURL(blob);
+	let url = "/api/method/fabtrk.fabtrk.report.ft_drawing_part_report_2.ft_drawing_part_report_2.download_item_details_excel"
+		+ "?filters=" + encodeURIComponent(JSON.stringify(filters));
 
 	let link = document.createElement("a");
 	link.href = url;
-	link.download = "FT_Drawing_Part_Report.csv";
+	link.download = "Item_Details.xlsx";
 	document.body.appendChild(link);
 	link.click();
 	document.body.removeChild(link);
 }
+
 // download both summary and detail tables in Excel with two defferent sheet for detail and summary
 function download_full_report(report) {
 
