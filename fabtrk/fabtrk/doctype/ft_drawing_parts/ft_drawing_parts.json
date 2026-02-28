@@ -1,6 +1,7 @@
 {
  "actions": [],
  "allow_import": 1,
+ "autoname": "naming_series:",
  "creation": "2026-02-04 18:21:01.983129",
  "doctype": "DocType",
  "engine": "InnoDB",
@@ -8,6 +9,8 @@
   "project_number",
   "drawing_number",
   "position_no",
+  "naming_series",
+  "item_id",
   "item",
   "lenght",
   "width",
@@ -29,13 +32,6 @@
    "fieldtype": "Float",
    "in_list_view": 1,
    "label": "Quantity  "
-  },
-  {
-   "fieldname": "item",
-   "fieldtype": "Link",
-   "in_list_view": 1,
-   "label": "Item",
-   "options": "FT Stock RM List"
   },
   {
    "fieldname": "lenght",
@@ -78,14 +74,36 @@
    "fieldname": "width",
    "fieldtype": "Float",
    "label": "Width"
+  },
+  {
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "hidden": 1,
+   "label": "Ft Series ",
+   "options": "FT-DP-"
+  },
+  {
+   "fieldname": "item_id",
+   "fieldtype": "Link",
+   "label": "Item ID",
+   "options": "FT Stock RM List"
+  },
+  {
+   "fetch_from": "item_id.computed_name",
+   "fieldname": "item",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Item"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-28 15:31:33.349205",
+ "modified": "2026-02-27 17:34:16.428797",
  "modified_by": "Administrator",
  "module": "Fabtrk",
  "name": "FT Drawing Parts",
+ "naming_rule": "By \"Naming Series\" field",
  "owner": "Administrator",
  "permissions": [
   {

@@ -4,7 +4,7 @@ def execute(filters=None):
     filters = filters or {}
 
     columns = [
-        {"label": "Project", "fieldname": "project_name", "fieldtype": "Link", "options": "FT Project", "width": 200},
+        {"label": "Project", "fieldname": "project_name", "fieldtype": "Link", "options": "FT Project", "width": 190},
         {"label": "Item", "fieldname": "item_name", "width": 400},
         {"label": "Total Entries", "fieldname": "item_count", "fieldtype": "Int", "width": 200, "align": "center"},
         {"label": "Total Weight", "fieldname": "total_weight", "fieldtype": "Float", "width": 200, "align": "center"},
@@ -24,7 +24,7 @@ def execute(filters=None):
         values["drawing_number"] = tuple(filters.get("drawing_number"))
 
     if filters.get("item"):
-        conditions += " AND dp.item IN %(item)s"
+        conditions += " AND dp.item_id IN %(item)s"
         values["item"] = tuple(filters.get("item"))
 
     if filters.get("stock_rm_type"):
@@ -46,15 +46,15 @@ def execute(filters=None):
     FROM `tabFT Project` p
     LEFT JOIN `tabFT Add Drawing` ad ON ad.project_number = p.name
     LEFT JOIN `tabFT Drawing Parts` dp ON dp.drawing_number = ad.name
-    LEFT JOIN `tabFT Stock RM List` rm ON rm.name = dp.item
+    LEFT JOIN `tabFT Stock RM List` rm ON rm.name = dp.item_id
     LEFT JOIN `tabFT Section Type` st ON st.name = rm.stock_rm_type
     WHERE 1=1
         {conditions}
-    GROUP BY p.name, dp.item, rm.computed_name, st.sort_key
+    GROUP BY p.name, dp.item_id, rm.computed_name, st.sort_key
     HAVING 
-        dp.item IS NOT NULL
+        dp.item_id IS NOT NULL
         OR (
-            dp.item IS NULL
+            dp.item_id IS NULL
             AND NOT EXISTS (
                 SELECT 1
                 FROM `tabFT Add Drawing` ad2
@@ -370,7 +370,7 @@ def get_all_details_for_export(filters):
         values["drawing_number"] = tuple(filters.get("drawing_number"))
 
     if filters.get("item"):
-        conditions += " AND dp.item IN %(item)s"
+        conditions += " AND dp.item_id IN %(item)s"
         values["item"] = tuple(filters.get("item"))
 
     # ---------------- DETAIL DATA ----------------
@@ -388,7 +388,7 @@ def get_all_details_for_export(filters):
         FROM `tabFT Drawing Parts` dp        
         LEFT JOIN `tabFT Add Drawing` ad ON ad.name = dp.drawing_number
         LEFT JOIN `tabFT Project` p ON p.name = ad.project_number
-        LEFT JOIN `tabFT Stock RM List` rm ON rm.name = dp.item
+        LEFT JOIN `tabFT Stock RM List` rm ON rm.name = dp.item_id
         WHERE 1=1 {conditions}
         ORDER BY p.name, ad.drawing_number
     """, values, as_dict=True)
@@ -403,7 +403,7 @@ def get_all_details_for_export(filters):
         FROM `tabFT Drawing Parts` dp
         LEFT JOIN `tabFT Add Drawing` ad ON ad.name = dp.drawing_number
         LEFT JOIN `tabFT Project` p ON p.name = ad.project_number
-        LEFT JOIN `tabFT Stock RM List` rm ON rm.name = dp.item
+        LEFT JOIN `tabFT Stock RM List` rm ON rm.name = dp.item_id
         WHERE 1=1 {conditions}
         GROUP BY p.name, rm.computed_name
         ORDER BY p.name
@@ -756,7 +756,7 @@ def download_item_excel(filters):
         values["project_number"] = tuple(filters.get("project_number"))
 
     if filters.get("item"):
-        conditions += " AND dp.item IN %(item)s"
+        conditions += " AND dp.item_id IN %(item)s"
         values["item"] = tuple(filters.get("item"))
 
     data = frappe.db.sql(f"""
@@ -768,7 +768,7 @@ def download_item_excel(filters):
         FROM `tabFT Drawing Parts` dp
         LEFT JOIN `tabFT Add Drawing` ad ON ad.name = dp.drawing_number
         LEFT JOIN `tabFT Project` p ON p.name = ad.project_number
-        LEFT JOIN `tabFT Stock RM List` rm ON rm.name = dp.item
+        LEFT JOIN `tabFT Stock RM List` rm ON rm.name = dp.item_id
         WHERE 1=1 {conditions}
         GROUP BY p.name, rm.computed_name
         ORDER BY p.name
