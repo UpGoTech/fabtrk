@@ -5,5 +5,5 @@
 from frappe.tests.utils import FrappeTestCase
 
 
-class TestFTStockRMList(FrappeTestCase):
+class TestFTStockRM(FrappeTestCase):
 	pass

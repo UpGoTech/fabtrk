@@ -5,5 +5,5 @@
 from frappe.model.document import Document
 
 
-class FTStockRMList(Document):
+class FTStockRM(Document):
 	pass

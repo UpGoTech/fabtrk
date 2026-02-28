@@ -13,20 +13,16 @@ frappe.listview_settings["FT Add Drawing"] = {
             return value;
         }
     },
-    // onload(listview) {
-    //     listview.page.add_inner_button("Export", function() {
-    //         window.open("/app/data-export/new-data-export?reference_doctype=FT Add Drawing");
-    //     });
-    // }
     onload(listview) {
 
         let btn = listview.page.add_inner_button("Export", function() {
-            window.open("/app/data-export/new-data-export?reference_doctype=FT Drawing Parts");
+            window.open("/app/data-export/new-data-export?reference_doctype=FT Add Drawing");
         });
 
         btn.removeClass("btn-default");
         btn.addClass("no-hover-export-btn");
     }
+    
 };
 $("<style>")
     .prop("type", "text/css")

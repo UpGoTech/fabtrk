@@ -1,5 +1,5 @@
 
-frappe.ui.form.on("FT Stock RM List", {    
+frappe.ui.form.on("FT Stock RM", {    
     refresh(frm) {
         set_grade_filter(frm);
         update_computed_name(frm);
