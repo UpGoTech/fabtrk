@@ -347,6 +347,7 @@ def get_item_details(project, item, drawing_numbers=None):
 
 #     return data
 
+
 # The above function is the initial version for exporting details, but we will enhance it to create a well-formatted Excel file with separate sheets for summary and details, including styling and better organization of data.
 
 @frappe.whitelist()

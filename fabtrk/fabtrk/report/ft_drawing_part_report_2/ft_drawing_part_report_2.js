@@ -6,26 +6,7 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 		frappe.query_report.set_filter_value("drawing_number", []);
 		frappe.query_report.set_filter_value("item", []);
 		frappe.query_report.set_filter_value("is_active", 1);
-
-		// report.page.add_inner_button("Download Item Excel", function () {
-
-		// 	let filters = report.get_values();
-
-		// 	let url = "/api/method/fabtrk.fabtrk.report.ft_drawing_part_report_2.ft_drawing_part_report_2.download_item_excel"
-		// 		+ "?filters=" + encodeURIComponent(JSON.stringify(filters));
-
-		// 	let link = document.createElement("a");
-		// 	link.href = url;
-		// 	link.download = "Item_Report.xlsx";
-		// 	document.body.appendChild(link);
-		// 	link.click();
-		// 	document.body.removeChild(link);
-
-		// });
-
-		// ===============================
-		// Download Summary Excel
-		// ===============================
+		// Add download item details button to summary table
 		report.page.add_inner_button("Download Item Excel", function () {
 
 			let filters = report.get_values();

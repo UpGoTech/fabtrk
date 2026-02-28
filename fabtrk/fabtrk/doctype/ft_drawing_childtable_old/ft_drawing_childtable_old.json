@@ -25,7 +25,7 @@
    "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Stock Item",
-   "options": "FT Stock RM List"
+   "options": "FT Stock RM"
   },
   {
    "fetch_from": "stock_item.stock_weight_kg",
@@ -101,7 +101,7 @@
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2026-02-28 15:31:21.434880",
+ "modified": "2026-02-28 16:31:47.023068",
  "modified_by": "Administrator",
  "module": "Fabtrk",
  "name": "FT Drawing Childtable Old",

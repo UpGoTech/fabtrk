@@ -6,10 +6,6 @@ app_email = "info@upgotech.in"
 app_license = "mit"
 
 
-# doctype_list_js = {
-#     "FT Stock RM List": "public/js/ft_stock_rm_list_list.js"
-# }
-
 # Apps
 # ------------------
 

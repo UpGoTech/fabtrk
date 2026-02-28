@@ -8,7 +8,3 @@ from frappe.model.document import Document
 class FTDrawingParts(Document):
 	pass
 
-<<<<<<< HEAD
-=======
-
->>>>>>> origin/feature-1
