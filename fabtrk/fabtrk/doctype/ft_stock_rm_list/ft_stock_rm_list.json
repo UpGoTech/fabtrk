@@ -11,6 +11,7 @@
   "grade",
   "stock_rm_type",
   "thickness_mm",
+  "thk",
   "kg__sqm",
   "name1",
   "kg__meter",
@@ -89,11 +90,17 @@
    "fieldtype": "Select",
    "label": "Series ",
    "options": "FT-S-"
+  },
+  {
+   "default": "1",
+   "fieldname": "thk",
+   "fieldtype": "Check",
+   "label": "THK"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-27 16:28:49.296682",
+ "modified": "2026-03-02 13:43:53.123901",
  "modified_by": "Administrator",
  "module": "Fabtrk",
  "name": "FT Stock RM List",
