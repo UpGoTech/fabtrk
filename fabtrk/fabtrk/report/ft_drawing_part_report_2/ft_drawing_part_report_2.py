@@ -404,7 +404,7 @@ def get_all_details_for_export(filters):
         FROM `tabFT Drawing Parts` dp
         LEFT JOIN `tabFT Add Drawing` ad ON ad.name = dp.drawing_number
         LEFT JOIN `tabFT Project` p ON p.name = ad.project_number
-        LEFT JOIN `tabFT Stock RM List` rm ON rm.name = dp.item_id
+        LEFT JOIN `tabFT Stock RM List` rm ON rm.name = dp.item
         WHERE 1=1 {conditions}
         GROUP BY p.name, rm.computed_name
         ORDER BY p.name

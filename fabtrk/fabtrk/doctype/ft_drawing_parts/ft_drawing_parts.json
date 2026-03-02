@@ -86,7 +86,7 @@
    "fieldname": "item_id",
    "fieldtype": "Link",
    "label": "Item ID",
-   "options": "FT Stock RM"
+   "options": "FT Stock RM List"
   },
   {
    "fetch_from": "item_id.computed_name",
@@ -99,7 +99,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-28 16:31:46.705518",
+ "modified": "2026-02-28 17:12:45.572738",
  "modified_by": "Administrator",
  "module": "Fabtrk",
  "name": "FT Drawing Parts",
