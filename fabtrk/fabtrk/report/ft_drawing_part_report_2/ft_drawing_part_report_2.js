@@ -21,11 +21,34 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 			link.click();
 			document.body.removeChild(link);
 
-		});
-		// Add download full report button to both summary and detail tables in Excel with two different sheets for detail and summary
+		// Add Buttons
+		// report.page.add_inner_button("Download Drawing Parts", function () {
+		// 	download_csv(report);
+		// });
+
 		// report.page.add_inner_button("Download Full Report", function () {
 		// 	download_full_report(report);
 		// });
+
+
+		// Add download item details button to summary table
+		report.page.add_inner_button("Download Item Excel", function () {
+
+			let filters = report.get_values();
+
+			let url = "/api/method/fabtrk.fabtrk.report.ft_drawing_part_report_2.ft_drawing_part_report_2.download_item_excel"
+				+ "?filters=" + encodeURIComponent(JSON.stringify(filters));
+
+			let link = document.createElement("a");
+			link.href = url;
+			link.download = "Item_Report.xlsx";
+			document.body.appendChild(link);
+			link.click();
+			document.body.removeChild(link);
+
+		});
+
+		// Add download full report button to both summary and detail tables in Excel with two different sheets for detail and summary
 		report.page.add_inner_button("Download Full Report", function () {
 
 			frappe.call({
@@ -44,6 +67,8 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 			});
 
 		});
+		});
+
 		setTimeout(() => {
 			frappe.query_report.refresh();
 		}, 100);
@@ -405,9 +430,7 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 								<div style="display:flex;justify-content:space-between;align-items:center;">
 									<h4>Item Details - ${r.message.item_name}</h4>
 									<div style="display:flex; gap:20px;">
-										
-										<button class="btn btn-xs btn-primary summary-download"
-											data-item="${item}"
+										<button class="btn btn-xs btn-primary summary-download" data-item="${item}"
 											data-project="${project}">
 											Download List
 										</button>
@@ -461,6 +484,26 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 			});
 
 
+		// Dynamic button click
+		$(document).off("click", ".summary-download")
+			.on("click", ".summary-download", function () {
+
+				let item_name = $(this).data("item");
+				let project_name = $(this).data("project");
+
+				let filters = {
+					item: item_name,
+					project: project_name
+				};
+
+				let url = "/api/method/fabtrk.fabtrk.report.ft_drawing_part_report_2.ft_drawing_part_report_2.download_item_details_excel"
+					+ "?filters=" + encodeURIComponent(JSON.stringify(filters));
+
+				// window.open(url);
+				window.location.href = url;
+			});
+
+
 		setTimeout(() => {
 
 			// Loop all rows
@@ -488,6 +531,144 @@ function clear_item_details() {
 	$(".view-btn").removeClass("active-detail");
 }
 // download current item details in Excel
+// function download_item_details(item_name, project_name) {
+
+
+
+
+// function download_csv(report) {
+
+// 	if (!report.data || !report.data.length) {
+// 		frappe.msgprint("No data to export");
+// 		return;
+// 	}
+
+// 	let columns = report.columns
+// 		.filter(col => col.fieldname !== "view") // remove View button column
+// 		.map(col => `"${col.label}"`);
+
+// 	let rows = report.data.map(row => {
+// 		return report.columns
+// 			.filter(col => col.fieldname !== "view")
+// 			.map(col => {
+// 				let value = row[col.fieldname] ?? "";
+// 				value = String(value).replace(/"/g, '""'); // escape quotes
+// 				return `"${value}"`;
+// 			}).join(",");
+// 	});
+
+// 	let csv_content = columns.join(",") + "\n" + rows.join("\n");
+
+// 	let blob = new Blob([csv_content], { type: "text/csv;charset=utf-8;" });
+// 	let url = URL.createObjectURL(blob);
+
+// 	let link = document.createElement("a");
+// 	link.href = url;
+// 	link.download = "FT_Drawing_Part_Report.csv";
+// 	document.body.appendChild(link);
+// 	link.click();
+// 	document.body.removeChild(link);
+// }
+// // download both summary and detail tables in Excel with two defferent sheet for detail and summary
+// function download_full_report(report) {
+
+// 	if (!report.data || !report.data.length) {
+// 		frappe.msgprint("No data to export");
+// 		return;
+// 	}
+
+// 	if (!window.XLSX) {
+// 		frappe.msgprint("Excel library loading... try again");
+// 		return;
+// 	}
+
+// 	// -----------------------
+// 	// SHEET 1 → SUMMARY TABLE
+// 	// -----------------------
+
+// 	let summary_data = [];
+
+// 	let valid_columns = report.columns.filter(col =>
+// 		col.fieldname && col.fieldname !== "view"
+// 	);
+
+// 	// Header row
+// 	summary_data.push(valid_columns.map(col => col.label));
+
+// 	// Data rows
+// 	report.data.forEach(row => {
+// 		summary_data.push(
+// 			valid_columns.map(col => row[col.fieldname] ?? "")
+// 		);
+// 	});
+
+// 	let summary_ws = XLSX.utils.aoa_to_sheet(summary_data);
+
+
+// 	// -----------------------
+// 	// SHEET 2 → ALL DETAILS
+// 	// -----------------------
+
+// 	let detail_data = [];
+// 	detail_data.push([
+// 		"Project",
+// 		"Item",
+// 		"Drawing",
+// 		"Qty",
+// 		"Length",
+// 		"Width",
+// 		"Single Weight",
+// 		"Total Weight"
+// 	]);
+
+// 	let filters = frappe.query_report.get_filter_values();
+
+// 	frappe.call({
+// 		method: "fabtrk.fabtrk.report.ft_drawing_part_report_2.ft_drawing_part_report_2.get_all_details_for_export",
+// 		args: {
+// 			filters: filters
+// 		},
+// 		async: false,
+// 		callback: function (r) {
+
+// 			(r.message || []).forEach(d => {
+// 				detail_data.push([
+// 					d.project,
+// 					d.item_name,
+// 					d.drawing_number,
+// 					d.quantity,
+// 					d.lenght,
+// 					d.width,
+// 					d.single_weight,
+// 					d.total_weight
+// 				]);
+// 			});
+// 		}
+// 	});
+
+// 	let detail_ws = XLSX.utils.aoa_to_sheet(detail_data);
+
+// 	// -----------------------
+// 	// CREATE WORKBOOK
+// 	// -----------------------
+
+// 	let wb = XLSX.utils.book_new();
+// 	XLSX.utils.book_append_sheet(wb, summary_ws, "Summary");
+// 	XLSX.utils.book_append_sheet(wb, detail_ws, "Details");
+
+// 	XLSX.writeFile(wb, "FT_Drawing_Part_Report.xlsx");
+// }
+// if (!window.XLSX) {
+// 	let script = document.createElement("script");
+// 	script.src = "https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js";
+// 	document.head.appendChild(script);
+// }
+
+
+
+
+// download current item details in Excel
+
 function download_item_details(item_name, project_name) {
 
 	let filters = {
@@ -506,7 +687,7 @@ function download_item_details(item_name, project_name) {
 	document.body.removeChild(link);
 }
 
-// download both summary and detail tables in Excel with two defferent sheet for detail and summary
+// download full report both summary and detail tables in Excel with two defferent sheet for detail and summary
 function download_full_report(report) {
 
 	if (!report.data || !report.data.length) {
@@ -571,7 +752,7 @@ function download_full_report(report) {
 			(r.message || []).forEach(d => {
 				detail_data.push([
 					d.project,
-					d.item_name,
+					d.item_id,
 					d.drawing_number,
 					d.quantity,
 					d.lenght,
@@ -600,6 +781,7 @@ if (!window.XLSX) {
 	script.src = "https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js";
 	document.head.appendChild(script);
 }
+
 
 $(`<style>
 

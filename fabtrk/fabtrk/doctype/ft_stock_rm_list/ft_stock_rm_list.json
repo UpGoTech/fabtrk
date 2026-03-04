@@ -1,0 +1,129 @@
+{
+ "actions": [],
+ "allow_import": 1,
+ "autoname": "naming_series:",
+ "creation": "2026-02-02 13:45:33.871896",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "naming_series",
+  "section_type",
+  "grade",
+  "stock_rm_type",
+  "thickness_mm",
+  "thk",
+  "kg__sqm",
+  "name1",
+  "kg__meter",
+  "surface_area_sqm__mtr",
+  "surface_area_sqm__ton",
+  "computed_name"
+ ],
+ "fields": [
+  {
+   "fieldname": "section_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Grade for Section / Plate",
+   "options": "\nPlate\nSection"
+  },
+  {
+   "fieldname": "computed_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Computed Name",
+   "unique": 1
+  },
+  {
+   "depends_on": "eval:(doc.section_type == 'Plate')",
+   "fieldname": "thickness_mm",
+   "fieldtype": "Float",
+   "label": "Thickness MM"
+  },
+  {
+   "fieldname": "grade",
+   "fieldtype": "Link",
+   "label": "Grade",
+   "options": "FT Material Grade Catalogues"
+  },
+  {
+   "fieldname": "stock_rm_type",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Stock RM Type",
+   "options": "FT Section Type"
+  },
+  {
+   "depends_on": "eval:(doc.section_type == 'Plate')",
+   "fieldname": "kg__sqm",
+   "fieldtype": "Float",
+   "label": "KG / Sq.m"
+  },
+  {
+   "depends_on": "eval:(doc.section_type == 'Section')",
+   "fieldname": "surface_area_sqm__mtr",
+   "fieldtype": "Float",
+   "label": "Surface Area Sq.M / Mtr"
+  },
+  {
+   "depends_on": "eval:(doc.section_type == 'Section')",
+   "fieldname": "surface_area_sqm__ton",
+   "fieldtype": "Float",
+   "label": "Surface Area Sq.M / Ton "
+  },
+  {
+   "depends_on": "eval:(doc.section_type == 'Section')",
+   "fieldname": "kg__meter",
+   "fieldtype": "Float",
+   "label": "Kg / Meter"
+  },
+  {
+   "depends_on": "eval:(doc.section_type == 'Section')",
+   "fieldname": "name1",
+   "fieldtype": "Data",
+   "label": "Name"
+  },
+  {
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "label": "Series ",
+   "options": "FT-S-"
+  },
+  {
+   "default": "1",
+   "fieldname": "thk",
+   "fieldtype": "Check",
+   "label": "THK"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-03-02 13:43:53.123901",
+ "modified_by": "Administrator",
+ "module": "Fabtrk",
+ "name": "FT Stock RM List",
+ "naming_rule": "By \"Naming Series\" field",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "computed_name",
+ "track_changes": 1,
+ "track_views": 1
+}

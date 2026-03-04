@@ -307,10 +307,9 @@ def get_item_details(project, item, drawing_numbers=None):
     return {"item_name": item_name, "data": rows}
 
 
-# The initial version of this function was a simple data export, but we have enhanced it to create a well-formatted Excel file with separate sheets for summary and details.
+# # ---------------- EXCEL EXPORT ----------------
 # @frappe.whitelist()
 # def get_all_details_for_export(filters):
-
 #     filters = frappe.parse_json(filters)
 #     conditions = ""
 #     values = {}
@@ -324,7 +323,7 @@ def get_item_details(project, item, drawing_numbers=None):
 #         values["drawing_number"] = tuple(filters.get("drawing_number"))
 
 #     if filters.get("item"):
-#         conditions += " AND dp.item IN %(item)s"
+#         conditions += " AND dp.item_id IN %(item)s"
 #         values["item"] = tuple(filters.get("item"))
 
 #     data = frappe.db.sql(f"""
@@ -340,16 +339,17 @@ def get_item_details(project, item, drawing_numbers=None):
 #         FROM `tabFT Drawing Parts` dp
 #         LEFT JOIN `tabFT Add Drawing` ad ON ad.name = dp.drawing_number
 #         LEFT JOIN `tabFT Project` p ON p.name = ad.project_number
-#         LEFT JOIN `tabFT Stock RM List` rm ON rm.name = dp.item
+#         LEFT JOIN `tabFT Stock RM List` rm ON rm.name = dp.item_id
 #         WHERE 1=1 {conditions}
 #         ORDER BY p.name, ad.drawing_number
 #     """, values, as_dict=True)
 
 #     return data
 
-
+    
+    
+    
 # The above function is the initial version for exporting details, but we will enhance it to create a well-formatted Excel file with separate sheets for summary and details, including styling and better organization of data.
-
 @frappe.whitelist()
 def get_all_details_for_export(filters):
     import openpyxl
@@ -404,7 +404,7 @@ def get_all_details_for_export(filters):
         FROM `tabFT Drawing Parts` dp
         LEFT JOIN `tabFT Add Drawing` ad ON ad.name = dp.drawing_number
         LEFT JOIN `tabFT Project` p ON p.name = ad.project_number
-        LEFT JOIN `tabFT Stock RM List` rm ON rm.name = dp.item
+        LEFT JOIN `tabFT Stock RM List` rm ON rm.name = dp.item_id
         WHERE 1=1 {conditions}
         GROUP BY p.name, rm.computed_name
         ORDER BY p.name
@@ -868,7 +868,7 @@ def download_item_excel(filters):
     frappe.response['filename'] = "Item_Report.xlsx"
     frappe.response['filecontent'] = file_stream.getvalue()
     frappe.response['type'] = 'binary'
-
+    
 
 # The above function generates a well-formatted Excel file for item details, including styling and better organization of data. It handles cases where values might be None or 0, ensuring the Excel file is clean and readable.
 @frappe.whitelist()
@@ -999,3 +999,6 @@ def download_item_details_excel(filters):
     frappe.response['filename'] = "Item_Details.xlsx"
     frappe.response['filecontent'] = file_stream.getvalue()
     frappe.response['type'] = 'download'
+    
+    
+    
