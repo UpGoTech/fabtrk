@@ -34,7 +34,7 @@ def execute(filters=None):
             ad.drawing_number AS drawing_number,
             pod.po_serial_no AS po_serial_no,
             IFNULL(ad.unit_weight, 0) AS unit_weight,
-            IFNULL(ad.quantity, 0) AS quantity,
+               AS quantity,
             (IFNULL(ad.unit_weight,0) * IFNULL(ad.quantity,0)) AS total_weight
         FROM `tabFT Project` p
         LEFT JOIN `tabFT Add Drawing` ad
