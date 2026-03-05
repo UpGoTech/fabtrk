@@ -4,13 +4,17 @@ def execute(filters=None):
     filters = filters or {}
 
     columns = [
-        {"label": "Project", "fieldname": "project_name", "fieldtype": "Link", "options": "FT Project", "width": 190},
-        {"label": "Item", "fieldname": "item_name", "width": 400},
-        {"label": "Total Entries", "fieldname": "item_count", "fieldtype": "Int", "width": 200, "align": "center"},
-        {"label": "Total Weight", "fieldname": "total_weight", "fieldtype": "Float", "width": 200, "align": "center"},
-        {"label": "Details", "fieldname": "view", "fieldtype": "HTML", "width": 200, "align": "center"},
+        {"label": "Project", "fieldname": "project_name", "fieldtype": "Link", "options": "FT Project", "width": 100},
+        {"label": "Item", "fieldname": "item_name", "width": 420},
+        {"label": "Total Entries", "fieldname": "item_count", "fieldtype": "Int", "width": 110, "align": "center"},
+        {"label": "Total Qty", "fieldname": "quantity", "fieldtype": "Int", "width": 85, "align": "center"},
+        {"label": "Total Length", "fieldname": "lenght", "fieldtype": "Float", "width": 110, "align": "center"},
+        {"label": "Total Width", "fieldname": "width", "fieldtype": "Float", "width": 120, "align": "center"},
+        {"label": "Total Weight", "fieldname": "total_weight", "fieldtype": "Float", "width": 110, "align": "center"},
+        {"label": "Details", "fieldname": "view", "fieldtype": "HTML", "width": 130, "align": "center"},
     ]
-
+ 
+           
     # ---------------- CONDITIONS ----------------
     conditions = ""
     values = {}
@@ -20,7 +24,8 @@ def execute(filters=None):
         values["project_number"] = tuple(filters.get("project_number"))
 
     if filters.get("drawing_number"):
-        conditions += " AND ad.drawing_number IN %(drawing_number)s"
+        # conditions += " AND ad.drawing_number IN %(drawing_number)s"
+        conditions += " AND ad.name IN %(drawing_number)s"
         values["drawing_number"] = tuple(filters.get("drawing_number"))
 
     if filters.get("item"):
@@ -42,6 +47,9 @@ def execute(filters=None):
         rm.computed_name AS item_name,
         COALESCE(CAST(st.sort_key AS UNSIGNED), 9999) AS sort_key,
         COUNT(dp.name) AS item_count,
+        SUM(COALESCE(dp.quantity, 0)) AS quantity,
+        SUM(COALESCE(dp.lenght, 0)) AS lenght,
+        SUM(COALESCE(dp.width, 0)) AS width,
         SUM(COALESCE(dp.total_weight, 0)) AS total_weight
     FROM `tabFT Project` p
     LEFT JOIN `tabFT Add Drawing` ad ON ad.project_number = p.name
@@ -79,7 +87,8 @@ def execute(filters=None):
             FROM `tabFT Project` p
             LEFT JOIN `tabFT Add Drawing` ad 
                 ON ad.project_number = p.name
-            WHERE ad.drawing_number IN %(drawing_number)s
+            # WHERE ad.drawing_number IN %(drawing_number)s
+            WHERE ad.name IN %(drawing_number)s
         """, {
             "drawing_number": tuple(filters.get("drawing_number"))
         }, as_dict=True)
@@ -94,6 +103,9 @@ def execute(filters=None):
 
     for row in data:
         row["item_count"] = row.get("item_count") or 0
+        row["quantity"] = row.get("quantity") or 0
+        row["lenght"] = row.get("lenght") or 0
+        row["width"] = row.get("width") or 0
         row["total_weight"] = row.get("total_weight") or 0
         row["item_name"] = row.get("item_name") or "-"
         row["view"] = f"""
@@ -137,7 +149,8 @@ def execute(filters=None):
     LEFT JOIN `tabFT Add Drawing` ad ON ad.project_number = p.name
     WHERE 1=1
         {" AND p.name IN %(project_number)s" if filters.get("project_number") else ""}
-        {" AND ad.drawing_number IN %(drawing_number)s" if filters.get("drawing_number") else ""}
+        # {" AND ad.drawing_number IN %(drawing_number)s" if filters.get("drawing_number") else ""}
+        {" AND ad.name IN %(drawing_number)s" if filters.get("drawing_number") else ""}
         {" AND p.is_active = 1" if filters.get("is_active") else ""}
     """
     drawing_values = {k: v for k, v in values.items() if k in ["project_number", "drawing_number"]}
@@ -171,10 +184,11 @@ def execute(filters=None):
 
     if filters.get("drawing_number"):
         po_conditions += """
-            AND pod.drawing_number IN (
-                SELECT name FROM `tabFT Add Drawing`
-                WHERE drawing_number IN %(drawing_number)s
-            )
+            # AND pod.drawing_number IN (
+            #     SELECT name FROM `tabFT Add Drawing`
+            #     WHERE drawing_number IN %(drawing_number)s
+            # )
+            AND pod.drawing_number IN %(drawing_number)s
         """
         po_values["drawing_number"] = tuple(filters.get("drawing_number"))
 
@@ -261,23 +275,45 @@ def execute(filters=None):
     if data:
         grand_total_weight = sum(d["total_weight"] for d in data)
         # grand_total_weight = sum(float(d.get("total_weight") or 0) for d in data)
+        grand_total_qty = sum(d["quantity"] for d in data)
+        grand_total_length = sum(d["lenght"] for d in data)
+        grand_total_width = sum(d["width"] for d in data)
+    
+        data.append({
+            "project_name": "TOTAL",
+            "item_name": "",
+            "item_count": None,
+            "quantity": grand_total_qty,
+            "lenght": grand_total_length,
+            "width": grand_total_width,
+            "total_weight": grand_total_weight,
+            "view": ""
+        })
 
-# ---------------- GET ITEM DETAILS FOR MODAL ----------------
+
+    return columns, data, None, None, report_summary  
+
+# ---------------- ITEM DETAILS ----------------
 @frappe.whitelist()
 def get_item_details(project, item, drawing_numbers=None):
+    from collections import defaultdict
+
     conditions = " WHERE p.name = %s AND dp.item = %s "
     values = [project, item]
 
     if drawing_numbers:
         drawing_numbers = frappe.parse_json(drawing_numbers)
         if drawing_numbers:
-            conditions += " AND ad.drawing_number IN %s "
+            # conditions += " AND ad.drawing_number IN %s "
+            conditions += " AND ad.name IN %s "
             values.append(tuple(drawing_numbers))
 
     rows = frappe.db.sql(f"""
         SELECT
-            ad.drawing_number AS drawing_number,            
-            dp.position_no AS position_no,            
+            p.name AS project_number,
+            pod.po_serial_no AS po_serial_no,
+            ad.drawing_number AS drawing_number,
+            dp.position_no AS position_no,
             dp.quantity,
             dp.lenght,
             dp.width,
@@ -286,20 +322,86 @@ def get_item_details(project, item, drawing_numbers=None):
         FROM `tabFT Drawing Parts` dp
         LEFT JOIN `tabFT Add Drawing` ad ON ad.name = dp.drawing_number
         LEFT JOIN `tabFT Project` p ON p.name = ad.project_number
+        LEFT JOIN `tabFT Po Drawing` pod
+            ON pod.project_number = p.name
+            AND pod.drawing_number = ad.name
         {conditions}
-        ORDER BY ad.drawing_number
+        ORDER BY 
+            CAST(pod.po_serial_no AS UNSIGNED) ASC,
+            ad.drawing_number ASC
     """, tuple(values), as_dict=True)
 
-    grand_total = sum(d.get("total_weight", 0) for d in rows)
-
-    rows.append({
-        "drawing_number": "<b>Total</b>",
+    # ---------------- GROUP SAME ROWS ----------------
+    grouped = defaultdict(lambda: {
+        "project_number": "",
+        "po_serial_no": "",
+        "drawing_number": "",
         "position_no": "",
-        "quantity": "",
-        "lenght": "",
-        "width": "",
+        "quantity": 0,
+        "lenght": 0,
+        "width": 0,
+        "single_weight": 0,
+        "total_weight": 0,
+        "entry_count": 0
+    })
+
+    for d in rows:
+        key = (
+            d.get("project_number"),
+            d.get("po_serial_no"),
+            d.get("drawing_number"),
+            d.get("position_no"),
+            d.get("quantity"),
+            d.get("lenght"),
+            d.get("width"),
+            d.get("single_weight"),
+            d.get("total_weight"),
+        )
+
+        grouped[key]["project_number"] = d.get("project_number")
+        grouped[key]["po_serial_no"] = d.get("po_serial_no")
+        grouped[key]["drawing_number"] = d.get("drawing_number")
+        grouped[key]["position_no"] = d.get("position_no")
+        grouped[key]["quantity"] = d.get("quantity")
+        grouped[key]["lenght"] = d.get("lenght")
+        grouped[key]["width"] = d.get("width")
+        grouped[key]["single_weight"] = d.get("single_weight")
+        grouped[key]["total_weight"] = d.get("total_weight")
+
+        grouped[key]["entry_count"] += 1
+
+    rows = list(grouped.values())
+
+    # ---------------- TOTAL CALCULATION ----------------
+    grand_total_weight = 0
+    grand_total_qty = 0
+    grand_total_length = 0
+    grand_total_width = 0
+
+    serial_no = 1
+
+    for d in rows:
+        d["serial_no"] = serial_no
+        serial_no += 1
+
+        grand_total_weight += d.get("total_weight") or 0
+        grand_total_qty += d.get("quantity") or 0
+        grand_total_length += d.get("lenght") or 0
+        grand_total_width += d.get("width") or 0
+
+    # ---------------- TOTAL ROW ----------------
+    rows.append({
+        "serial_no": "",
+        "project_number": "<b>Total</b>",
+        "po_serial_no": "",
+        "drawing_number": "",
+        "position_no": "",
+        "entry_count": "",
+        "quantity": grand_total_qty,
+        "lenght": grand_total_length,
+        "width": grand_total_width,
         "single_weight": "",
-        "total_weight": grand_total
+        "total_weight": grand_total_weight
     })
 
     item_name = frappe.db.get_value("FT Stock RM List", item, "computed_name") or item
@@ -308,47 +410,6 @@ def get_item_details(project, item, drawing_numbers=None):
 
 
 # # ---------------- EXCEL EXPORT ----------------
-# @frappe.whitelist()
-# def get_all_details_for_export(filters):
-#     filters = frappe.parse_json(filters)
-#     conditions = ""
-#     values = {}
-
-#     if filters.get("project_number"):
-#         conditions += " AND p.name IN %(project_number)s"
-#         values["project_number"] = tuple(filters.get("project_number"))
-
-#     if filters.get("drawing_number"):
-#         conditions += " AND ad.drawing_number IN %(drawing_number)s"
-#         values["drawing_number"] = tuple(filters.get("drawing_number"))
-
-#     if filters.get("item"):
-#         conditions += " AND dp.item_id IN %(item)s"
-#         values["item"] = tuple(filters.get("item"))
-
-#     data = frappe.db.sql(f"""
-#         SELECT
-#             p.name as project,
-#             rm.computed_name as item_name,
-#             ad.drawing_number,
-#             dp.quantity,
-#             dp.lenght,
-#             dp.width,
-#             dp.single_weight,
-#             dp.total_weight
-#         FROM `tabFT Drawing Parts` dp
-#         LEFT JOIN `tabFT Add Drawing` ad ON ad.name = dp.drawing_number
-#         LEFT JOIN `tabFT Project` p ON p.name = ad.project_number
-#         LEFT JOIN `tabFT Stock RM List` rm ON rm.name = dp.item_id
-#         WHERE 1=1 {conditions}
-#         ORDER BY p.name, ad.drawing_number
-#     """, values, as_dict=True)
-
-#     return data
-
-    
-    
-    
 # The above function is the initial version for exporting details, but we will enhance it to create a well-formatted Excel file with separate sheets for summary and details, including styling and better organization of data.
 @frappe.whitelist()
 def get_all_details_for_export(filters):
@@ -878,6 +939,7 @@ def download_item_details_excel(filters):
     from openpyxl.styles import Font, PatternFill, Border, Side, Alignment
     from openpyxl.utils import get_column_letter
     from io import BytesIO
+    from collections import defaultdict
 
     filters = frappe.parse_json(filters)
 
@@ -886,7 +948,9 @@ def download_item_details_excel(filters):
 
     data = frappe.db.sql("""
         SELECT
-            dp.drawing_number as drawing,
+            p.name as project_number,
+            pod.po_serial_no,
+            ad.drawing_number as drawing,
             dp.position_no,
             dp.quantity,
             dp.lenght,
@@ -894,20 +958,69 @@ def download_item_details_excel(filters):
             dp.single_weight,
             dp.total_weight
         FROM `tabFT Drawing Parts` dp
-        LEFT JOIN `tabFT Add Drawing` ad
-            ON ad.name = dp.drawing_number
+        LEFT JOIN `tabFT Add Drawing` ad ON ad.name = dp.drawing_number
+        LEFT JOIN `tabFT Project` p ON p.name = ad.project_number
+        LEFT JOIN `tabFT Po Drawing` pod
+            ON pod.project_number = p.name
+            AND pod.drawing_number = ad.name
         WHERE dp.item = %(item)s
         AND ad.project_number = %(project)s
+        ORDER BY 
+            CAST(pod.po_serial_no AS UNSIGNED) ASC,
+            ad.drawing_number ASC
     """, {"item": item, "project": project}, as_dict=True)
+
+    # -------- GROUP SAME ROWS --------
+    grouped = defaultdict(lambda: {
+        "project_number": "",
+        "po_serial_no": "",
+        "drawing": "",
+        "position_no": "",
+        "quantity": 0,
+        "lenght": 0,
+        "width": 0,
+        "single_weight": 0,
+        "total_weight": 0,
+        "entry_count": 0
+    })
+
+    for d in data:
+        key = (
+            d.get("project_number"),
+            d.get("po_serial_no"),
+            d.get("drawing"),
+            d.get("position_no"),
+            d.get("quantity"),
+            d.get("lenght"),
+            d.get("width"),
+            d.get("single_weight"),
+            d.get("total_weight"),
+        )
+
+        grouped[key]["project_number"] = d.get("project_number")
+        grouped[key]["po_serial_no"] = d.get("po_serial_no")
+        grouped[key]["drawing"] = d.get("drawing")
+        grouped[key]["position_no"] = d.get("position_no")
+        grouped[key]["quantity"] = d.get("quantity")
+        grouped[key]["lenght"] = d.get("lenght")
+        grouped[key]["width"] = d.get("width")
+        grouped[key]["single_weight"] = d.get("single_weight")
+        grouped[key]["total_weight"] = d.get("total_weight")
+        grouped[key]["entry_count"] += 1
+
+    data = list(grouped.values())
 
     wb = openpyxl.Workbook()
     ws = wb.active
     ws.title = "Item Details"
-    # ws.row_dimensions[1].height = 28
 
     headers = [
+        "Sr No",
+        "Project No",
+        "Po Serial No",
         "Drawing",
-        "Position",
+        "Position No",
+        "Entry Count",
         "Qty",
         "Length",
         "Width",
@@ -915,21 +1028,18 @@ def download_item_details_excel(filters):
         "Total Weight"
     ]
 
-    # ---------- STYLES ----------
+    # -------- STYLES --------
     header_font = Font(bold=True, size=13, color="FFFFFF")
     header_fill = PatternFill(start_color="2F75B5", end_color="2F75B5", fill_type="solid")
-
     data_font = Font(size=12)
     total_font = Font(bold=True, size=14)
-
     total_fill = PatternFill(start_color="F3F3F3", end_color="F3F3F3", fill_type="solid")
 
     thin = Side(style="thin")
     center = Alignment(horizontal="center", vertical="center")
-
     full_border = Border(left=thin, right=thin, top=thin, bottom=thin)
 
-    # ---------- HEADER ----------
+    # -------- HEADER --------
     for col, header in enumerate(headers, 1):
         cell = ws.cell(row=1, column=col, value=header)
         cell.font = header_font
@@ -938,14 +1048,20 @@ def download_item_details_excel(filters):
         cell.alignment = center
 
     row_no = 2
-    total_weight_sum = 0
+    serial_no = 1
 
-    # ---------- DATA ROWS ----------
+    total_qty = total_length = total_width = total_weight = 0
+
+    # -------- DATA ROWS --------
     for d in data:
 
         row_values = [
+            serial_no,
+            d.get("project_number"),
+            d.get("po_serial_no"),
             d.get("drawing"),
             d.get("position_no"),
+            d.get("entry_count"),
             d.get("quantity"),
             d.get("lenght"),
             d.get("width"),
@@ -953,52 +1069,75 @@ def download_item_details_excel(filters):
             d.get("total_weight"),
         ]
 
-        total_weight_sum += d.get("total_weight") or 0
+        total_qty += d.get("quantity") or 0
+        total_length += d.get("lenght") or 0
+        total_width += d.get("width") or 0
+        total_weight += d.get("total_weight") or 0
 
         for col, val in enumerate(row_values, 1):
             cell = ws.cell(row=row_no, column=col, value=val)
             cell.font = data_font
             cell.border = full_border
             cell.alignment = center
+            
+            # Formatting for Single Weight (column 10)
+            if col == 10:
+                cell.number_format = '#,##0.000'
+
+            # Formatting for Total Weight (column 11)
+            if col == 11:
+                cell.number_format = '#,##0.000'
 
         row_no += 1
+        serial_no += 1
 
-    # ---------- TOTAL ROW ----------
-    for col in range(1, 8):
-
+    # -------- TOTAL ROW --------
+    for col in range(1, 12):
         cell = ws.cell(row=row_no, column=col)
         cell.fill = total_fill
-        cell.alignment = start_align = Alignment(horizontal="left", vertical="center") if col == 1 else center
+        cell.alignment = center
 
-        # LEFT OUTER BORDER
         if col == 1:
-            cell.border = Border(left=thin, top=thin, bottom=thin)
             cell.value = "Total"
             cell.font = total_font
+            cell.border = Border(left=thin, top=thin, bottom=thin)
 
-        # RIGHT OUTER BORDER
         elif col == 7:
-            cell.border = Border(right=thin, left=thin, top=thin, bottom=thin)
-            cell.value = total_weight_sum
+            cell.value = total_qty
             cell.font = total_font
+            cell.border = Border(top=thin, bottom=thin)
 
-        # MIDDLE CELLS (NO VERTICAL LINE)
+        elif col == 8:
+            cell.value = total_length
+            cell.font = total_font
+            cell.border = Border(top=thin, bottom=thin)
+
+        elif col == 9:
+            cell.value = total_width
+            cell.font = total_font
+            cell.border = Border(top=thin, bottom=thin)
+
+        elif col == 11:
+            cell.value = total_weight
+            cell.font = total_font
+            cell.border = Border(right=thin, left=thin, top=thin, bottom=thin)
+            cell.number_format = '#,##0.000'  # <-- yahan number format lagao
+
         else:
             cell.border = Border(top=thin, bottom=thin)
 
-    # ---------- COLUMN WIDTH ----------
-    widths = [22, 15, 10, 12, 12, 16, 16]
+    # -------- COLUMN WIDTH --------
+    widths = [8, 18, 15, 30, 15, 12, 10, 12, 12, 16, 16]
     for i, w in enumerate(widths, 1):
         ws.column_dimensions[get_column_letter(i)].width = w
 
-    # ---------- SAVE ----------
+    # -------- SAVE --------
     file_stream = BytesIO()
     wb.save(file_stream)
     file_stream.seek(0)
 
     frappe.response['filename'] = "Item_Details.xlsx"
     frappe.response['filecontent'] = file_stream.getvalue()
-    frappe.response['type'] = 'download'
-    
+    frappe.response['type'] = 'download'   
     
     
