@@ -1,3 +1,4 @@
+
 frappe.query_reports["FT Drawing Part Report 2"] = {
 
 	onload(report) {
@@ -58,7 +59,8 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 			});
 
 		});
-		
+
+
 		setTimeout(() => {
 			frappe.query_report.refresh();
 		}, 100);
@@ -83,61 +85,6 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 			}
 		},
 
-		// ---------------- DRAWING ----------------
-		// {
-		// 	fieldname: "drawing_number",
-		// 	label: "Drawing Number",
-		// 	fieldtype: "MultiSelectList",
-
-		// 	get_data: function (txt) {
-
-		// 		let projects = frappe.query_report.get_filter_value("project_number") || [];
-		// 		let filters = [];
-
-		// 		// Search filter (IMPORTANT)
-		// 		if (txt) {
-		// 			filters.push(["drawing_number", "like", "%" + txt + "%"]);
-		// 		}
-
-		// 		if (projects.length) {
-		// 			filters.push(["project_number", "in", projects]);
-		// 		}
-
-		// 		return frappe.call({
-		// 			method: "frappe.client.get_list",
-		// 			args: {
-		// 				doctype: "FT Add Drawing",
-		// 				fields: ["name", "drawing_number"],
-		// 				filters: filters,
-		// 			}
-		// 		}).then(r => {
-
-		// 			let unique = {};
-		// 			let result = [];
-
-		// 			(r.message || []).forEach(d => {
-		// 				if (d.drawing_number && !unique[d.drawing_number]) {
-		// 					unique[d.drawing_number] = true;
-
-		// 					result.push({
-		// 						value: d.drawing_number,
-		// 						label: d.drawing_number,
-		// 						description: ""
-		// 					});
-		// 				}
-		// 			});
-
-		// 			return result;
-		// 		});
-		// 	},
-
-		// 	on_change() {
-		// 		frappe.query_report.set_filter_value("item", []);
-		// 		frappe.query_report.refresh();
-
-		// 		clear_item_details();
-		// 	}
-		// },
 		{
 			fieldname: "drawing_number",
 			label: "Drawing Number",
@@ -228,8 +175,6 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 				frappe.query_report.refresh();
 			}
 		},
-
-
 
 
 		// ---------------- ITEM ----------------
@@ -324,8 +269,11 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 						args: {
 							doctype: "FT Add Drawing",
 							fields: ["name"],
+							// filters: [
+							// 	["drawing_number", "in", drawings]
+							// ],
 							filters: [
-								["drawing_number", "in", drawings]
+								["name", "in", drawings]
 							],
 							limit_page_length: 0
 						}
@@ -637,10 +585,7 @@ function download_full_report(report) {
 		return;
 	}
 
-	// -----------------------
 	// SHEET 1 → SUMMARY TABLE
-	// -----------------------
-
 	let summary_data = [];
 
 	let valid_columns = report.columns.filter(col =>
@@ -660,9 +605,7 @@ function download_full_report(report) {
 	let summary_ws = XLSX.utils.aoa_to_sheet(summary_data);
 
 
-	// -----------------------
 	// SHEET 2 → ALL DETAILS
-	// -----------------------
 
 	let detail_data = [];
 	detail_data.push([
@@ -703,9 +646,7 @@ function download_full_report(report) {
 
 	let detail_ws = XLSX.utils.aoa_to_sheet(detail_data);
 
-	// -----------------------
 	// CREATE WORKBOOK
-	// -----------------------
 
 	let wb = XLSX.utils.book_new();
 	XLSX.utils.book_append_sheet(wb, summary_ws, "Summary");
