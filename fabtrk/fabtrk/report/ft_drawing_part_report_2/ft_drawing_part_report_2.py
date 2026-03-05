@@ -1,3 +1,4 @@
+ 
 import frappe
 
 def execute(filters=None):
@@ -24,7 +25,6 @@ def execute(filters=None):
         values["project_number"] = tuple(filters.get("project_number"))
 
     if filters.get("drawing_number"):
-        # conditions += " AND ad.drawing_number IN %(drawing_number)s"
         conditions += " AND ad.name IN %(drawing_number)s"
         values["drawing_number"] = tuple(filters.get("drawing_number"))
 
@@ -43,9 +43,12 @@ def execute(filters=None):
     query = f"""
     SELECT
         p.name AS project_name,
-        dp.item AS item_id,
+        dp.item_id AS item_id,
         rm.computed_name AS item_name,
         COALESCE(CAST(st.sort_key AS UNSIGNED), 9999) AS sort_key,
+        
+        CAST(REGEXP_SUBSTR(rm.computed_name, '[0-9]+') AS UNSIGNED) AS item_sort,
+        
         COUNT(dp.name) AS item_count,
         SUM(COALESCE(dp.quantity, 0)) AS quantity,
         SUM(COALESCE(dp.lenght, 0)) AS lenght,
@@ -70,7 +73,7 @@ def execute(filters=None):
                 WHERE ad2.project_number = p.name
             )
         )
-    ORDER BY p.name, sort_key ASC
+    ORDER BY p.name, sort_key ASC,item_sort ASC
     """
 
     data = frappe.db.sql(query, values, as_dict=True) or []
@@ -87,7 +90,6 @@ def execute(filters=None):
             FROM `tabFT Project` p
             LEFT JOIN `tabFT Add Drawing` ad 
                 ON ad.project_number = p.name
-            # WHERE ad.drawing_number IN %(drawing_number)s
             WHERE ad.name IN %(drawing_number)s
         """, {
             "drawing_number": tuple(filters.get("drawing_number"))
@@ -96,8 +98,11 @@ def execute(filters=None):
         for proj in blank_projects:
             data.append({
                 "project_name": proj.name,
-                "item": "-",
-                "total_entries": 0,
+                "item_name": "-",
+                "item_count": 0,
+                "quantity": 0,
+                "lenght": 0,
+                "width": 0,
                 "total_weight": 0.000,
             })
 
@@ -134,7 +139,7 @@ def execute(filters=None):
         project_count_values["project_number"] = tuple(filters.get("project_number"))
 
     if filters.get("drawing_number"):
-        project_count_query += " AND ad.drawing_number IN %(drawing_number)s"
+        project_count_query += " AND ad.name IN %(drawing_number)s"
         project_count_values["drawing_number"] = tuple(filters.get("drawing_number"))
 
     if filters.get("is_active"):
@@ -149,7 +154,6 @@ def execute(filters=None):
     LEFT JOIN `tabFT Add Drawing` ad ON ad.project_number = p.name
     WHERE 1=1
         {" AND p.name IN %(project_number)s" if filters.get("project_number") else ""}
-        # {" AND ad.drawing_number IN %(drawing_number)s" if filters.get("drawing_number") else ""}
         {" AND ad.name IN %(drawing_number)s" if filters.get("drawing_number") else ""}
         {" AND p.is_active = 1" if filters.get("is_active") else ""}
     """
@@ -184,10 +188,6 @@ def execute(filters=None):
 
     if filters.get("drawing_number"):
         po_conditions += """
-            # AND pod.drawing_number IN (
-            #     SELECT name FROM `tabFT Add Drawing`
-            #     WHERE drawing_number IN %(drawing_number)s
-            # )
             AND pod.drawing_number IN %(drawing_number)s
         """
         po_values["drawing_number"] = tuple(filters.get("drawing_number"))
@@ -273,16 +273,16 @@ def execute(filters=None):
     # =====================================================
 
     if data:
-        grand_total_weight = sum(d["total_weight"] for d in data)
-        # grand_total_weight = sum(float(d.get("total_weight") or 0) for d in data)
-        grand_total_qty = sum(d["quantity"] for d in data)
-        grand_total_length = sum(d["lenght"] for d in data)
-        grand_total_width = sum(d["width"] for d in data)
+        grand_total_entries = sum(float(d.get("item_count") or 0) for d in data)
+        grand_total_weight = sum(float(d.get("total_weight") or 0) for d in data)
+        grand_total_qty = sum(float(d.get("quantity") or 0) for d in data)
+        grand_total_length = sum(float(d.get("lenght") or 0) for d in data)
+        grand_total_width = sum(float(d.get("width") or 0) for d in data)
     
         data.append({
             "project_name": "TOTAL",
             "item_name": "",
-            "item_count": None,
+            "item_count": grand_total_entries,
             "quantity": grand_total_qty,
             "lenght": grand_total_length,
             "width": grand_total_width,
@@ -298,13 +298,12 @@ def execute(filters=None):
 def get_item_details(project, item, drawing_numbers=None):
     from collections import defaultdict
 
-    conditions = " WHERE p.name = %s AND dp.item = %s "
+    conditions = " WHERE p.name = %s AND dp.item_id = %s "
     values = [project, item]
 
     if drawing_numbers:
         drawing_numbers = frappe.parse_json(drawing_numbers)
         if drawing_numbers:
-            # conditions += " AND ad.drawing_number IN %s "
             conditions += " AND ad.name IN %s "
             values.append(tuple(drawing_numbers))
 
@@ -327,7 +326,7 @@ def get_item_details(project, item, drawing_numbers=None):
             AND pod.drawing_number = ad.name
         {conditions}
         ORDER BY 
-            CAST(pod.po_serial_no AS UNSIGNED) ASC,
+            COALESCE(CAST(pod.po_serial_no AS UNSIGNED),0) ASC,
             ad.drawing_number ASC
     """, tuple(values), as_dict=True)
 
@@ -470,21 +469,7 @@ def get_all_details_for_export(filters):
         GROUP BY p.name, rm.computed_name
         ORDER BY p.name
     """, values, as_dict=True)
-    # summary_data = frappe.db.sql(f"""
-    #     SELECT
-    #         p.name as project,
-    #         rm.computed_name as item_name,
-    #         COUNT(dp.name) as total_entries,
-    #         COALESCE(SUM(dp.total_weight), 0) as total_weight
-    #     FROM `tabFT Project` p
-    #     LEFT JOIN `tabFT Add Drawing` ad ON ad.project_number = p.name
-    #     LEFT JOIN `tabFT Drawing Parts` dp ON dp.drawing_number = ad.name
-    #     LEFT JOIN `tabFT Stock RM List` rm ON rm.name = dp.item
-    #     WHERE 1=1 {conditions}
-    #     GROUP BY p.name, rm.computed_name
-    #     ORDER BY p.name
-    # """, values, as_dict=True)
-
+    
     wb = openpyxl.Workbook()
 
     header_font = Font(bold=True, color="FFFFFF")
@@ -981,4 +966,4 @@ def download_item_details_excel(filters):
     frappe.response['filecontent'] = file_stream.getvalue()
     frappe.response['type'] = 'download'   
     
-    
+        
