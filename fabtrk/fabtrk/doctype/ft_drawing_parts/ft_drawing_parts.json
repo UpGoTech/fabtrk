@@ -79,7 +79,7 @@
    "fieldname": "naming_series",
    "fieldtype": "Select",
    "hidden": 1,
-   "label": "Ft Series ",
+   "label": "FT Series ",
    "options": "FT-DP-"
   },
   {
@@ -99,7 +99,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-27 17:34:16.428797",
+ "modified": "2026-03-06 17:23:45.372400",
  "modified_by": "Administrator",
  "module": "Fabtrk",
  "name": "FT Drawing Parts",

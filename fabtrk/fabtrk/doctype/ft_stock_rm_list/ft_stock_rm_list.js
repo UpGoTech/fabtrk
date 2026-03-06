@@ -171,6 +171,7 @@
 
 
 // isme THK ke liye check data type use kiya hai uskeliye yeh cod
+
 frappe.ui.form.on("FT Stock RM List", {
 
     refresh(frm) {
@@ -348,3 +349,5 @@ function update_computed_name(frm) {
         }
     });
 }
+
+
