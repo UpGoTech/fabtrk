@@ -772,6 +772,8 @@ def download_item_details_excel(filters):
     item = filters.get("item")
     project = filters.get("project")
 
+    item_name = frappe.db.get_value("FT Stock RM List", item, "computed_name") or item
+
     data = frappe.db.sql("""
         SELECT
             p.name as project_number,
@@ -789,7 +791,7 @@ def download_item_details_excel(filters):
         LEFT JOIN `tabFT Po Drawing` pod
             ON pod.project_number = p.name
             AND pod.drawing_number = ad.name
-        WHERE dp.item = %(item)s
+        WHERE dp.item_id = %(item)s
         AND ad.project_number = %(project)s
         ORDER BY 
             CAST(pod.po_serial_no AS UNSIGNED) ASC,
@@ -839,6 +841,15 @@ def download_item_details_excel(filters):
     wb = openpyxl.Workbook()
     ws = wb.active
     ws.title = "Item Details"
+    
+    # -------- ITEM HEADING --------
+    ws.merge_cells(start_row=1, start_column=1, end_row=1, end_column=11)
+
+    title_cell = ws.cell(row=1, column=1)
+    title_cell.value = f"Item Details - {item_name}"
+    title_cell.font = Font(bold=True, size=16)
+    title_cell.alignment = Alignment(horizontal="center", vertical="center")
+
 
     headers = [
         "Sr No",
@@ -867,13 +878,13 @@ def download_item_details_excel(filters):
 
     # -------- HEADER --------
     for col, header in enumerate(headers, 1):
-        cell = ws.cell(row=1, column=col, value=header)
+        cell = ws.cell(row=2, column=col, value=header)
         cell.font = header_font
         cell.fill = header_fill
         cell.border = full_border
         cell.alignment = center
 
-    row_no = 2
+    row_no = 3
     serial_no = 1
 
     total_qty = total_length = total_width = total_weight = 0
