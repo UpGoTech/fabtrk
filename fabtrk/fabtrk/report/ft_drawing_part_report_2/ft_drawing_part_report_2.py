@@ -409,222 +409,154 @@ def get_item_details(project, item, drawing_numbers=None):
 
 
 # # ---------------- EXCEL EXPORT ----------------
-# The above function is the initial version for exporting details, but we will enhance it to create a well-formatted Excel file with separate sheets for summary and details, including styling and better organization of data.
-# @frappe.whitelist()
-# def get_all_details_for_export(filters):
-#     import openpyxl
-#     from openpyxl.styles import Font, PatternFill, Border, Side, Alignment
-#     from openpyxl.utils import get_column_letter
-#     from io import BytesIO
-#     from frappe.utils.file_manager import save_file
+# Only show Summary Details 
+@frappe.whitelist()
+def download_item_excel(filters):
+    import openpyxl
+    from openpyxl.styles import Font, PatternFill, Border, Side, Alignment
+    from io import BytesIO
+    from collections import defaultdict
 
-#     filters = frappe.parse_json(filters)
-#     conditions = ""
-#     values = {}
+    filters = frappe.parse_json(filters)
 
-#     if filters.get("project_number"):
-#         conditions += " AND p.name IN %(project_number)s"
-#         values["project_number"] = tuple(filters.get("project_number"))
+    conditions = ""
+    values = {}
 
-#     if filters.get("drawing_number"):
-#         conditions += " AND ad.drawing_number IN %(drawing_number)s"
-#         values["drawing_number"] = tuple(filters.get("drawing_number"))
+    if filters.get("project_number"):
+        conditions += " AND p.name IN %(project_number)s"
+        values["project_number"] = tuple(filters.get("project_number"))
 
-#     if filters.get("item"):
-#         conditions += " AND dp.item_id IN %(item)s"
-#         values["item"] = tuple(filters.get("item"))
+    if filters.get("item"):
+        conditions += " AND dp.item_id IN %(item)s"
+        values["item"] = tuple(filters.get("item"))
 
-#     # ---------------- DETAIL DATA ----------------
-#     detail_data = frappe.db.sql(f"""
-#         SELECT
-#             p.name as project,
-#             rm.computed_name as item_name,
-#             ad.drawing_number,
-#             dp.position_no,
-#             dp.quantity,
-#             dp.lenght,
-#             dp.width,
-#             dp.single_weight,
-#             dp.total_weight
-#         FROM `tabFT Drawing Parts` dp        
-#         LEFT JOIN `tabFT Add Drawing` ad ON ad.name = dp.drawing_number
-#         LEFT JOIN `tabFT Project` p ON p.name = ad.project_number
-#         LEFT JOIN `tabFT Stock RM List` rm ON rm.name = dp.item_id
-#         WHERE 1=1 {conditions}
-#         ORDER BY p.name, ad.drawing_number
-#     """, values, as_dict=True)
+    data = frappe.db.sql(f"""
+        SELECT
+            p.name as project,
+            rm.computed_name as item,
+            COUNT(dp.name) as total_entries,
+            IFNULL(SUM(dp.quantity), 0) as total_qty,
+            IFNULL(SUM(dp.lenght), 0) as total_length,
+            IFNULL(SUM(dp.width), 0) as total_width,
+            IFNULL(SUM(dp.total_weight),0) as total_weight
+        FROM `tabFT Drawing Parts` dp
+        LEFT JOIN `tabFT Add Drawing` ad ON ad.name = dp.drawing_number
+        LEFT JOIN `tabFT Project` p ON p.name = ad.project_number
+        LEFT JOIN `tabFT Stock RM List` rm ON rm.name = dp.item_id
+        WHERE 1=1 {conditions}
+        GROUP BY p.name, rm.computed_name
+        ORDER BY p.name
+    """, values, as_dict=True)
 
-#     # ---------------- SUMMARY DATA ----------------
-#     summary_data = frappe.db.sql(f"""
-#         SELECT
-#             p.name as project,
-#             rm.computed_name as item_name,
-#             COUNT(dp.name) as total_entries,
-#             SUM(dp.total_weight) as total_weight
-#         FROM `tabFT Drawing Parts` dp
-#         LEFT JOIN `tabFT Add Drawing` ad ON ad.name = dp.drawing_number
-#         LEFT JOIN `tabFT Project` p ON p.name = ad.project_number
-#         LEFT JOIN `tabFT Stock RM List` rm ON rm.name = dp.item_id
-#         WHERE 1=1 {conditions}
-#         GROUP BY p.name, rm.computed_name
-#         ORDER BY p.name
-#     """, values, as_dict=True)
-    
-#     wb = openpyxl.Workbook()
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Item Report"
 
-#     header_font = Font(bold=True, color="FFFFFF")
-#     total_font = Font(bold=True, size=12)
+    header_font     = Font(bold=True, size=12, color="FFFFFF")
+    header_fill     = PatternFill(start_color="2F75B5", end_color="2F75B5", fill_type="solid")
+    proj_total_font = Font(bold=True, size=11, color="FFFFFF")
+    proj_total_fill = PatternFill(start_color="2E75B6", end_color="2E75B6", fill_type="solid")
 
-#     header_fill = PatternFill(start_color="2F75B5", end_color="2F75B5", fill_type="solid")
-#     total_fill = PatternFill(start_color="F3F3F3", end_color="F3F3F3", fill_type="solid")
+    thin_border = Border(
+        left=Side(style="thin"), right=Side(style="thin"),
+        top=Side(style="thin"),  bottom=Side(style="thin")
+    )
+    center_align = Alignment(horizontal="center", vertical="center")
+    left_align   = Alignment(horizontal="left",   vertical="center")
 
-#     thin_border = Border(
-#         left=Side(style="thin"),
-#         right=Side(style="thin"),
-#         top=Side(style="thin"),
-#         bottom=Side(style="thin")
-#     )
+    headers    = ["Sr No", "Project", "Item", "Total Entries",
+                  "Total Qty", "Total Length", "Total Width", "Total Weight"]
+    TOTAL_COLS = len(headers)
 
-#     # ================= SUMMARY SHEET =================
-#     ws1 = wb.active
-#     ws1.title = "Summary"
+    project_groups = defaultdict(list)
+    for d in data:
+        project_groups[d.get("project") or "Unknown"].append(d)
 
-#     summary_headers = ["Project", "Item", "Total Entries", "Total Weight"]
+    row_no = 1
 
-#     for col, header in enumerate(summary_headers, 1):
-#         cell = ws1.cell(row=1, column=col, value=header)
-#         cell.font = header_font
-#         cell.fill = header_fill
-#         cell.border = thin_border
+    for project_name, rows in project_groups.items():
 
-#     row_no = 2
-#     grand_total_summary = 0
+        ws.merge_cells(start_row=row_no, start_column=1,
+                       end_row=row_no, end_column=TOTAL_COLS)
+        hc           = ws.cell(row=row_no, column=1,
+                               value=f"{project_name}  —  All Items Data")
+        hc.font      = Font(bold=True, size=15, color="000000")
+        hc.alignment = left_align
+        ws.row_dimensions[row_no].height = 24
+        row_no += 1
+        row_no += 1
 
-#     for d in summary_data:
-#         values_row = [
-#             d.get("project"),
-#             d.get("item_name"),
-#             d.get("total_entries"),
-#             d.get("total_weight"),
-#         ]
+        for col, header in enumerate(headers, 1):
+            cell           = ws.cell(row=row_no, column=col, value=header)
+            cell.font      = header_font
+            cell.fill      = header_fill
+            cell.border    = thin_border
+            cell.alignment = center_align
+        ws.row_dimensions[row_no].height = 18
+        row_no += 1
 
-#         grand_total_summary += d.get("total_weight") or 0
+        proj_entries = proj_qty = proj_length = proj_width = proj_weight = 0
+        sr = 1
 
-#         for col, value in enumerate(values_row, 1):
-#             cell = ws1.cell(row=row_no, column=col, value=value)
-#             cell.border = thin_border
-#         row_no += 1
+        for d in rows:
+            entries = d.get("total_entries") or 0
+            qty     = d.get("total_qty")     or 0
+            length  = d.get("total_length")  or 0
+            width   = d.get("total_width")   or 0
+            weight  = d.get("total_weight")  or 0
 
-#     # ADD GRAND TOTAL ROW (Summary)
-#     total_row = row_no
+            row_vals = [sr, d.get("project") or "-", d.get("item") or "-",
+                        entries, qty, length, width, weight]
 
-#     ws1.merge_cells(start_row=total_row, start_column=1, end_row=total_row, end_column=3)
-#     total_label = ws1.cell(row=total_row, column=1, value="Total")
-#     total_label.font = total_font
-#     total_label.fill = total_fill
-#     total_label.border = thin_border
+            for col, val in enumerate(row_vals, 1):
+                cell           = ws.cell(row=row_no, column=col, value=val)
+                cell.border    = thin_border
+                cell.alignment = left_align if col in [2, 3] else center_align
+                cell.font      = Font(size=11)
+                if col in [6, 7, 8]:
+                    cell.number_format = '#,##0.000'
 
-#     total_value = ws1.cell(row=total_row, column=4, value=grand_total_summary)
-#     total_value.font = total_font
-#     total_value.fill = total_fill
-#     total_value.border = thin_border
+            proj_entries += entries; proj_qty    += qty
+            proj_length  += length;  proj_width  += width
+            proj_weight  += weight
+            row_no += 1
+            sr += 1
 
-#     # Apply border to merged area
-#     for col in range(1, 5):
-#         ws1.cell(row=total_row, column=col).border = thin_border
+        # Total row — no merge, full background
+        total_vals = ["Total", "", "", proj_entries, proj_qty,
+                      proj_length, proj_width, proj_weight]
 
-#     ws1.column_dimensions["A"].width = 20
-#     ws1.column_dimensions["B"].width = 40
-#     ws1.column_dimensions["C"].width = 18
-#     ws1.column_dimensions["D"].width = 18
+        for col, val in enumerate(total_vals, 1):
+            cell           = ws.cell(row=row_no, column=col, value=val)
+            cell.font      = proj_total_font
+            cell.fill      = proj_total_fill
+            cell.border    = thin_border
+            cell.alignment = left_align if col == 1 else center_align
+            if col in [6, 7, 8]:
+                cell.number_format = '#,##0.000'
+
+        ws.row_dimensions[row_no].height = 18
+        row_no += 2
+
+    ws.column_dimensions["A"].width = 8
+    ws.column_dimensions["B"].width = 18
+    ws.column_dimensions["C"].width = 45
+    ws.column_dimensions["D"].width = 15
+    ws.column_dimensions["E"].width = 12
+    ws.column_dimensions["F"].width = 15
+    ws.column_dimensions["G"].width = 15
+    ws.column_dimensions["H"].width = 18
+
+    file_stream = BytesIO()
+    wb.save(file_stream)
+    file_stream.seek(0)
+
+    frappe.response["filename"]    = "Item_Report.xlsx"
+    frappe.response["filecontent"] = file_stream.getvalue()
+    frappe.response["type"]        = "binary"
 
 
-#     # ================= DETAIL SHEET =================
-#     ws2 = wb.create_sheet("Details")
-
-#     detail_headers = [
-#         "Project",
-#         "Item",
-#         "Drawing",
-#         "Position No",
-#         "Qty",
-#         "Length",
-#         "Width",
-#         "Single Weight",
-#         "Total Weight"
-#     ]
-
-#     for col, header in enumerate(detail_headers, 1):
-#         cell = ws2.cell(row=1, column=col, value=header)
-#         cell.font = header_font
-#         cell.fill = header_fill
-#         cell.border = thin_border
-
-#     row_no = 2
-#     grand_total_detail = 0
-
-#     for d in detail_data:
-#         values_row = [
-#             d.get("project"),
-#             d.get("item_name"),
-#             d.get("drawing_number"),
-#             d.get("position_no"),
-#             d.get("quantity"),
-#             d.get("lenght"),
-#             d.get("width"),
-#             d.get("single_weight"),
-#             d.get("total_weight"),
-#         ]
-
-#         grand_total_detail += d.get("total_weight") or 0
-
-#         for col, value in enumerate(values_row, 1):
-#             cell = ws2.cell(row=row_no, column=col, value=value)
-#             cell.border = thin_border
-#         row_no += 1
-
-#     # ADD GRAND TOTAL ROW (Details)
-#     total_row = row_no
-
-#     ws2.merge_cells(start_row=total_row, start_column=1, end_row=total_row, end_column=8)
-#     total_label = ws2.cell(row=total_row, column=1, value="Total")
-#     total_label.font = total_font
-#     total_label.fill = total_fill
-#     total_label.border = thin_border
-
-#     total_value = ws2.cell(row=total_row, column=9, value=grand_total_detail)
-#     total_value.font = total_font
-#     total_value.fill = total_fill
-#     total_value.border = thin_border
-
-#     for col in range(1, 10):
-#         ws2.cell(row=total_row, column=col).border = thin_border
-
-#     ws2.column_dimensions["A"].width = 20
-#     ws2.column_dimensions["B"].width = 40
-#     ws2.column_dimensions["C"].width = 18
-#     ws2.column_dimensions["D"].width = 18
-#     ws2.column_dimensions["E"].width = 10
-#     ws2.column_dimensions["F"].width = 10
-#     ws2.column_dimensions["G"].width = 10
-#     ws2.column_dimensions["H"].width = 15
-#     ws2.column_dimensions["I"].width = 15
-
-#     # ---------------- SAVE FILE ----------------
-#     file_stream = BytesIO()
-#     wb.save(file_stream)
-#     file_stream.seek(0)
-
-#     file_doc = save_file(
-#         "FT_Drawing_Part.xlsx",
-#         file_stream.getvalue(),
-#         None,
-#         None,
-#         is_private=0
-#     )
-
-#     return file_doc.file_url
-
+# three sheet Excel 
 @frappe.whitelist()
 def get_all_details_for_export(filters):
     import openpyxl
@@ -670,7 +602,7 @@ def get_all_details_for_export(filters):
         LEFT JOIN `tabFT Stock RM List` rm ON rm.name = dp.item_id
         WHERE 1=1 {conditions}
         GROUP BY p.name, rm.computed_name
-        ORDER BY p.name
+        ORDER BY p.name, rm.computed_name
     """, values, as_dict=True)
 
     # ---------------- DETAIL DATA ----------------
@@ -698,6 +630,35 @@ def get_all_details_for_export(filters):
             CAST(pod.po_serial_no AS UNSIGNED) ASC,
             ad.drawing_number ASC
     """, values, as_dict=True)
+
+    # ---------------- PO DRAWING DATA ----------------
+    po_conditions = ""
+    po_values = {}
+
+    if filters.get("project_number"):
+        po_conditions += " AND pod.project_number IN %(project_number)s"
+        po_values["project_number"] = tuple(filters.get("project_number"))
+
+    if filters.get("drawing_number"):
+        po_conditions += " AND pod.drawing_number IN %(drawing_number)s"
+        po_values["drawing_number"] = tuple(filters.get("drawing_number"))
+
+    po_drawing_data = frappe.db.sql(f"""
+        SELECT
+            pod.project_number  as project,
+            ad.drawing_number   as drawing_number,
+            pod.po_serial_no    as po_serial_no,
+            pod.po_description  as po_description,
+            pod.unit_weight     as unit_weight,
+            pod.required_qty    as required_qty,
+            pod.total_weight    as total_weight
+        FROM `tabFT Po Drawing` pod
+        LEFT JOIN `tabFT Add Drawing` ad ON ad.name = pod.drawing_number
+        WHERE 1=1 {po_conditions}
+        ORDER BY pod.project_number,
+            CAST(pod.po_serial_no AS UNSIGNED) ASC,
+            ad.drawing_number ASC
+    """, po_values, as_dict=True)
 
     # ---------------- GROUP DETAIL ROWS ----------------
     grouped_detail = defaultdict(lambda: {
@@ -727,55 +688,58 @@ def get_all_details_for_export(filters):
         grouped_detail[key]["total_weight"]   = d.get("total_weight")
         grouped_detail[key]["entry_count"]    += 1
 
-    detail_rows = list(grouped_detail.values())
+    detail_rows = sorted(
+        grouped_detail.values(),
+        key=lambda x: (x.get("project") or "", x.get("item_name") or "")
+    )
 
     # ============================================================
     # WORKBOOK & STYLES
     # ============================================================
     wb = openpyxl.Workbook()
 
-    header_font     = Font(bold=True, size=12, color="FFFFFF")
-    header_fill     = PatternFill(start_color="2F75B5", end_color="2F75B5", fill_type="solid")
-    proj_total_font = Font(bold=True, size=11, color="FFFFFF")
-    proj_total_fill = PatternFill(start_color="2E75B6", end_color="2E75B6", fill_type="solid")
-    data_font       = Font(size=11)
-    total_font      = Font(bold=True, size=12)
-    total_fill      = PatternFill(start_color="F3F3F3", end_color="F3F3F3", fill_type="solid")
+    header_font  = Font(bold=True, size=12, color="FFFFFF")
+    header_fill  = PatternFill(start_color="2F75B5", end_color="2F75B5", fill_type="solid")
+    data_font    = Font(size=11)
+    total_font   = Font(bold=True, size=12, color="FFFFFF")
+    total_fill   = PatternFill(start_color="2E75B6", end_color="2E75B6", fill_type="solid")
 
-    thin        = Side(style="thin")
-    thin_border = Border(left=thin, right=thin, top=thin, bottom=thin)
+    thin         = Side(style="thin")
+    thin_border  = Border(left=thin, right=thin, top=thin, bottom=thin)
     center_align = Alignment(horizontal="center", vertical="center")
     left_align   = Alignment(horizontal="left",   vertical="center")
 
+    num_fmt_3dec = '#,##0.000'
+
     # ============================================================
-    # SHEET 1 — Summary
+    # SHEET 1 — Drawing PO List
     # ============================================================
     ws1 = wb.active
-    ws1.title = "Summary"
+    ws1.title = "Drawing PO List"
 
-    s1_headers    = ["Sr No", "Project", "Item", "Total Entries", "Total Qty", "Total Length", "Total Width", "Total Weight"]
-    TOTAL_COLS_S1 = len(s1_headers)
+    s1_headers    = ["Sr No", "Project Number", "Drawing Number", "Po Serial No",
+                     "PO Description", "Unit Weight", "Required Qty", "Total Weight"]
+    TOTAL_COLS_S1 = len(s1_headers)  # 8
 
-    project_groups = defaultdict(list)
-    for d in summary_data:
-        project_groups[d.get("project") or "Unknown"].append(d)
+    po_project_groups = defaultdict(list)
+    for d in po_drawing_data:
+        po_project_groups[d.get("project") or "Unknown"].append(d)
 
     row_no = 1
 
-    for project_name, rows in project_groups.items():
+    for project_name, rows in po_project_groups.items():
 
-        # Project heading
-        ws1.merge_cells(start_row=row_no, start_column=1, end_row=row_no, end_column=TOTAL_COLS_S1)
-        hc           = ws1.cell(row=row_no, column=1, value=f"{project_name}  —  All Items Data")
-        hc.font      = Font(bold=True, size=15, color="1F4E79")
-        hc.alignment = left_align
-        ws1.row_dimensions[row_no].height = 24
+        ws1.merge_cells(start_row=row_no, start_column=1,
+                        end_row=row_no, end_column=TOTAL_COLS_S1)
+        h1           = ws1.cell(row=row_no, column=1,
+                                value=f"{project_name}  —  Drawing PO List")
+        h1.font      = Font(bold=True, size=15, color="FFFFFF")
+        h1.fill      = PatternFill(start_color="1F4E79", end_color="1F4E79", fill_type="solid")
+        h1.alignment = left_align
+        ws1.row_dimensions[row_no].height = 28
+        row_no += 1
         row_no += 1
 
-        # Blank gap row
-        row_no += 1
-
-        # Column headers
         for col, header in enumerate(s1_headers, 1):
             cell           = ws1.cell(row=row_no, column=col, value=header)
             cell.font      = header_font
@@ -785,7 +749,94 @@ def get_all_details_for_export(filters):
         ws1.row_dimensions[row_no].height = 18
         row_no += 1
 
-        # Data rows
+        t_unit_weight = t_req_qty = t_total_weight = 0
+        sr = 1
+
+        for d in rows:
+            unit_w  = d.get("unit_weight")  or 0
+            req_qty = d.get("required_qty") or 0
+            tot_w   = d.get("total_weight") or 0
+
+            row_vals = [
+                sr,
+                d.get("project")        or "-",
+                d.get("drawing_number") or "-",
+                d.get("po_serial_no")   or "-",
+                d.get("po_description") or "-",
+                unit_w, req_qty, tot_w,
+            ]
+
+            for col, val in enumerate(row_vals, 1):
+                cell           = ws1.cell(row=row_no, column=col, value=val)
+                cell.font      = data_font
+                cell.border    = thin_border
+                # ✅ Drawing Number (col 3) center, PO Description (col 5) left
+                cell.alignment = left_align if col in [2, 5] else center_align
+                if col in [6, 7, 8]:
+                    cell.number_format = num_fmt_3dec
+
+            t_unit_weight  += unit_w
+            t_req_qty      += req_qty
+            t_total_weight += tot_w
+            row_no += 1
+            sr += 1
+
+        # Total row — no merge, full background
+        total_vals = ["Total", "", "", "", "",
+                      t_unit_weight, t_req_qty, t_total_weight]
+
+        for col, val in enumerate(total_vals, 1):
+            cell           = ws1.cell(row=row_no, column=col, value=val)
+            cell.font      = total_font
+            cell.fill      = total_fill
+            cell.border    = thin_border
+            cell.alignment = left_align if col == 1 else center_align
+            if col in [6, 7, 8]:
+                cell.number_format = num_fmt_3dec
+
+        ws1.row_dimensions[row_no].height = 18
+        row_no += 3
+
+    # col widths: Sr No, Project, Drawing, Po Serial, PO Desc, Unit Wt, Req Qty, Total Wt
+    for col, w in zip("ABCDEFGH", [8, 18, 30, 15, 40, 15, 15, 18]):
+        ws1.column_dimensions[col].width = w
+
+    # ============================================================
+    # SHEET 2 — Summary
+    # ============================================================
+    ws2 = wb.create_sheet("Summary")
+
+    s2_headers    = ["Sr No", "Project", "Item", "Total Entries", "Total Qty",
+                     "Total Length", "Total Width", "Total Weight"]
+    TOTAL_COLS_S2 = len(s2_headers)  # 8
+
+    project_groups = defaultdict(list)
+    for d in summary_data:
+        project_groups[d.get("project") or "Unknown"].append(d)
+
+    row_no = 1
+
+    for project_name, rows in project_groups.items():
+
+        ws2.merge_cells(start_row=row_no, start_column=1,
+                        end_row=row_no, end_column=TOTAL_COLS_S2)
+        hc           = ws2.cell(row=row_no, column=1,
+                                value=f"{project_name}  —  Item Wise Summary")
+        hc.font      = Font(bold=True, size=15, color="000000")
+        hc.alignment = left_align
+        ws2.row_dimensions[row_no].height = 24
+        row_no += 1
+        row_no += 1
+
+        for col, header in enumerate(s2_headers, 1):
+            cell           = ws2.cell(row=row_no, column=col, value=header)
+            cell.font      = header_font
+            cell.fill      = header_fill
+            cell.border    = thin_border
+            cell.alignment = center_align
+        ws2.row_dimensions[row_no].height = 18
+        row_no += 1
+
         proj_entries = proj_qty = proj_length = proj_width = proj_weight = 0
         sr = 1
 
@@ -796,81 +847,84 @@ def get_all_details_for_export(filters):
             width   = d.get("total_width")   or 0
             weight  = d.get("total_weight")  or 0
 
-            for col, val in enumerate([sr, d.get("project") or "-", d.get("item_name") or "-",
-                                        entries, qty, length, width, weight], 1):
-                cell           = ws1.cell(row=row_no, column=col, value=val)
+            row_vals = [sr, d.get("project") or "-", d.get("item_name") or "-",
+                        entries, qty, length, width, weight]
+
+            for col, val in enumerate(row_vals, 1):
+                cell           = ws2.cell(row=row_no, column=col, value=val)
                 cell.border    = thin_border
-                cell.alignment = left_align if col in [2, 3] else center_align
                 cell.font      = data_font
+                cell.alignment = left_align if col in [2, 3] else center_align
+                if col in [6, 7, 8]:
+                    cell.number_format = num_fmt_3dec
 
-            proj_entries += entries; proj_qty    += qty
-            proj_length  += length;  proj_width  += width; proj_weight += weight
-            row_no += 1; sr += 1
+            proj_entries += entries
+            proj_qty     += qty
+            proj_length  += length
+            proj_width   += width
+            proj_weight  += weight
+            row_no += 1
+            sr += 1
 
-        # Project total row
-        ws1.merge_cells(start_row=row_no, start_column=1, end_row=row_no, end_column=3)
-        pt           = ws1.cell(row=row_no, column=1, value="Total")
-        pt.font      = proj_total_font
-        pt.fill      = proj_total_fill
-        pt.alignment = left_align
-        pt.border    = thin_border
+        # Total row — no merge, full background
+        total_vals = ["Total", "", "", proj_entries, proj_qty,
+                      proj_length, proj_width, proj_weight]
 
-        for col, val in zip(range(4, 9), [proj_entries, proj_qty, proj_length, proj_width, proj_weight]):
-            cell           = ws1.cell(row=row_no, column=col, value=val)
-            cell.font      = proj_total_font
-            cell.fill      = proj_total_fill
-            cell.alignment = center_align
+        for col, val in enumerate(total_vals, 1):
+            cell           = ws2.cell(row=row_no, column=col, value=val)
+            cell.font      = total_font
+            cell.fill      = total_fill
             cell.border    = thin_border
+            cell.alignment = left_align if col == 1 else center_align
+            if col in [6, 7, 8]:
+                cell.number_format = num_fmt_3dec
 
-        ws1.row_dimensions[row_no].height = 18
+        ws2.row_dimensions[row_no].height = 18
         row_no += 2
 
     for col, w in zip("ABCDEFGH", [8, 18, 45, 15, 12, 15, 15, 18]):
-        ws1.column_dimensions[col].width = w
+        ws2.column_dimensions[col].width = w
 
     # ============================================================
-    # SHEET 2 — Details
+    # SHEET 3 — Details
     # ============================================================
-    ws2 = wb.create_sheet("Details")
+    ws3 = wb.create_sheet("Details")
 
-    s2_headers = [
+    s3_headers = [
         "Sr No", "Project", "Item", "Po Serial No", "Drawing",
         "Position No", "Entry Count", "Qty", "Length", "Width",
         "Single Weight", "Total Weight"
     ]
-    TOTAL_COLS_S2 = len(s2_headers)  # 12
+    TOTAL_COLS_S3 = len(s3_headers)  # 12
 
-    detail_groups = defaultdict(list)
+    detail_project_groups = defaultdict(list)
     for d in detail_rows:
-        key = (d.get("project"), d.get("item_name"))
-        detail_groups[key].append(d)
+        detail_project_groups[d.get("project") or "Unknown"].append(d)
 
     row_no = 1
 
-    for (proj, item_nm), rows in detail_groups.items():
+    for proj, rows in detail_project_groups.items():
 
-        # Project + Item heading
-        ws2.merge_cells(start_row=row_no, start_column=1, end_row=row_no, end_column=TOTAL_COLS_S2)
-        h2           = ws2.cell(row=row_no, column=1, value=f"{proj}  —  {item_nm}")
-        h2.font      = Font(bold=True, size=14, color="1F4E79")
-        h2.alignment = left_align
-        ws2.row_dimensions[row_no].height = 22
+        ws3.merge_cells(start_row=row_no, start_column=1,
+                        end_row=row_no, end_column=TOTAL_COLS_S3)
+        h3           = ws3.cell(row=row_no, column=1,
+                                value=f"{proj}  —  All Items Detail")
+        h3.font      = Font(bold=True, size=15, color="FFFFFF")
+        h3.fill      = PatternFill(start_color="1F4E79", end_color="1F4E79", fill_type="solid")
+        h3.alignment = left_align
+        ws3.row_dimensions[row_no].height = 28
+        row_no += 1
         row_no += 1
 
-        # Blank gap
-        row_no += 1
-
-        # Column headers
-        for col, header in enumerate(s2_headers, 1):
-            cell           = ws2.cell(row=row_no, column=col, value=header)
+        for col, header in enumerate(s3_headers, 1):
+            cell           = ws3.cell(row=row_no, column=col, value=header)
             cell.font      = header_font
             cell.fill      = header_fill
             cell.border    = thin_border
             cell.alignment = center_align
-        ws2.row_dimensions[row_no].height = 18
+        ws3.row_dimensions[row_no].height = 18
         row_no += 1
 
-        # Data rows
         t_qty = t_length = t_width = t_weight = 0
         sr = 1
 
@@ -882,56 +936,47 @@ def get_all_details_for_export(filters):
             weight = d.get("total_weight")  or 0
 
             row_vals = [
-                sr,
-                d.get("project"),
-                d.get("item_name"),
-                d.get("po_serial_no"),
-                d.get("drawing_number"),
-                d.get("position_no"),
-                d.get("entry_count"),
+                sr, d.get("project"), d.get("item_name"),
+                d.get("po_serial_no"), d.get("drawing_number"),
+                d.get("position_no"), d.get("entry_count"),
                 qty, length, width, sw, weight,
             ]
 
             for col, val in enumerate(row_vals, 1):
-                cell           = ws2.cell(row=row_no, column=col, value=val)
+                cell           = ws3.cell(row=row_no, column=col, value=val)
                 cell.font      = data_font
                 cell.border    = thin_border
-                cell.alignment = left_align if col in [2, 3, 5] else center_align
-                if col in [11, 12]:
-                    cell.number_format = '#,##0.000'
+                # ✅ Drawing Number (col 5) center, Project (col 2) & Item (col 3) left
+                cell.alignment = left_align if col in [2, 3] else center_align
+                if col in [9, 10, 11, 12]:
+                    cell.number_format = num_fmt_3dec
 
-            t_qty += qty; t_length += length
-            t_width += width; t_weight += weight
-            row_no += 1; sr += 1
+            t_qty    += qty
+            t_length += length
+            t_width  += width
+            t_weight += weight
+            row_no += 1
+            sr += 1
 
-        # Detail total row
-        for col in range(1, TOTAL_COLS_S2 + 1):
-            cell           = ws2.cell(row=row_no, column=col)
-            cell.fill      = total_fill
-            cell.alignment = center_align
-            cell.border    = thin_border
+        # Total row — no merge, full background
+        total_vals = ["Total", "", "", "", "", "", "",
+                      t_qty, t_length, t_width, "", t_weight]
 
-        ws2.merge_cells(start_row=row_no, start_column=1, end_row=row_no, end_column=3)
-        tl           = ws2.cell(row=row_no, column=1, value="Total")
-        tl.font      = total_font
-        tl.fill      = total_fill
-        tl.alignment = left_align
-        tl.border    = thin_border
-
-        for col, val in zip([8, 9, 10, 12], [t_qty, t_length, t_width, t_weight]):
-            cell           = ws2.cell(row=row_no, column=col, value=val)
+        for col, val in enumerate(total_vals, 1):
+            cell           = ws3.cell(row=row_no, column=col, value=val)
             cell.font      = total_font
             cell.fill      = total_fill
-            cell.alignment = center_align
             cell.border    = thin_border
-            if col == 12:
-                cell.number_format = '#,##0.000'
+            cell.alignment = left_align if col == 1 else center_align
+            if col in [9, 10, 12]:
+                cell.number_format = num_fmt_3dec
 
-        ws2.row_dimensions[row_no].height = 18
-        row_no += 2
+        ws3.row_dimensions[row_no].height = 18
+        row_no += 3
 
-    for col, w in zip(range(1, 13), [8, 18, 40, 15, 30, 15, 12, 10, 12, 12, 16, 16]):
-        ws2.column_dimensions[get_column_letter(col)].width = w
+    # ✅ Length column (col 9 = I) width 12 → 20
+    for col, w in zip(range(1, 13), [8, 18, 40, 15, 30, 15, 12, 10, 20, 12, 16, 16]):
+        ws3.column_dimensions[get_column_letter(col)].width = w
 
     # ---------------- SAVE FILE ----------------
     file_stream = BytesIO()
@@ -947,313 +992,9 @@ def get_all_details_for_export(filters):
     )
 
     return file_doc.file_url
-# The above function is the initial version for exporting details, but we will enhance it to create a well-formatted Excel file, including styling and better organization of data.
-# @frappe.whitelist()
-# def download_item_excel(filters):
-#     import frappe
-#     import openpyxl
-#     from openpyxl.styles import Font, PatternFill, Border, Side, Alignment
-#     from io import BytesIO
-
-#     filters = frappe.parse_json(filters)
-
-#     conditions = ""
-#     values = {}
-
-#     if filters.get("project_number"):
-#         conditions += " AND p.name IN %(project_number)s"
-#         values["project_number"] = tuple(filters.get("project_number"))
-
-#     if filters.get("item"):
-#         conditions += " AND dp.item_id IN %(item)s"
-#         values["item"] = tuple(filters.get("item"))
-
-#     data = frappe.db.sql(f"""
-#         SELECT
-#             p.name as project,
-#             rm.computed_name as item,
-#             COUNT(dp.name) as total_entries,
-#             IFNULL(SUM(dp.total_weight),0) as total_weight
-#         FROM `tabFT Drawing Parts` dp
-#         LEFT JOIN `tabFT Add Drawing` ad ON ad.name = dp.drawing_number
-#         LEFT JOIN `tabFT Project` p ON p.name = ad.project_number
-#         LEFT JOIN `tabFT Stock RM List` rm ON rm.name = dp.item_id
-#         WHERE 1=1 {conditions}
-#         GROUP BY p.name, rm.computed_name
-#         ORDER BY p.name
-#     """, values, as_dict=True)
-
-#     wb = openpyxl.Workbook()
-#     ws = wb.active
-#     ws.title = "Item Report"
-
-#     headers = ["Project", "Item", "Total Entries", "Total Weight"]
-
-#     header_font = Font(bold=True, size=12, color="FFFFFF")
-#     header_fill = PatternFill(start_color="2F75B5", end_color="2F75B5", fill_type="solid")
-
-#     total_font = Font(bold=True, size=12)
-#     total_fill = PatternFill(start_color="F3F3F3", end_color="F3F3F3", fill_type="solid")
-
-#     thin_border = Border(
-#         left=Side(style="thin"),
-#         right=Side(style="thin"),
-#         top=Side(style="thin"),
-#         bottom=Side(style="thin")
-#     )
-
-#     center_align = Alignment(horizontal="center", vertical="center")
-
-#     # Header Row
-#     for col, header in enumerate(headers, 1):
-#         cell = ws.cell(row=1, column=col, value=header)
-#         cell.font = header_font
-#         cell.fill = header_fill
-#         cell.border = thin_border
-#         cell.alignment = center_align
-
-#     # Data Rows
-#     row_no = 2
-#     grand_total_entries = 0
-#     grand_total_weight = 0
-
-#     for d in data:
-#         entries = d.get("total_entries") or 0
-#         weight = d.get("total_weight") or 0
-
-#         values_row = [
-#             d.get("project"),
-#             d.get("item") or "-",
-#             entries,
-#             weight,
-#         ]
-
-#         grand_total_entries += entries
-#         grand_total_weight += weight
-
-#         for col, val in enumerate(values_row, 1):
-#             cell = ws.cell(row=row_no, column=col, value=val)
-#             cell.border = thin_border
-#             cell.alignment = start_align = Alignment(horizontal="left", vertical="center") if col in [1, 2] else center_align
-#             cell.font = Font(size=11)
-
-#         row_no += 1
-
-#     # GRAND TOTAL ROW ADD
-#     total_row = row_no
-
-#     ws.merge_cells(start_row=total_row, start_column=1, end_row=total_row, end_column=2)
-
-#     total_label = ws.cell(row=total_row, column=1, value="Total")
-#     total_label.font = total_font
-#     total_label.fill = total_fill
-#     total_label.alignment = start_align = Alignment(horizontal="left", vertical="center")
-
-#     total_entries_cell = ws.cell(row=total_row, column=3, value=grand_total_entries)
-#     total_entries_cell.font = total_font
-#     total_entries_cell.fill = total_fill
-#     total_entries_cell.alignment = center_align
-
-#     total_weight_cell = ws.cell(row=total_row, column=4, value=grand_total_weight)
-#     total_weight_cell.font = total_font
-#     total_weight_cell.fill = total_fill
-#     total_weight_cell.alignment = center_align
-
-#     # Apply border to full total row
-#     for col in range(1, 5):
-#         ws.cell(row=total_row, column=col).border = thin_border
-
-#     # Column Width Adjust
-#     ws.column_dimensions["A"].width = 20
-#     ws.column_dimensions["B"].width = 45
-#     ws.column_dimensions["C"].width = 18
-#     ws.column_dimensions["D"].width = 18
-
-#     file_stream = BytesIO()
-#     wb.save(file_stream)
-#     file_stream.seek(0)
-
-#     frappe.response['filename'] = "Item_Report.xlsx"
-#     frappe.response['filecontent'] = file_stream.getvalue()
-#     frappe.response['type'] = 'binary'
 
 
-@frappe.whitelist()
-def download_item_excel(filters):
-    import openpyxl
-    from openpyxl.styles import Font, PatternFill, Border, Side, Alignment
-    from io import BytesIO
-    from collections import defaultdict
-
-    filters = frappe.parse_json(filters)
-
-    conditions = ""
-    values = {}
-
-    if filters.get("project_number"):
-        conditions += " AND p.name IN %(project_number)s"
-        values["project_number"] = tuple(filters.get("project_number"))
-
-    if filters.get("item"):
-        conditions += " AND dp.item_id IN %(item)s"
-        values["item"] = tuple(filters.get("item"))
-
-    data = frappe.db.sql(f"""
-        SELECT
-            p.name as project,
-            rm.computed_name as item,
-            COUNT(dp.name) as total_entries,
-            IFNULL(SUM(dp.quantity), 0) as total_qty,
-            IFNULL(SUM(dp.lenght), 0) as total_length,
-            IFNULL(SUM(dp.width), 0) as total_width,
-            IFNULL(SUM(dp.total_weight),0) as total_weight
-        FROM `tabFT Drawing Parts` dp
-        LEFT JOIN `tabFT Add Drawing` ad ON ad.name = dp.drawing_number
-        LEFT JOIN `tabFT Project` p ON p.name = ad.project_number
-        LEFT JOIN `tabFT Stock RM List` rm ON rm.name = dp.item_id
-        WHERE 1=1 {conditions}
-        GROUP BY p.name, rm.computed_name
-        ORDER BY p.name
-    """, values, as_dict=True)
-
-    wb = openpyxl.Workbook()
-    ws = wb.active
-    ws.title = "Item Report"
-
-    # -------- STYLES --------
-    header_font     = Font(bold=True, size=12, color="FFFFFF")
-    header_fill     = PatternFill(start_color="2F75B5", end_color="2F75B5", fill_type="solid")
-    proj_total_font = Font(bold=True, size=11, color="FFFFFF")
-    proj_total_fill = PatternFill(start_color="2E75B6", end_color="2E75B6", fill_type="solid")
-
-    thin_border = Border(
-        left=Side(style="thin"),
-        right=Side(style="thin"),
-        top=Side(style="thin"),
-        bottom=Side(style="thin")
-    )
-    center_align = Alignment(horizontal="center", vertical="center")
-    left_align   = Alignment(horizontal="left",   vertical="center")
-
-    headers    = ["Sr No", "Project", "Item", "Total Entries", "Total Qty", "Total Length", "Total Width", "Total Weight"]
-    TOTAL_COLS = len(headers)  # 8
-
-    # -------- GROUP DATA BY PROJECT --------
-    project_groups = defaultdict(list)
-    for d in data:
-        project_groups[d.get("project") or "Unknown"].append(d)
-
-    row_no = 1
-
-    for project_name, rows in project_groups.items():
-
-        # ======== PROJECT HEADING ========
-        ws.merge_cells(
-            start_row=row_no, start_column=1,
-            end_row=row_no,   end_column=TOTAL_COLS
-        )
-        heading_cell = ws.cell(
-            row=row_no, column=1,
-            value=f"{project_name}  —  All Items Data"
-        )
-        heading_cell.font      = Font(bold=True, size=15, color="1F4E79")
-        heading_cell.alignment = left_align
-        ws.row_dimensions[row_no].height = 24
-        row_no += 1
-
-        # Blank gap row
-        row_no += 1
-
-        # ======== COLUMN HEADER ROW ========
-        for col, header in enumerate(headers, 1):
-            cell           = ws.cell(row=row_no, column=col, value=header)
-            cell.font      = header_font
-            cell.fill      = header_fill
-            cell.border    = thin_border
-            cell.alignment = center_align
-        ws.row_dimensions[row_no].height = 18
-        row_no += 1
-
-        # ======== DATA ROWS ========
-        proj_entries = proj_qty = proj_length = proj_width = proj_weight = 0
-        sr = 1
-
-        for d in rows:
-            entries = d.get("total_entries") or 0
-            qty     = d.get("total_qty")     or 0
-            length  = d.get("total_length")  or 0
-            width   = d.get("total_width")   or 0
-            weight  = d.get("total_weight")  or 0
-
-            values_row = [
-                sr,
-                d.get("project") or "-",
-                d.get("item")    or "-",
-                entries, qty, length, width, weight,
-            ]
-
-            proj_entries += entries
-            proj_qty     += qty
-            proj_length  += length
-            proj_width   += width
-            proj_weight  += weight
-
-            for col, val in enumerate(values_row, 1):
-                cell           = ws.cell(row=row_no, column=col, value=val)
-                cell.border    = thin_border
-                cell.alignment = left_align if col in [2, 3] else center_align
-                cell.font      = Font(size=11)
-            row_no += 1
-            sr += 1
-
-        # ======== PROJECT TOTAL ROW ========
-        ws.merge_cells(
-            start_row=row_no, start_column=1,
-            end_row=row_no,   end_column=3
-        )
-        pt_label           = ws.cell(row=row_no, column=1, value="Total")
-        pt_label.font      = proj_total_font
-        pt_label.fill      = proj_total_fill
-        pt_label.alignment = left_align
-        pt_label.border    = thin_border
-
-        for col, val in zip(
-            range(4, 9),
-            [proj_entries, proj_qty, proj_length, proj_width, proj_weight]
-        ):
-            cell           = ws.cell(row=row_no, column=col, value=val)
-            cell.font      = proj_total_font
-            cell.fill      = proj_total_fill
-            cell.alignment = center_align
-            cell.border    = thin_border
-
-        ws.row_dimensions[row_no].height = 18
-        row_no += 1
-
-        # Blank row between projects
-        row_no += 1
-
-    # -------- COLUMN WIDTH --------
-    ws.column_dimensions["A"].width = 8
-    ws.column_dimensions["B"].width = 18
-    ws.column_dimensions["C"].width = 45
-    ws.column_dimensions["D"].width = 15
-    ws.column_dimensions["E"].width = 12
-    ws.column_dimensions["F"].width = 15
-    ws.column_dimensions["G"].width = 15
-    ws.column_dimensions["H"].width = 18
-
-    # -------- SAVE & RETURN --------
-    file_stream = BytesIO()
-    wb.save(file_stream)
-    file_stream.seek(0)
-
-    # ✅ SAHI TARIKA
-    frappe.response["filename"]    = "Item_Report.xlsx"
-    frappe.response["filecontent"] = file_stream.getvalue()
-    frappe.response["type"]        = "binary"
-
-# The above function generates a well-formatted Excel file for item details, including styling and better organization of data. It handles cases where values might be None or 0, ensuring the Excel file is clean and readable.
+# item details EXCEL    
 @frappe.whitelist()
 def download_item_details_excel(filters):
     import frappe
@@ -1473,4 +1214,171 @@ def download_item_details_excel(filters):
     frappe.response['filecontent'] = file_stream.getvalue()
     frappe.response['type'] = 'download'   
     
-        
+
+
+
+
+# item detail export import button
+
+# ROW-LEVEL IMPORT
+@frappe.whitelist()
+def import_row_data(project, drawing_number, position_no, item):
+    """
+    Ye function ek specific row ka data import karta hai.
+    Aap yahan apna actual import logic likhein.
+    Abhi yeh ek placeholder hai jo success return karta hai.
+    """
+    try:
+        # ── Yahan apna import logic likho ──
+        # Example: kisi aur doctype mein data copy karna, status update karna, etc.
+
+        existing = frappe.db.get_value(
+            "FT Drawing Parts",
+            {
+                "drawing_number": drawing_number,
+                "position_no": position_no,
+                "item_id": item
+            },
+            "name"
+        )
+
+        if not existing:
+            return {"status": "error", "msg": "Row not found in Drawing Parts"}
+
+        # TODO: Yahan apna actual import action karo
+        # frappe.db.set_value("FT Drawing Parts", existing, "some_field", some_value)
+        # frappe.db.commit()
+
+        return {
+            "status": "success",
+            "msg": f"Import successful for Drawing: {drawing_number}, Position: {position_no}"
+        }
+
+    except Exception as e:
+        frappe.log_error(frappe.get_traceback(), "import_row_data Error")
+        return {"status": "error", "msg": str(e)}
+
+
+# ROW-LEVEL EXPORT (Single Row Excel Download)
+@frappe.whitelist()
+def export_row_excel(project, drawing_number, position_no, item):
+    import openpyxl
+    from openpyxl.styles import Font, PatternFill, Border, Side, Alignment
+    from openpyxl.utils import get_column_letter
+    from io import BytesIO
+
+    item_name = frappe.db.get_value("FT Stock RM List", item, "computed_name") or item
+
+    data = frappe.db.sql("""
+        SELECT
+            p.name          AS project_number,
+            pod.po_serial_no,
+            ad.drawing_number,
+            dp.position_no,
+            dp.quantity,
+            dp.lenght,
+            dp.width,
+            dp.single_weight,
+            dp.total_weight
+        FROM `tabFT Drawing Parts` dp
+        LEFT JOIN `tabFT Add Drawing` ad  ON ad.name  = dp.drawing_number
+        LEFT JOIN `tabFT Project`     p   ON p.name   = ad.project_number
+        LEFT JOIN `tabFT Po Drawing`  pod
+               ON pod.project_number = p.name
+              AND pod.drawing_number  = ad.name
+        WHERE dp.item_id        = %(item)s
+          AND ad.project_number = %(project)s
+          AND ad.drawing_number = %(drawing_number)s
+          AND dp.position_no    = %(position_no)s
+        ORDER BY CAST(pod.po_serial_no AS UNSIGNED) ASC
+    """, {
+        "item": item,
+        "project": project,
+        "drawing_number": drawing_number,
+        "position_no": position_no
+    }, as_dict=True)
+
+    # ── Workbook setup ──
+    wb  = openpyxl.Workbook()
+    ws  = wb.active
+    ws.title = "Row Export"
+
+    thin         = Side(style="thin")
+    border       = Border(left=thin, right=thin, top=thin, bottom=thin)
+    center       = Alignment(horizontal="center", vertical="center")
+    header_font  = Font(bold=True, size=12, color="FFFFFF")
+    header_fill  = PatternFill(start_color="2F75B5", end_color="2F75B5", fill_type="solid")
+    total_font   = Font(bold=True, size=12, color="FFFFFF")
+    total_fill   = PatternFill(start_color="2E75B6", end_color="2E75B6", fill_type="solid")
+
+    # ── Title row ──
+    headers = ["Sr No", "Project No", "Po Serial No", "Drawing",
+               "Position No", "Qty", "Length", "Width", "Single Weight", "Total Weight"]
+
+    ws.merge_cells(start_row=1, start_column=1, end_row=1, end_column=len(headers))
+    title_cell            = ws.cell(row=1, column=1, value=f"Row Export — {item_name}")
+    title_cell.font       = Font(bold=True, size=14)
+    title_cell.alignment  = center
+    ws.row_dimensions[1].height = 22
+
+    # ── Header row ──
+    for col, h in enumerate(headers, 1):
+        cell           = ws.cell(row=2, column=col, value=h)
+        cell.font      = header_font
+        cell.fill      = header_fill
+        cell.border    = border
+        cell.alignment = center
+
+    # ── Data rows ──
+    t_qty = t_len = t_wid = t_weight = 0
+    for sr, d in enumerate(data, 1):
+        qty    = d.get("quantity")      or 0
+        length = d.get("lenght")        or 0
+        width  = d.get("width")         or 0
+        sw     = d.get("single_weight") or 0
+        weight = d.get("total_weight")  or 0
+
+        vals = [sr,
+                d.get("project_number"), d.get("po_serial_no"),
+                d.get("drawing_number"), d.get("position_no"),
+                qty, length, width, sw, weight]
+
+        for col, val in enumerate(vals, 1):
+            cell               = ws.cell(row=sr + 2, column=col, value=val)
+            cell.border        = border
+            cell.alignment     = center
+            cell.font          = Font(size=11)
+            if col in [9, 10]:
+                cell.number_format = '#,##0.000'
+
+        t_qty    += qty
+        t_len    += length
+        t_wid    += width
+        t_weight += weight
+
+    # ── Total row ──
+    total_row = len(data) + 3
+    total_vals = ["Total", "", "", "", "", t_qty, t_len, t_wid, "", t_weight]
+    for col, val in enumerate(total_vals, 1):
+        cell               = ws.cell(row=total_row, column=col, value=val)
+        cell.font          = total_font
+        cell.fill          = total_fill
+        cell.border        = border
+        cell.alignment     = center
+        if col in [9, 10]:
+            cell.number_format = '#,##0.000'
+
+    # ── Column widths ──
+    for col, w in zip(range(1, 11), [8, 18, 15, 30, 15, 10, 12, 12, 16, 16]):
+        ws.column_dimensions[get_column_letter(col)].width = w
+
+    # ── Stream response ──
+    file_stream = BytesIO()
+    wb.save(file_stream)
+    file_stream.seek(0)
+
+    frappe.response["filename"]    = f"Row_Export_{drawing_number}_{position_no}.xlsx"
+    frappe.response["filecontent"] = file_stream.getvalue()
+    frappe.response["type"]        = "binary"
+    
+    
