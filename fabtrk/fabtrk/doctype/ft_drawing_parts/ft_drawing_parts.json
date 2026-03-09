@@ -10,6 +10,7 @@
   "drawing_number",
   "position_no",
   "naming_series",
+  "item_id",
   "item",
   "lenght",
   "width",
@@ -88,11 +89,17 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Item"
+  },
+  {
+   "fieldname": "item_id",
+   "fieldtype": "Link",
+   "label": "Item ID",
+   "options": "FT Stock RM List"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-02 13:50:49.405375",
+ "modified": "2026-03-06 18:01:36.690133",
  "modified_by": "Administrator",
  "module": "Fabtrk",
  "name": "FT Drawing Parts",
