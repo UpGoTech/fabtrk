@@ -2,25 +2,20 @@
 frappe.query_reports["FT Drawing Part Report 2"] = {
 
 	onload(report) {
-		// Set default filters
 		frappe.query_report.set_filter_value("project_number", []);
 		frappe.query_report.set_filter_value("drawing_number", []);
 		frappe.query_report.set_filter_value("item", []);
 		frappe.query_report.set_filter_value("is_active", 1);
 		// Add download item details button to summary table
-		report.page.add_inner_button("Download Item Excel", function () {
-
+		report.page.add_inner_button("Download Summary", function () {
 			let filters = report.get_values();
 
-			let url = "/api/method/fabtrk.fabtrk.report.ft_drawing_part_report_2.ft_drawing_part_report_2.download_item_excel"
-				+ "?filters=" + encodeURIComponent(JSON.stringify(filters));
+			let params = new URLSearchParams({
+				filters: JSON.stringify(filters)
+			});
 
-			let link = document.createElement("a");
-			link.href = url;
-			link.download = "Item_Report.xlsx";
-			document.body.appendChild(link);
-			link.click();
-			document.body.removeChild(link);
+			// ✅ window.location.href — sabse reliable Frappe binary download ke liye
+			window.location.href = "/api/method/fabtrk.fabtrk.report.ft_drawing_part_report_2.ft_drawing_part_report_2.download_item_excel?" + params.toString();
 		});
 		
 		// Add download full report button to both summary and detail tables in Excel with two different sheets for detail and summary
@@ -42,7 +37,6 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 			});
 
 		});
-
 
 		setTimeout(() => {
 			frappe.query_report.refresh();
@@ -418,6 +412,41 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 								total_weight_style = "text-align:center; color:#000; font-weight:700; font-size:15px;";
 							}
 
+
+							// is_total_row check ke baad row build karte waqt:
+
+							let action_buttons = "";
+
+							if (!is_total_row) {
+								action_buttons = `
+										<td style="text-align:center;">
+											<div style="display:flex; gap:6px; justify-content:center;">
+												<button class="btn btn-xs btn-success row-import-btn"
+													style="min-width:60px;"
+													data-project="${d.project_number || ''}"
+													data-drawing="${d.drawing_number || ''}"
+													data-position="${d.position_no || ''}"
+													data-part-no="${d.part_no || ''}"
+													data-item="${item}">
+													Import (show drawings)
+												</button>
+												<button class="btn btn-xs btn-warning row-export-btn"
+													style="min-width:60px;"
+													data-project="${d.project_number || ''}"
+													data-drawing="${d.drawing_number || ''}"
+													data-position="${d.position_no || ''}"
+													data-part-no="${d.part_no || ''}"
+													data-item="${item}">
+													Export DXL/DWG
+												</button>
+											</div>
+										</td>
+									`;
+							} else {
+								action_buttons = `<td></td>`;
+							}
+
+
 							rows += `
 								<tr style="${row_style}">
 									<td style="text-align:center;">${d.serial_no || ""}</td>
@@ -425,12 +454,15 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
         							<td>${d.po_serial_no || ""}</td>
 									<td>${d.drawing_number}</td>
 									<td style="text-align:center;">${d.position_no || ""}</td>
+									<td style="text-align:center;">${d.part_no || ""}</td>
 									<td style="text-align:center;">${d.entry_count || ""}</td>
 									<td style="${total_weight_style}">${qty}</td>
 									<td style="${total_weight_style}">${length}</td>
 									<td style="${total_weight_style}">${width}</td>
 									<td style="text-align:center;">${single_weight}</td>
 									<td style="${total_weight_style}">${total_weight}</td>
+
+									${action_buttons}
 								</tr>
 							`;
 
@@ -440,6 +472,9 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 									String(d.total_weight).replace(/<[^>]+>/g, '')
 								) || 0;
 							}
+
+
+
 						});
 
 						let html = `
@@ -466,12 +501,15 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 										<th >Po Serial No</th>
 										<th >Drawing</th>
 										<th style="text-align: center;">Position No</th>
+										<th style="text-align: center;">Part No</th>
 										<th style="text-align:center;">Entry Count</th>
 										<th style="text-align: center;">Qty</th>
 										<th style="text-align: center;">Length</th>
 										<th style="text-align: center;">Width</th>
 										<th style="text-align: center;">Single Weight</th>
 										<th style="text-align: center;">Total Weight</th>
+
+										<th style="text-align: center;">Actions</th>
 									</tr>
 									${rows}
 								</table>
@@ -479,6 +517,60 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 						`;
 
 						$(report.wrapper).find(".datatable").after(html);
+
+						// Import button click
+						$(document).off("click", ".row-import-btn")
+							.on("click", ".row-import-btn", function () {
+								let project = $(this).data("project");
+								let drawing = $(this).data("drawing");
+								let position = $(this).data("position");
+								let item_id = $(this).data("item");
+
+								frappe.call({
+									method: "fabtrk.fabtrk.report.ft_drawing_part_report_2.ft_drawing_part_report_2.import_row_data",
+									args: {
+										project: project,
+										drawing_number: drawing,
+										position_no: position,
+										item: item_id
+									},
+									callback: function (r) {
+										if (r.message && r.message.status === "success") {
+											frappe.show_alert({
+												message: r.message.msg || "Import successful",
+												indicator: "green"
+											});
+										} else {
+											frappe.show_alert({
+												message: (r.message && r.message.msg) || "Import failed",
+												indicator: "red"
+											});
+										}
+									}
+								});
+							});
+
+						// Export button click
+						$(document).off("click", ".row-export-btn")
+							.on("click", ".row-export-btn", function () {
+								let project = $(this).data("project");
+								let drawing = $(this).data("drawing");
+								let position = $(this).data("position");
+								let item_id = $(this).data("item");
+
+								let params = new URLSearchParams({
+									project: project,
+									drawing_number: drawing,
+									position_no: position,
+									item: item_id
+								});
+
+								window.location.href =
+									"/api/method/fabtrk.fabtrk.report.ft_drawing_part_report_2.ft_drawing_part_report_2.export_row_excel?"
+									+ params.toString();
+							});
+
+
 
 						$(".close-view").on("click", function () {
 							$("#item-detail-container").remove();
@@ -637,6 +729,7 @@ function download_full_report(report) {
 
 	XLSX.writeFile(wb, "FT_Drawing_Part_Report.xlsx");
 }
+
 if (!window.XLSX) {
 	let script = document.createElement("script");
 	script.src = "https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js";

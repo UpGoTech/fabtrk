@@ -19,7 +19,7 @@ class FTAddDrawing(Document):
             {
                 "project_number": self.project_number,
                 "drawing_number": self.drawing_number,
-                "name": ["!=", self.name]  # update case handle
+                "name": ["!=", self.name]  
             }
         )
 

@@ -42,7 +42,7 @@ function set_drawing_filter(frm) {
             if (r.message) {
                 used_drawings = r.message
                     .map(d => d.drawing_number)
-                    .filter(d => d); // null hata do
+                    .filter(d => d); 
             }
 
             // drawing_number link field filter
