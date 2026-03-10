@@ -1218,6 +1218,8 @@ def download_item_details_excel(filters):
 
 
 
+
+
 # item detail export import button
 
 # ROW-LEVEL IMPORT

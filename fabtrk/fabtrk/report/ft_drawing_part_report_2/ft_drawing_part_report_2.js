@@ -434,7 +434,7 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 													style="min-width:60px;"
 													data-project="${d.project_number || ''}"
 													data-drawing="${d.drawing_number || ''}"
-													data-position="${d.position_no || ''}"
+													data-position="${d.position_no || ''}"    
 													data-item="${item}">
 													Export DXL/DWG
 												</button>

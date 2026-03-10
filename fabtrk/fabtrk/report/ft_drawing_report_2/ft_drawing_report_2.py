@@ -59,7 +59,6 @@ def execute(filters=None):
         "total_weight": total_total_weight
     })
 
-    
 
 # ================= SUMMARY =================
 
