@@ -1139,7 +1139,7 @@ def download_item_details_excel(filters):
         serial_no += 1
 
     # -------- TOTAL ROW --------
-    for col in range(1, 12):
+    for col in range(1, 13):
         cell = ws.cell(row=row_no, column=col)
         cell.fill = total_fill
         cell.alignment = center
@@ -1149,29 +1149,29 @@ def download_item_details_excel(filters):
             cell.font = total_font
             cell.border = Border(left=thin, top=thin, bottom=thin)
 
-        elif col == 7:
+        elif col == 8:
             cell.value = total_qty
             cell.font = total_font
-            cell.border = Border(top=thin, bottom=thin)
-
-        elif col == 8:
-            cell.value = total_length
-            cell.font = total_font
-            cell.border = Border(top=thin, bottom=thin)
+            cell.border = Border(left=thin, top=thin, bottom=thin)
 
         elif col == 9:
+            cell.value = total_length
+            cell.font = total_font
+            cell.border = Border(left=thin, top=thin, bottom=thin)
+
+        elif col == 10:
             cell.value = total_width
             cell.font = total_font
-            cell.border = Border(top=thin, bottom=thin)
+            cell.border = Border(left=thin, top=thin, bottom=thin)
 
-        elif col == 11:
+        elif col == 12:
             cell.value = total_weight
             cell.font = total_font
             cell.border = Border(right=thin, left=thin, top=thin, bottom=thin)
             cell.number_format = '#,##0.000'  
 
         else:
-            cell.border = Border(top=thin, bottom=thin)
+            cell.border = Border(left=thin, top=thin, bottom=thin)
 
     # -------- COLUMN WIDTH --------
     widths = [8, 18, 15, 30, 15, 12, 10, 12, 12, 12, 16, 16]
