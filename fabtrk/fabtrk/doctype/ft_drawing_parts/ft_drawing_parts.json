@@ -91,13 +91,13 @@
   },
   {
    "fieldname": "part_no",
-   "fieldtype": "Float",
+   "fieldtype": "Data",
    "label": "Part No"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-09 12:40:30.880258",
+ "modified": "2026-03-10 16:13:05.731555",
  "modified_by": "Administrator",
  "module": "Fabtrk",
  "name": "FT Drawing Parts",

@@ -11,9 +11,9 @@
   "grade",
   "stock_rm_type",
   "thickness_mm",
+  "name1",
   "thk",
   "kg__sqm",
-  "name1",
   "kg__meter",
   "surface_area_sqm__mtr",
   "surface_area_sqm__ton",
@@ -33,6 +33,7 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Computed Name",
+   "read_only": 1,
    "unique": 1
   },
   {
@@ -100,7 +101,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-02 13:43:53.123901",
+ "modified": "2026-03-10 15:03:43.778782",
  "modified_by": "Administrator",
  "module": "Fabtrk",
  "name": "FT Stock RM List",

@@ -19,7 +19,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-18 16:48:04.933713",
+ "modified": "2026-03-10 13:32:40.710449",
  "modified_by": "Administrator",
  "module": "Fabtrk",
  "name": "FT Customer",
@@ -43,5 +43,7 @@
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": [],
- "title_field": "customer_name"
+ "title_field": "customer_name",
+ "track_changes": 1,
+ "track_views": 1
 }
