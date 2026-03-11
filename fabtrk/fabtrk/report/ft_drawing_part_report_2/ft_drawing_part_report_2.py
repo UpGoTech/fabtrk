@@ -1188,6 +1188,8 @@ def download_item_details_excel(filters):
     frappe.response['type'] = 'download'   
   
 
+
+
 # item detail export import button
 
 # ROW-LEVEL IMPORT
