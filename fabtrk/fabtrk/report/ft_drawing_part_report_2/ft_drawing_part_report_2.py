@@ -313,6 +313,7 @@ def get_item_details(project, item, drawing_numbers=None):
             pod.po_serial_no AS po_serial_no,
             ad.drawing_number AS drawing_number,
             dp.position_no AS position_no,
+            dp.part_no AS part_no,
             dp.quantity,
             dp.lenght,
             dp.width,
@@ -336,6 +337,7 @@ def get_item_details(project, item, drawing_numbers=None):
         "po_serial_no": "",
         "drawing_number": "",
         "position_no": "",
+        "part_no": "",
         "quantity": 0,
         "lenght": 0,
         "width": 0,
@@ -350,6 +352,7 @@ def get_item_details(project, item, drawing_numbers=None):
             d.get("po_serial_no"),
             d.get("drawing_number"),
             d.get("position_no"),
+            d.get("part_no"), 
             d.get("quantity"),
             d.get("lenght"),
             d.get("width"),
@@ -361,6 +364,7 @@ def get_item_details(project, item, drawing_numbers=None):
         grouped[key]["po_serial_no"] = d.get("po_serial_no")
         grouped[key]["drawing_number"] = d.get("drawing_number")
         grouped[key]["position_no"] = d.get("position_no")
+        grouped[key]["part_no"]        = d.get("part_no") 
         grouped[key]["quantity"] = d.get("quantity")
         grouped[key]["lenght"] = d.get("lenght")
         grouped[key]["width"] = d.get("width")

@@ -453,6 +453,7 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
         							<td>${d.po_serial_no || ""}</td>
 									<td>${d.drawing_number}</td>
 									<td style="text-align:center;">${d.position_no || ""}</td>
+									<td style="text-align:center;">${d.part_no || ""}</td>
 									<td style="text-align:center;">${d.entry_count || ""}</td>
 									<td style="${total_weight_style}">${qty}</td>
 									<td style="${total_weight_style}">${length}</td>
@@ -500,6 +501,7 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 										<th >Po Serial No</th>
 										<th >Drawing</th>
 										<th style="text-align: center;">Position No</th>
+										<th style="text-align: center;">Part No</th>
 										<th style="text-align:center;">Entry Count</th>
 										<th style="text-align: center;">Qty</th>
 										<th style="text-align: center;">Length</th>

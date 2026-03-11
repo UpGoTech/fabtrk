@@ -7,9 +7,9 @@ def execute(filters=None):
     columns = [
         {"label": "Project", "fieldname": "project_name", "fieldtype": "Link", "options": "FT Project", "width": 200},
         {"label": "Drawing Number", "fieldname": "drawing_number", "fieldtype": "Data","width": 200,"align": "center"},
-        {"label": "PO Serial No", "fieldname": "po_serial_no", "fieldtype": "Data","width": 200,"align": "center"},
+        {"label": "PO Serial No", "fieldname": "po_serial_no", "fieldtype": "Data","width": 190,"align": "center"},
         {"label": "Unit Weight", "fieldname": "unit_weight", "fieldtype": "Float", "width": 200,"align": "center"},
-        {"label": "Required Qty", "fieldname": "quantity", "fieldtype": "Int", "width": 200,"align": "center"},
+        {"label": "Required Qty", "fieldname": "quantity", "fieldtype": "Int", "width": 190,"align": "center"},
         {"label": "Total Weight", "fieldname": "total_weight", "fieldtype": "Float", "width": 200,"align": "center"},
     ]
 
