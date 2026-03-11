@@ -472,8 +472,6 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 								) || 0;
 							}
 
-
-
 						});
 
 
@@ -599,6 +597,194 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 				// window.open(url);
 				window.location.href = url;
 			});
+
+
+		$(document).off("click", ".save-btn")
+			.on("click", ".save-btn", function () {
+
+				let data = $(this).data();
+
+				frappe.call({
+					method: "fabtrk.fabtrk.report.ft_drawing_part_report_2.ft_drawing_part_report_2.save_row_data",
+					args: {
+						sr_no: data.srno,
+						project: data.project,
+						item_name: data.itemname,
+						item_count: data.itemcount,
+						quantity: data.qty,
+						lenght: data.length,
+						width: data.width,
+						total_weight: data.weight
+					},
+					callback: function (r) {
+						frappe.msgprint(r.message.msg || "Saved");
+					}
+				});
+
+			});
+
+		// $(document).off("click", ".compare-btn")
+		// 	.on("click", ".compare-btn", function () {
+
+		// 		let data = $(this).data();
+
+		// 		frappe.call({
+		// 			method: "fabtrk.fabtrk.report.ft_drawing_part_report_2.ft_drawing_part_report_2.compare_row_data",
+		// 			args: {
+		// 				sr_no: data.srno,
+		// 				project: data.project,
+		// 				item_name: data.itemname,
+		// 				item_count: data.itemcount,   
+		// 				quantity: data.qty,
+		// 				lenght: data.length,
+		// 				width: data.width,
+		// 				total_weight: data.weight
+		// 			},
+		// 			callback: function (r) {
+
+		// 				if (!r.message || r.message.status !== "success") {
+		// 					frappe.msgprint(r.message.msg || "No data");
+		// 					return;
+		// 				}
+
+		// 				let diff = r.message.difference;
+
+		// 				if (!Object.keys(diff).length) {
+		// 					frappe.msgprint("No Difference Found");
+		// 					return;
+		// 				}
+
+		// 				let html = "<table class='table table-bordered'>";
+		// 				html += "<tr><th>Field</th><th>Saved</th><th>Current</th></tr>";
+
+		// 				Object.keys(diff).forEach(f => {
+		// 					html += `
+		// 						<tr style="background:#ffecec;">
+		// 						<td><b>${f}</b></td>
+		// 						<td style="color:red;">${diff[f].saved}</td>
+		// 						<td style="color:green;">${diff[f].current}</td>
+		// 						</tr>
+		// 					`;
+		// 				});
+
+		// 				html += "</table>";
+
+		// 				frappe.msgprint({
+		// 					title: "Data Comparison",
+		// 					message: html,
+		// 					wide: true
+		// 				});
+
+		// 			}
+		// 		});
+
+		// 	});
+		$(document).off("click", ".compare-btn")
+			.on("click", ".compare-btn", function () {
+
+				let data = $(this).data();
+
+				frappe.call({
+					method: "fabtrk.fabtrk.report.ft_drawing_part_report_2.ft_drawing_part_report_2.compare_row_data",
+					args: {
+						sr_no: data.srno,
+						project: data.project,
+						item_name: data.itemname,
+						item_count: data.itemcount,
+						quantity: data.qty,
+						lenght: data.length,
+						width: data.width,
+						total_weight: data.weight
+					},
+					callback: function (r) {
+
+						if (!r.message) {
+							frappe.msgprint("Server se response nahi aaya");
+							return;
+						}
+
+						// ✅ Saved data not found
+						if (r.message.status === "error") {
+							frappe.msgprint({
+								title: "Compare Result",
+								message: `<b style="color:red;">⚠️ ${r.message.msg}</b><br><br>
+									Click the <b>Save</b> button first, then the clothes. This text`,
+								indicator: "red"
+							});
+							return;
+						}
+
+						let diff = r.message.difference;
+
+						// ✅ No difference found
+						if (!diff || !Object.keys(diff).length) {
+							frappe.msgprint({
+								title: "Compare Result",
+								message: `<div style="text-align:center; padding:10px;">
+									<span style="color:green; font-size:20px;">✅</span><br>
+									<b style="color:green;">No Difference Found</b><br>
+									Saved data aur current data same hai.
+								</div>`,
+								indicator: "green"
+							});
+							return;
+						}
+
+						// ✅ Show differences
+						// Field labels for display
+						let field_labels = {
+							"total_entries": "Total Entries",
+							"total_qty": "Total Qty",
+							"total_length": "Total Length",
+							"total_width": "Total Width",
+							"total_weight": "Total Weight"
+						};
+
+						let html = `
+							<table class="table table-bordered" style="margin-top:10px;">
+								<thead>
+									<tr style="background:#2F75B5; color:#fff;">
+										<th>Field</th>
+										<th>Saved Value</th>
+										<th>Current Value</th>
+										<th>Difference</th>
+									</tr>
+								</thead>
+								<tbody>
+						`;
+
+						Object.keys(diff).forEach(f => {
+							let saved_val = parseFloat(diff[f].saved || 0);
+							let current_val = parseFloat(diff[f].current || 0);
+							let difference = (current_val - saved_val).toFixed(3);
+							let diff_color = difference > 0 ? "green" : "red";
+							let diff_sign = difference > 0 ? "+" : "";
+
+							html += `
+								<tr>
+									<td><b>${field_labels[f] || f}</b></td>
+									<td style="color:#e65c00; text-align:center;">${saved_val}</td>
+									<td style="color:#1a7abf; text-align:center;">${current_val}</td>
+									<td style="color:${diff_color}; text-align:center; font-weight:bold;">
+										${diff_sign}${difference}
+									</td>
+								</tr>
+							`;
+						});
+
+						html += `</tbody></table>`;
+
+						frappe.msgprint({
+							title: `📊 Compare: ${data.itemname}`,
+							message: html,
+							wide: true,
+							indicator: "orange"
+						});
+					}
+				});
+			});
+
+
 
 
 		setTimeout(() => {
@@ -842,4 +1028,13 @@ $(`<style>
 	padding: 0 !important;
 }
 </style>`).appendTo("head");
+
+
+
+
+
+
+
+
+
 

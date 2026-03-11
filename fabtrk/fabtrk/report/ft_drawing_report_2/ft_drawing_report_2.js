@@ -7,10 +7,6 @@ frappe.query_reports["FT Drawing Report 2"] = {
 		frappe.query_report.set_filter_value("drawing_number", []);
 		frappe.query_report.set_filter_value("is_active", 1);
 
-		// Add Buttons
-		// report.page.add_inner_button("Download Drawings", function () {
-		// 	download_csv(report);
-		// });
 		report.page.add_inner_button("Drawing Excel", function () {
 
 			let filters = report.get_values();
@@ -132,39 +128,7 @@ frappe.query_reports["FT Drawing Report 2"] = {
 
 
 
-// function download_csv(report) {
 
-// 	if (!report.data || !report.data.length) {
-// 		frappe.msgprint("No data to export");
-// 		return;
-// 	}
-
-// 	let columns = report.columns
-// 		.filter(col => col.fieldname !== "view")
-// 		.map(col => `"${col.label}"`);
-
-// 	let rows = report.data.map(row => {
-// 		return report.columns
-// 			.filter(col => col.fieldname !== "view")
-// 			.map(col => {
-// 				let value = row[col.fieldname] ?? "";
-// 				value = String(value).replace(/"/g, '""');
-// 				return `"${value}"`;
-// 			}).join(",");
-// 	});
-
-// 	let csv_content = columns.join(",") + "\n" + rows.join("\n");
-
-// 	let blob = new Blob([csv_content], { type: "text/csv;charset=utf-8;" });
-// 	let url = URL.createObjectURL(blob);
-
-// 	let link = document.createElement("a");
-// 	link.href = url;
-// 	link.download = "FT_Drawing_Report.csv";
-// 	document.body.appendChild(link);
-// 	link.click();
-// 	document.body.removeChild(link);
-// }
 
 $(`<style>
 
