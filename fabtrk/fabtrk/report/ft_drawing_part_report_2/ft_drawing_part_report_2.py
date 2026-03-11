@@ -350,7 +350,7 @@ def get_item_details(project, item, drawing_numbers=None):
             d.get("po_serial_no"),
             d.get("drawing_number"),
             d.get("position_no"),
-            d.get("part_no"),
+            d.get("part_no"), 
             d.get("quantity"),
             d.get("lenght"),
             d.get("width"),
@@ -362,7 +362,7 @@ def get_item_details(project, item, drawing_numbers=None):
         grouped[key]["po_serial_no"] = d.get("po_serial_no")
         grouped[key]["drawing_number"] = d.get("drawing_number")
         grouped[key]["position_no"] = d.get("position_no")
-        grouped[key]["part_no"] = d.get("part_no")
+        grouped[key]["part_no"]        = d.get("part_no") 
         grouped[key]["quantity"] = d.get("quantity")
         grouped[key]["lenght"] = d.get("lenght")
         grouped[key]["width"] = d.get("width")
@@ -1187,7 +1187,6 @@ def download_item_details_excel(filters):
     frappe.response['filecontent'] = file_stream.getvalue()
     frappe.response['type'] = 'download'   
   
-
 
 
 # item detail export import button
