@@ -8,8 +8,18 @@ frappe.query_reports["FT Drawing Report 2"] = {
 		frappe.query_report.set_filter_value("is_active", 1);
 
 		// Add Buttons
-		report.page.add_inner_button("Download Drawings", function () {
-			download_csv(report);
+		// report.page.add_inner_button("Download Drawings", function () {
+		// 	download_csv(report);
+		// });
+		report.page.add_inner_button("Drawing Excel", function () {
+
+			let filters = report.get_values();
+
+			let url = "/api/method/fabtrk.fabtrk.report.ft_drawing_report_2.ft_drawing_report_2.download_drawing_excel"
+				+ "?filters=" + encodeURIComponent(JSON.stringify(filters));
+
+			window.location.href = url;
+
 		});
 
 		setTimeout(() => {
@@ -105,7 +115,7 @@ frappe.query_reports["FT Drawing Report 2"] = {
 				report.datatable.hideColumn(field);
 			}
 		});
-	}, 
+	},
 	formatter: function (value, row, column, data, default_formatter) {
 
 		value = default_formatter(value, row, column, data);
@@ -122,39 +132,39 @@ frappe.query_reports["FT Drawing Report 2"] = {
 
 
 
-function download_csv(report) {
+// function download_csv(report) {
 
-	if (!report.data || !report.data.length) {
-		frappe.msgprint("No data to export");
-		return;
-	}
+// 	if (!report.data || !report.data.length) {
+// 		frappe.msgprint("No data to export");
+// 		return;
+// 	}
 
-	let columns = report.columns
-		.filter(col => col.fieldname !== "view")
-		.map(col => `"${col.label}"`);
+// 	let columns = report.columns
+// 		.filter(col => col.fieldname !== "view")
+// 		.map(col => `"${col.label}"`);
 
-	let rows = report.data.map(row => {
-		return report.columns
-			.filter(col => col.fieldname !== "view")
-			.map(col => {
-				let value = row[col.fieldname] ?? "";
-				value = String(value).replace(/"/g, '""');
-				return `"${value}"`;
-			}).join(",");
-	});
+// 	let rows = report.data.map(row => {
+// 		return report.columns
+// 			.filter(col => col.fieldname !== "view")
+// 			.map(col => {
+// 				let value = row[col.fieldname] ?? "";
+// 				value = String(value).replace(/"/g, '""');
+// 				return `"${value}"`;
+// 			}).join(",");
+// 	});
 
-	let csv_content = columns.join(",") + "\n" + rows.join("\n");
+// 	let csv_content = columns.join(",") + "\n" + rows.join("\n");
 
-	let blob = new Blob([csv_content], { type: "text/csv;charset=utf-8;" });
-	let url = URL.createObjectURL(blob);
+// 	let blob = new Blob([csv_content], { type: "text/csv;charset=utf-8;" });
+// 	let url = URL.createObjectURL(blob);
 
-	let link = document.createElement("a");
-	link.href = url;
-	link.download = "FT_Drawing_Report.csv";
-	document.body.appendChild(link);
-	link.click();
-	document.body.removeChild(link);
-}
+// 	let link = document.createElement("a");
+// 	link.href = url;
+// 	link.download = "FT_Drawing_Report.csv";
+// 	document.body.appendChild(link);
+// 	link.click();
+// 	document.body.removeChild(link);
+// }
 
 $(`<style>
 
