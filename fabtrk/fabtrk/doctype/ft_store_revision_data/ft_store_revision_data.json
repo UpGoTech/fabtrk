@@ -12,7 +12,8 @@
   "total_qty",
   "total_length",
   "total_width",
-  "total_weight"
+  "total_weight",
+  "revision_log"
  ],
  "fields": [
   {
@@ -54,11 +55,16 @@
    "fieldname": "total_width",
    "fieldtype": "Data",
    "label": "Total Width"
+  },
+  {
+   "fieldname": "revision_log",
+   "fieldtype": "Long Text",
+   "label": "Revision Log"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-11 16:32:43.132767",
+ "modified": "2026-03-12 12:41:35.344154",
  "modified_by": "Administrator",
  "module": "Fabtrk",
  "name": "FT Store Revision Data",
