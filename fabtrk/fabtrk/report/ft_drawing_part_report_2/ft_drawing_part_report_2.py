@@ -1,5 +1,6 @@
  
 import frappe
+from frappe.utils import get_url
 
 def execute(filters=None):
     filters = filters or {}
@@ -664,6 +665,7 @@ def get_all_details_for_export(filters):
             pod.po_serial_no,
             ad.drawing_number,
             dp.position_no,
+            dp.part_no,
             IFNULL(dp.quantity,0) as quantity,
             IFNULL(dp.lenght,0) as lenght,
             IFNULL(dp.width,0) as width,
@@ -877,7 +879,7 @@ def get_all_details_for_export(filters):
     ws3=wb.create_sheet("Details")
 
     headers=["Sr No","Project","Item","PO Serial","Drawing",
-             "Position","Qty","Length","Width","Single Weight","Total Weight"]
+             "Position","Part No","Qty","Length","Width","Single Weight","Total Weight"]
 
     ws3.merge_cells(start_row=1,start_column=1,end_row=1,end_column=len(headers))
     title=ws3.cell(row=1,column=1,value="Item Wise Summary")
@@ -903,7 +905,7 @@ def get_all_details_for_export(filters):
     for d in detail_data:
 
         vals=[sr,d.project,d.item_name,d.po_serial_no,
-              d.drawing_number,d.position_no,d.quantity,
+              d.drawing_number,d.position_no,d.part_no,d.quantity,
               d.lenght,d.width,d.single_weight,d.total_weight]
 
         for col,val in enumerate(vals,1):
@@ -924,7 +926,7 @@ def get_all_details_for_export(filters):
         row+=1
         sr+=1
 
-    total_row=["Total","","","","","",t_qty,t_len,t_wid,t_swt,t_twt]
+    total_row=["Total","","","","","","",t_qty,t_len,t_wid,t_swt,t_twt]
 
     for col,val in enumerate(total_row,1):
 
@@ -937,7 +939,7 @@ def get_all_details_for_export(filters):
         if col>=7:
             c.number_format=num
 
-    widths=[8,20,40,15,30,15,12,18,18,18,20]
+    widths=[8,20,40,15,30,15,12,18,18,18,18,20]
 
     for i,w in enumerate(widths,1):
         ws3.column_dimensions[get_column_letter(i)].width=w
@@ -1187,169 +1189,249 @@ def download_item_details_excel(filters):
     frappe.response['filecontent'] = file_stream.getvalue()
     frappe.response['type'] = 'download'   
   
+# --------------------- GENERATE JSON FOR NESTING CENTER ---------------------
+# @frappe.whitelist()
+# def export_nesting_json(filters=None):
+
+#     import json
+
+#     filters = frappe.parse_json(filters)
+
+#     project = filters.get("project")
+#     item = filters.get("item")
+
+#     item_name = frappe.db.get_value(
+#         "FT Stock RM List",
+#         item,
+#         "computed_name"
+#     )
+
+#     rows = frappe.db.sql("""
+#         SELECT
+#             dp.quantity,
+#             dp.lenght,
+#             dp.width,
+#             dp.part_no
+#         FROM `tabFT Drawing Parts` dp
+#         LEFT JOIN `tabFT Add Drawing` ad ON ad.name = dp.drawing_number
+#         WHERE ad.project_number=%s
+#         AND dp.item_id=%s
+#     """,(project,item),as_dict=1)
+
+#     parts = []
+
+#     for row in rows:
+
+#         parts.append({
+#             "Quantity": int(row.quantity or 0),
+#             "RectangularShape": {
+#                 "Length": str(row.lenght or 0),
+#                 "Width": str(row.width or 0)
+#             },
+#             "Name": f"{row.part_no}",
+#             "Colour": "#8C704D"
+#         })
 
 
-# item detail export import button
+#     data = {
 
-# ROW-LEVEL IMPORT
+#         "Settings": {
+#             "DimensionLimit": None,
+#             "DistancePartPart": "0",
+#             "DistancePartRawPlate": "0",
+#             "MirrorControl": "Allow",
+#             "NestingInHoles": True,
+#             "RotationControl": "Free",
+#             "SortRawPlates": True,
+#             "GroupLayouts": True,
+#             "PlacementDirection": "LeftDown",
+#             "RotationTwist": {"Deg": 0},
+#             "NestingMode": "General",
+#             "SettingsStrips": {"Sorting": "Length"},
+#             "LayoutDuplicationAuto": False
+#         },
+
+#         "Problem": {
+
+#             "Parts": parts,
+
+#             "RawPlates": [
+#                 {
+#                     "Quantity": 10,
+#                     "RectangularShape": {
+#                         "Length": "12000",
+#                         "Width": "100"
+#                     },
+#                     "Name": item_name
+#                 }
+#             ]
+#         },
+
+#         "StopConditions": {
+#             "AllPartsNested": False,
+#             "Scrap": False,
+#             "ScrapValue": 0,
+#             "Scrap2": False,
+#             "Scrap2Value": 0,
+#             "SmartStop": False,
+#             "Timeout": True,
+#             "TimeoutValue": 300
+#         }
+#     }
+
+#     frappe.response["filename"] = "nesting_data.json"
+#     frappe.response["filecontent"] = json.dumps(data, indent=4)
+#     frappe.response["type"] = "download"
+
 @frappe.whitelist()
-def import_row_data(project, drawing_number, position_no, item):
-    """
-    Ye function ek specific row ka data import karta hai.
-    Aap yahan apna actual import logic likhein.
-    Abhi yeh ek placeholder hai jo success return karta hai.
-    """
-    try:
-        # ── Yahan apna import logic likho ──
-        # Example: kisi aur doctype mein data copy karna, status update karna, etc.
+def export_nesting_json(filters=None):
 
-        existing = frappe.db.get_value(
-            "FT Drawing Parts",
-            {
-                "drawing_number": drawing_number,
-                "position_no": position_no,
-                "item_id": item
-            },
-            "name"
-        )
+    import json
+    import random
 
-        if not existing:
-            return {"status": "error", "msg": "Row not found in Drawing Parts"}
+    # ---------- RANDOM COLOR FUNCTION ----------
+    def get_random_color():
+        return "#{:06x}".format(random.randint(0, 0xFFFFFF))
 
-        # TODO: Yahan apna actual import action karo
-        # frappe.db.set_value("FT Drawing Parts", existing, "some_field", some_value)
-        # frappe.db.commit()
+    filters = frappe.parse_json(filters)
 
-        return {
-            "status": "success",
-            "msg": f"Import successful for Drawing: {drawing_number}, Position: {position_no}"
-        }
+    project = filters.get("project")
+    item = filters.get("item")
 
-    except Exception as e:
-        frappe.log_error(frappe.get_traceback(), "import_row_data Error")
-        return {"status": "error", "msg": str(e)}
+    item_name = frappe.db.get_value(
+        "FT Stock RM List",
+        item,
+        "computed_name"
+    )
 
-
-# ROW-LEVEL EXPORT (Single Row Excel Download)
-@frappe.whitelist()
-def export_row_excel(project, drawing_number, position_no, item):
-    import openpyxl
-    from openpyxl.styles import Font, PatternFill, Border, Side, Alignment
-    from openpyxl.utils import get_column_letter
-    from io import BytesIO
-
-    item_name = frappe.db.get_value("FT Stock RM List", item, "computed_name") or item
-
-    data = frappe.db.sql("""
+    rows = frappe.db.sql("""
         SELECT
-            p.name          AS project_number,
-            pod.po_serial_no,
-            ad.drawing_number,
-            dp.position_no,
             dp.quantity,
             dp.lenght,
             dp.width,
-            dp.single_weight,
-            dp.total_weight
+            dp.part_no
         FROM `tabFT Drawing Parts` dp
-        LEFT JOIN `tabFT Add Drawing` ad  ON ad.name  = dp.drawing_number
-        LEFT JOIN `tabFT Project`     p   ON p.name   = ad.project_number
-        LEFT JOIN `tabFT Po Drawing`  pod
-               ON pod.project_number = p.name
-              AND pod.drawing_number  = ad.name
-        WHERE dp.item_id        = %(item)s
-          AND ad.project_number = %(project)s
-          AND ad.drawing_number = %(drawing_number)s
-          AND dp.position_no    = %(position_no)s
-        ORDER BY CAST(pod.po_serial_no AS UNSIGNED) ASC
-    """, {
-        "item": item,
-        "project": project,
-        "drawing_number": drawing_number,
-        "position_no": position_no
-    }, as_dict=True)
+        LEFT JOIN `tabFT Add Drawing` ad ON ad.name = dp.drawing_number
+        WHERE ad.project_number=%s
+        AND dp.item_id=%s
+    """,(project,item),as_dict=1)
 
-    # ── Workbook setup ──
-    wb  = openpyxl.Workbook()
-    ws  = wb.active
-    ws.title = "Row Export"
+    parts = []
 
-    thin         = Side(style="thin")
-    border       = Border(left=thin, right=thin, top=thin, bottom=thin)
-    center       = Alignment(horizontal="center", vertical="center")
-    header_font  = Font(bold=True, size=12, color="FFFFFF")
-    header_fill  = PatternFill(start_color="2F75B5", end_color="2F75B5", fill_type="solid")
-    total_font   = Font(bold=True, size=12, color="FFFFFF")
-    total_fill   = PatternFill(start_color="2E75B6", end_color="2E75B6", fill_type="solid")
+    for row in rows:
 
-    # ── Title row ──
-    headers = ["Sr No", "Project No", "Po Serial No", "Drawing",
-               "Position No", "Qty", "Length", "Width", "Single Weight", "Total Weight"]
+        # ---------- DEFAULT WIDTH ----------
+        width = int(row.width) if row.width and int(row.width) != 0 else 100
 
-    ws.merge_cells(start_row=1, start_column=1, end_row=1, end_column=len(headers))
-    title_cell            = ws.cell(row=1, column=1, value=f"Row Export — {item_name}")
-    title_cell.font       = Font(bold=True, size=14)
-    title_cell.alignment  = center
-    ws.row_dimensions[1].height = 22
+        parts.append({
+            "Quantity": int(row.quantity or 0),
+            "RectangularShape": {
+                "Length": str(int(row.lenght or 0)),
+                "Width": str(width)
+            },
+            "Name": f"{row.part_no}",
+            "Colour": get_random_color()   
+        })
 
-    # ── Header row ──
-    for col, h in enumerate(headers, 1):
-        cell           = ws.cell(row=2, column=col, value=h)
-        cell.font      = header_font
-        cell.fill      = header_fill
-        cell.border    = border
-        cell.alignment = center
 
-    # ── Data rows ──
-    t_qty = t_len = t_wid = t_weight = 0
-    for sr, d in enumerate(data, 1):
-        qty    = d.get("quantity")      or 0
-        length = d.get("lenght")        or 0
-        width  = d.get("width")         or 0
-        sw     = d.get("single_weight") or 0
-        weight = d.get("total_weight")  or 0
+    data = {
 
-        vals = [sr,
-                d.get("project_number"), d.get("po_serial_no"),
-                d.get("drawing_number"), d.get("position_no"),
-                qty, length, width, sw, weight]
+        "Settings": {
+            "DimensionLimit": None,
+            "DistancePartPart": "0",
+            "DistancePartRawPlate": "0",
+            "MirrorControl": "Allow",
+            "NestingInHoles": True,
+            "RotationControl": "Free",
+            "SortRawPlates": True,
+            "GroupLayouts": True,
+            "PlacementDirection": "LeftDown",
+            "RotationTwist": {"Deg": 0},
+            "NestingMode": "General",
+            "SettingsStrips": {"Sorting": "Length"},
+            "LayoutDuplicationAuto": False
+        },
 
-        for col, val in enumerate(vals, 1):
-            cell               = ws.cell(row=sr + 2, column=col, value=val)
-            cell.border        = border
-            cell.alignment     = center
-            cell.font          = Font(size=11)
-            if col in [9, 10]:
-                cell.number_format = '#,##0.000'
+        "Problem": {
 
-        t_qty    += qty
-        t_len    += length
-        t_wid    += width
-        t_weight += weight
+            "Parts": parts,
 
-    # ── Total row ──
-    total_row = len(data) + 3
-    total_vals = ["Total", "", "", "", "", t_qty, t_len, t_wid, "", t_weight]
-    for col, val in enumerate(total_vals, 1):
-        cell               = ws.cell(row=total_row, column=col, value=val)
-        cell.font          = total_font
-        cell.fill          = total_fill
-        cell.border        = border
-        cell.alignment     = center
-        if col in [9, 10]:
-            cell.number_format = '#,##0.000'
+            "RawPlates": [
+                {
+                    "Quantity": 10,
+                    "RectangularShape": {
+                        "Length": "12000",
+                        "Width": "100"
+                    },
+                    "Name": item_name,
+                    "Colour": get_random_color()   
+                }
+            ]
+        },
 
-    # ── Column widths ──
-    for col, w in zip(range(1, 11), [8, 18, 15, 30, 15, 10, 12, 12, 16, 16]):
-        ws.column_dimensions[get_column_letter(col)].width = w
+        "StopConditions": {
+            "AllPartsNested": False,
+            "Scrap": False,
+            "ScrapValue": 0,
+            "Scrap2": False,
+            "Scrap2Value": 0,
+            "SmartStop": False,
+            "Timeout": True,
+            "TimeoutValue": 300
+        }
+    }
 
-    # ── Stream response ──
-    file_stream = BytesIO()
-    wb.save(file_stream)
-    file_stream.seek(0)
+    frappe.response["filename"] = "nesting_data.json"
+    frappe.response["filecontent"] = json.dumps(data, indent=4)
+    frappe.response["type"] = "download"
 
-    frappe.response["filename"]    = f"Row_Export_{drawing_number}_{position_no}.xlsx"
-    frappe.response["filecontent"] = file_stream.getvalue()
-    frappe.response["type"]        = "binary"
-    
-    
+# ----------------- GENERATING DATA IN DXF FILE -----------------
+# data generate on dxffile and import to nesting center
+# @frappe.whitelist()
+# def import_row_data(project, drawing_number, position_no, item):
+
+#     print("PROJECT:", project)
+#     print("DRAWING:", drawing_number)
+#     print("POSITION:", position_no)
+#     print("ITEM:", item)
+
+#     rows = frappe.get_all(
+#         "FT Drawing Parts",
+#         fields=["name","drawing_number","position_no","item_id"],
+#         filters=[
+#             ["drawing_number", "like", f"%{drawing_number}%"],
+#             ["position_no", "=", position_no]
+#         ],
+#         limit=1
+#     )
+
+#     if not rows:
+#         frappe.throw("Part not found")
+
+#     part = rows[0]
+
+#     file = frappe.get_value(
+#         "File",
+#         {
+#             "attached_to_doctype": "FT Drawing Parts",
+#             "attached_to_name": part["name"],
+#             "file_name": ["like", "%.dxf"]
+#         },
+#         "file_url"
+#     )
+
+#     if not file:
+#         frappe.throw("DXF file not attached with this part")
+
+#     nesting_json = {
+#         "project": project,
+#         "drawing_number": drawing_number,
+#         "position_no": position_no,
+#         "item": item,
+#         "dxf_file": file
+#     }
+
+#     return nesting_json
+
+
+
