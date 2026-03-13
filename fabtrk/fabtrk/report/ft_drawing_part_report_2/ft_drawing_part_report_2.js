@@ -480,14 +480,14 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 								<div style="display:flex;justify-content:space-between;align-items:center;">
 									<h4>Item Details - ${r.message.item_name}</h4>
 									<div style="display:flex; gap:20px;">
+										<button class="btn btn-xs btn-primary nesting-export">
+											Nesting data export
+										</button>
 										<!-- ✅ UPDATED: Nesting Report button with class + data attrs -->
 										<button class="btn btn-xs btn-primary nesting-report-btn"
 											data-item="${item}"
 											data-project="${project}"
 											data-item-name="${r.message.item_name}">
-											Nesting Report
-										</button>
-										<button class="btn btn-xs btn-primary">
 											Nesting Report
 										</button>
 										<button class="btn btn-xs btn-primary summary-download" data-item="${item}"
