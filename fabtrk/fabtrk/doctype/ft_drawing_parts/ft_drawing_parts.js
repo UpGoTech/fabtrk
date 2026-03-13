@@ -221,11 +221,11 @@ function toggle_dimension_fields(frm) {
 
     // if (!frm.doc.item) return;
     if (!frm.doc.item) {
-        calculate_total(frm);
+        calculate_total(frm);   // yeh kam me nhi hai
         return;
     }
 
-    frappe.db.get_value("FT Stock RM List", frm.doc.item, "section_type")
+    frappe.db.get_value("FT Stock RM List", frm.doc.item_id, "section_type")
         .then(r => {
             if (r.message && r.message.section_type === "Plate") {
                 frm.toggle_display("lenght", true);
@@ -234,7 +234,7 @@ function toggle_dimension_fields(frm) {
                 frm.toggle_display("lenght", true);
                 frm.toggle_display("width", false);
             }
-            calculate_total(frm);
+            calculate_total(frm); // yeh kam me nhi hai
         });
 }
 
