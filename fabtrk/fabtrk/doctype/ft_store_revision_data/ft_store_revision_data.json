@@ -64,10 +64,11 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-12 12:41:35.344154",
+ "modified": "2026-03-14 18:07:00.473751",
  "modified_by": "Administrator",
  "module": "Fabtrk",
  "name": "FT Store Revision Data",
+ "naming_rule": "By script",
  "owner": "Administrator",
  "permissions": [
   {

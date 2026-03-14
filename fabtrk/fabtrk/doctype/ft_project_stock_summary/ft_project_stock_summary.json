@@ -16,7 +16,7 @@
    "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Stock Item",
-   "options": "FT Stock RM List"
+   "options": "FT Stock RM"
   },
   {
    "fieldname": "total_weight_kg",
@@ -32,7 +32,7 @@
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2026-02-03 14:45:20.294517",
+ "modified": "2026-02-28 16:31:47.211285",
  "modified_by": "Administrator",
  "module": "Fabtrk",
  "name": "FT Project Stock Summary",

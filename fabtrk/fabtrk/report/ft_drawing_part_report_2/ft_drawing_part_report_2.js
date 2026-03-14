@@ -6,10 +6,8 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 		frappe.query_report.set_filter_value("drawing_number", []);
 		frappe.query_report.set_filter_value("item", []);
 		frappe.query_report.set_filter_value("is_active", 1);
-
-
-		//  DOWNLOAD ITEM EXCEL BUTTON to Project wise item summary - Header button
-		report.page.add_inner_button("Download Item Excel", function () {
+		// Add download item details button to summary table
+		report.page.add_inner_button("Download Summary", function () {
 			let filters = report.get_values();
 
 			let params = new URLSearchParams({
@@ -40,6 +38,47 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 		});
 
 		// SAVE SNAPSHOT BUTTON - Header button
+		// report.page.add_inner_button("💾 Save Snapshot", function () {
+		// 	let report_data = frappe.query_report.data || [];
+
+		// 	// Filter out TOTAL row
+		// 	let rows_to_save = report_data.filter(d =>
+		// 		d.project_name && d.project_name !== "TOTAL" && d.item_id
+		// 	);
+
+		// 	if (!rows_to_save.length) {
+		// 		frappe.msgprint("Koi data nahi hai save karne ke liye");
+		// 		return;
+		// 	}
+
+		// 	frappe.confirm(
+		// 		`Kya aap ${rows_to_save.length} rows ka snapshot save karna chahte ho?`,
+		// 		function () {
+		// 			let promises = rows_to_save.map((row, i) => {
+		// 				return frappe.call({
+		// 					method: "fabtrk.fabtrk.report.ft_drawing_part_report_2.ft_drawing_part_report_2.save_row_data",
+		// 					args: {
+		// 						sr_no: i + 1,
+		// 						project: row.project_name,
+		// 						item_name: row.item_name,
+		// 						item_count: row.item_count,
+		// 						quantity: row.quantity,
+		// 						lenght: row.lenght,
+		// 						width: row.width,
+		// 						total_weight: row.total_weight
+		// 					}
+		// 				});
+		// 			});
+
+		// 			Promise.all(promises).then(() => {
+		// 				frappe.show_alert({
+		// 					message: `✅ ${rows_to_save.length} rows saved successfully!`,
+		// 					indicator: "green"
+		// 				});
+		// 			});
+		// 		}
+		// 	);
+		// });
 		report.page.add_inner_button("💾 Save Snapshot", function () {
 			let report_data = frappe.query_report.data || [];
 
@@ -56,6 +95,7 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 			frappe.confirm(
 				`Kya aap ${rows_to_save.length} rows ka snapshot save karna chahte ho?`,
 				function () {
+
 					let promises = rows_to_save.map((row, i) => {
 						return frappe.call({
 							method: "fabtrk.fabtrk.report.ft_drawing_part_report_2.ft_drawing_part_report_2.save_row_data",
@@ -72,11 +112,44 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 						});
 					});
 
-					Promise.all(promises).then(() => {
-						frappe.show_alert({
-							message: `✅ ${rows_to_save.length} rows saved successfully!`,
-							indicator: "green"
+					Promise.all(promises).then(results => {
+
+						// Kitne actually save hue aur kitne same the
+						let saved_count = 0;
+						let no_change_count = 0;
+
+						results.forEach(r => {
+							if (r.message && r.message.status === "success") {
+								if (r.message.msg && r.message.msg.includes("same")) {
+									no_change_count++;
+								} else {
+									saved_count++;
+								}
+							}
 						});
+
+						// Sab same hain — koi change nahi
+						if (no_change_count === rows_to_save.length) {
+							frappe.msgprint({
+								title: "No Changes Found",
+								message: `⚠️ No changes were found in the data, so the snapshot was not saved. The previous snapshot remains unchanged.`,
+								indicator: "orange"
+							});
+						}
+						// Kuch save hue, kuch same the
+						else if (saved_count > 0 && no_change_count > 0) {
+							frappe.show_alert({
+								message: `✅ ${saved_count} rows saved | ⏭️ ${no_change_count} rows mein koi change nahi hai`,
+								indicator: "blue"
+							});
+						}
+						// Sab save ho gaye
+						else if (saved_count > 0) {
+							frappe.show_alert({
+								message: `✅ ${saved_count} rows saved successfully!`,
+								indicator: "green"
+							});
+						}
 					});
 				}
 			);
@@ -265,6 +338,8 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 		setTimeout(() => {
 			frappe.query_report.refresh();
 		}, 100);
+
+
 	},
 
 	filters: [
@@ -631,37 +706,40 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 								total_weight_style = "text-align:center; color:#000; font-weight:700; font-size:15px;";
 							}
 
-
 							// is_total_row check ke baad row build karte waqt:
-							let action_buttons = "";
 
-							if (!is_total_row) {
-								action_buttons = `
-										<td style="text-align:center;">
-											<div style="display:flex; gap:6px; justify-content:center;">
-												<button class="btn btn-xs btn-success row-import-btn"
-													style="min-width:60px;"
-													data-project="${d.project_number || ''}"
-													data-drawing="${d.drawing_number || ''}"
-													data-position="${d.position_no || ''}"
-													data-item="${item}">
-													Import (show drawings)
-												</button>
-												<button class="btn btn-xs btn-warning row-export-btn"
-													style="min-width:60px;"
-													data-project="${d.project_number || ''}"
-													data-drawing="${d.drawing_number || ''}"
-													data-position="${d.position_no || ''}"    
-													data-item="${item}">
-													Export DXL/DWG
-												</button>
-											</div>
-										</td>
-									`;
-							} else {
-								action_buttons = `<td></td>`;
-							}
+							// let action_buttons = "";
 
+							// if (!is_total_row) {
+							// 	action_buttons = `
+							// 			<td style="text-align:center;">
+							// 				<div style="display:flex; gap:6px; justify-content:center;">
+							// 					<button class="btn btn-xs btn-success row-import-btn"
+							// 						style="min-width:60px;"
+							// 						data-project="${d.project_number || ''}"
+							// 						data-drawing="${d.drawing_number || ''}"
+							// 						data-position="${d.position_no || ''}"
+							// 						data-part-no="${d.part_no || ''}"
+							// 						data-item="${item}">
+							// 						Import (show drawings)
+							// 					</button>
+							// 					<button class="btn btn-xs btn-warning row-export-btn"
+							// 						style="min-width:60px;"
+							// 						data-project="${d.project_number || ''}"
+							// 						data-drawing="${d.drawing_number || ''}"
+							// 						data-position="${d.position_no || ''}"
+							// 						data-part-no="${d.part_no || ''}"
+							// 						data-item="${item}">
+							// 						Export DXF/DWG
+							// 					</button>
+							// 				</div>
+							// 			</td>
+							// 		`;
+							// } else {
+							// 	action_buttons = `<td></td>`;
+							// }
+							// ${action_buttons}
+							// <th style="text-align: center;">Actions</th>
 
 							rows += `
 								<tr style="${row_style}">
@@ -676,9 +754,7 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 									<td style="${total_weight_style}">${length}</td>
 									<td style="${total_weight_style}">${width}</td>
 									<td style="text-align:center;">${single_weight}</td>
-									<td style="${total_weight_style}">${total_weight}</td>
-
-									${action_buttons}
+									<td style="${total_weight_style}">${total_weight}</td>									
 								</tr>
 							`;
 
@@ -688,17 +764,24 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 									String(d.total_weight).replace(/<[^>]+>/g, '')
 								) || 0;
 							}
-
 						});
 
-						//  Detail table HTML:
 						let html = `
 							<div id="item-detail-container"
 								style="margin-top:20px; padding:20px; border:1px solid #ddd;">
-
 								<div style="display:flex;justify-content:space-between;align-items:center;">
 									<h4>Item Details - ${r.message.item_name}</h4>
 									<div style="display:flex; gap:20px;">
+										<button class="btn btn-xs btn-primary nesting-export">
+											Nesting data export
+										</button>
+										<!-- ✅ UPDATED: Nesting Report button with class + data attrs -->
+										<button class="btn btn-xs btn-primary nesting-report-btn"
+											data-item="${item}"
+											data-project="${project}"
+											data-item-name="${r.message.item_name}">
+											Nesting Report
+										</button>
 										<button class="btn btn-xs btn-primary summary-download" data-item="${item}"
 											data-project="${project}">
 											Download List
@@ -723,8 +806,6 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 										<th style="text-align: center;">Width</th>
 										<th style="text-align: center;">Single Weight</th>
 										<th style="text-align: center;">Total Weight</th>
-
-										<th style="text-align: center;">Actions</th>
 									</tr>
 									${rows}
 								</table>
@@ -733,60 +814,6 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 
 						$(report.wrapper).find(".datatable").after(html);
 
-						// Import button click
-						$(document).off("click", ".row-import-btn")
-							.on("click", ".row-import-btn", function () {
-								let project = $(this).data("project");
-								let drawing = $(this).data("drawing");
-								let position = $(this).data("position");
-								let item_id = $(this).data("item");
-
-								frappe.call({
-									method: "fabtrk.fabtrk.report.ft_drawing_part_report_2.ft_drawing_part_report_2.import_row_data",
-									args: {
-										project: project,
-										drawing_number: drawing,
-										position_no: position,
-										item: item_id
-									},
-									callback: function (r) {
-										if (r.message && r.message.status === "success") {
-											frappe.show_alert({
-												message: r.message.msg || "Import successful",
-												indicator: "green"
-											});
-										} else {
-											frappe.show_alert({
-												message: (r.message && r.message.msg) || "Import failed",
-												indicator: "red"
-											});
-										}
-									}
-								});
-							});
-
-						// Export button click
-						$(document).off("click", ".row-export-btn")
-							.on("click", ".row-export-btn", function () {
-								let project = $(this).data("project");
-								let drawing = $(this).data("drawing");
-								let position = $(this).data("position");
-								let item_id = $(this).data("item");
-
-								let params = new URLSearchParams({
-									project: project,
-									drawing_number: drawing,
-									position_no: position,
-									item: item_id
-								});
-
-								window.location.href =
-									"/api/method/fabtrk.fabtrk.report.ft_drawing_part_report_2.ft_drawing_part_report_2.export_row_excel?"
-									+ params.toString();
-							});
-
-
-
 						$(".close-view").on("click", function () {
 							$("#item-detail-container").remove();
 							$(".view-btn").removeClass("active-detail");
@@ -794,8 +821,6 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 					}
 				});
 			});
-
-
 		// Dynamic button click
 		$(document).off("click", ".summary-download")
 			.on("click", ".summary-download", function () {
@@ -815,6 +840,86 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 				window.location.href = url;
 			});
 
+		// ===============================
+		// Export DXF Button Click
+		// ===============================
+
+		$(document).off("click", ".nesting-export")
+			.on("click", ".nesting-export", function () {
+
+				let item_name = $(".summary-download").data("item");
+				let project_name = $(".summary-download").data("project");
+
+				let filters = {
+					item: item_name,
+					project: project_name
+				};
+
+				let url = "/api/method/fabtrk.fabtrk.report.ft_drawing_part_report_2.ft_drawing_part_report_2.export_nesting_json"
+					+ "?filters=" + encodeURIComponent(JSON.stringify(filters));
+
+				window.location.href = url;
+
+			});
+
+		// ================================================================
+		// ✅ NEW: Nesting Report button click handler
+		// ================================================================
+		$(document).off("click", ".nesting-report-btn")
+			.on("click", ".nesting-report-btn", function () {
+				let item_name = $(this).data("item");
+				let project_name = $(this).data("project");
+				let display_name = $(this).data("item-name") || item_name;
+				show_nesting_report_modal(item_name, project_name, display_name);
+			});
+
+		// $(document).off("click", ".row-export-btn")
+		// 	.on("click", ".row-export-btn", function () {
+
+		// 		let project = $(this).data("project");
+		// 		let drawing = $(this).data("drawing");
+		// 		let position = $(this).data("position");
+		// 		let item = $(this).data("item");   // FIX
+
+		// 		let row = $(this).closest("tr");
+
+		// 		let length = row.find("td").eq(8).text().trim();
+		// 		let width = row.find("td").eq(9).text().trim();
+
+		// 		frappe.call({
+		// 			method: "fabtrk.api.api.export_dxf",
+		// 			args: {
+		// 				project: project,
+		// 				drawing: drawing,
+		// 				position: position,
+		// 				length: length,
+		// 				width: width,
+		// 				item: item
+		// 			},
+		// 			callback: function (r) {
+
+		// 				if (r.message) {
+
+		// 					frappe.show_alert({
+		// 						message: "DXF Generated",
+		// 						indicator: "green"
+		// 					});
+
+		// 					window.open(r.message);
+
+		// 				} else {
+
+		// 					frappe.show_alert({
+		// 						message: "DXF Generation Failed",
+		// 						indicator: "red"
+		// 					});
+
+		// 				}
+		// 			}
+		// 		});
+
+		// 	});
+
 		setTimeout(() => {
 
 			// Loop all rows
@@ -833,7 +938,7 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 			});
 
 		}, 100);
-	}
+	},
 };
 
 // table refresh
@@ -841,7 +946,6 @@ function clear_item_details() {
 	$("#item-detail-container").remove();
 	$(".view-btn").removeClass("active-detail");
 }
-
 
 // download current item details in Excel
 function download_item_details(item_name, project_name) {
@@ -949,6 +1053,347 @@ if (!window.XLSX) {
 	script.src = "https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js";
 	document.head.appendChild(script);
 }
+
+
+
+// ================================================================
+// ✅ NEW FUNCTION: Nesting Report Modal
+// "Nesting Report" button click karne par ye open hota hai
+// ================================================================
+function show_nesting_report_modal(item, project, item_display_name) {
+
+	$("#nesting-report-modal-overlay").remove();
+
+	let modal_html = `
+	<div id="nesting-report-modal-overlay" style="
+		position:fixed; top:0; left:0; width:100%; height:100%;
+		background:rgba(0,0,0,0.55); z-index:9999;
+		display:flex; align-items:center; justify-content:center;">
+ 
+		<div style="
+			background:#fff; border-radius:10px; padding:28px;
+			width:740px; max-width:95vw; max-height:92vh;
+			overflow-y:auto; box-shadow:0 12px 48px rgba(0,0,0,0.35);
+			position:relative;">
+ 
+			<!-- Header -->
+			<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:22px;">
+				<h4 style="margin:0; color:#1a1a2e; font-size:16px;">
+					🔩 Nesting Report &nbsp;—&nbsp;
+					<span style="color:#4361ee;">${item_display_name}</span>
+				</h4>
+				<button id="close-nesting-modal" style="
+					background:#e63946; color:#fff; border:none;
+					border-radius:5px; padding:5px 14px; cursor:pointer; font-size:14px; font-weight:600;">
+					✕ Close
+				</button>
+			</div>
+ 
+			<!-- STEP 1: Upload Result JSON -->
+			<div style="
+				background:#f0f4ff; border:1px solid #c8d3f5;
+				border-radius:8px; padding:16px; margin-bottom:16px;">
+ 
+				<p style="font-weight:700; color:#2d3a8c; margin-bottom:6px; font-size:14px;">
+					📂 Step 1 — Nesting Center ka Result JSON upload karo
+				</p>
+				<p style="font-size:12px; color:#666; margin-bottom:10px;">
+					Nesting Center mein JSON load karke Run karo, phir result/output JSON file yahan upload karo
+				</p>
+				<div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+					<input type="file" id="nesting-result-json" accept=".json"
+						style="border:1px solid #bbb; padding:5px 8px; border-radius:5px;
+						font-size:13px; flex:1; min-width:200px; background:#fff;">
+					<button id="parse-nesting-json" style="
+						background:#4361ee; color:#fff; border:none; border-radius:5px;
+						padding:7px 16px; cursor:pointer; font-size:13px; font-weight:600; white-space:nowrap;">
+						📊 Parse & Show
+					</button>
+				</div>
+			</div>
+ 
+			<!-- Stats Cards -->
+			<div id="nesting-stats-area" style="display:none;
+				background:#fff; border:2px solid #4361ee;
+				border-radius:8px; padding:18px; margin-bottom:16px;">
+ 
+				<p style="font-weight:700; color:#4361ee; font-size:14px; margin-bottom:14px;">
+					✅ Nesting Results
+				</p>
+ 
+				<div style="display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:14px;">
+					<div style="background:#e8f4fd; border-radius:8px; padding:14px; text-align:center;">
+						<div style="font-size:11px; color:#666; margin-bottom:4px; text-transform:uppercase; letter-spacing:.5px;">Sheets</div>
+						<div id="stat-sheets" style="font-size:28px; font-weight:800; color:#1a73e8;">—</div>
+					</div>
+					<div style="background:#e8fdf4; border-radius:8px; padding:14px; text-align:center;">
+						<div style="font-size:11px; color:#666; margin-bottom:4px; text-transform:uppercase; letter-spacing:.5px;">Nested Parts</div>
+						<div id="stat-nested-parts" style="font-size:28px; font-weight:800; color:#0f9d58;">—</div>
+					</div>
+					<div style="background:#fdecea; border-radius:8px; padding:14px; text-align:center;">
+						<div style="font-size:11px; color:#666; margin-bottom:4px; text-transform:uppercase; letter-spacing:.5px;">Scrap</div>
+						<div id="stat-scrap" style="font-size:28px; font-weight:800; color:#e63946;">—</div>
+					</div>
+					<div style="background:#fdf3e8; border-radius:8px; padding:14px; text-align:center;">
+						<div style="font-size:11px; color:#666; margin-bottom:4px; text-transform:uppercase; letter-spacing:.5px;">Sheets Area</div>
+						<div id="stat-sheets-area" style="font-size:22px; font-weight:700; color:#f4a261;">—</div>
+					</div>
+					<div style="background:#f3e8fd; border-radius:8px; padding:14px; text-align:center;">
+						<div style="font-size:11px; color:#666; margin-bottom:4px; text-transform:uppercase; letter-spacing:.5px;">Nested Mass</div>
+						<div id="stat-nested-mass" style="font-size:22px; font-weight:700; color:#9b5de5;">—</div>
+					</div>
+					<div style="background:#e8fdf9; border-radius:8px; padding:14px; text-align:center;">
+						<div style="font-size:11px; color:#666; margin-bottom:4px; text-transform:uppercase; letter-spacing:.5px;">Result Time</div>
+						<div id="stat-result-time" style="font-size:22px; font-weight:700; color:#0d9488;">—</div>
+					</div>
+				</div>
+ 
+				<!-- Per-Sheet Breakdown Table -->
+				<div id="sheet-breakdown" style="display:none;">
+					<p style="font-weight:600; color:#333; margin-bottom:8px; font-size:13px;">Per Sheet Breakdown:</p>
+					<table class="table table-bordered table-sm" style="font-size:13px;">
+						<thead style="background:#f0f4ff;">
+							<tr>
+								<th style="text-align:center; width:40px;">#</th>
+								<th>Sheet Name</th>
+								<th style="text-align:center;">Scrap %</th>
+								<th style="text-align:center;">Parts</th>
+							</tr>
+						</thead>
+						<tbody id="sheet-breakdown-rows"></tbody>
+					</table>
+				</div>
+			</div>
+ 
+			<!-- Manual Entry (toggle) -->
+			<div id="manual-stats-area" style="display:none;
+				background:#fffbf0; border:1px dashed #f0a500;
+				border-radius:8px; padding:16px; margin-bottom:16px;">
+ 
+				<p style="font-weight:700; color:#b45309; margin-bottom:10px; font-size:13px;">
+					✏️ Manually stats enter karo:
+				</p>
+				<div style="display:grid; grid-template-columns:repeat(3,1fr); gap:10px;">
+					<div>
+						<label style="font-size:12px; color:#555; display:block; margin-bottom:3px;">Sheets</label>
+						<input type="text" id="manual-sheets" class="form-control form-control-sm" placeholder="3">
+					</div>
+					<div>
+						<label style="font-size:12px; color:#555; display:block; margin-bottom:3px;">Nested Parts</label>
+						<input type="text" id="manual-nested-parts" class="form-control form-control-sm" placeholder="3/6">
+					</div>
+					<div>
+						<label style="font-size:12px; color:#555; display:block; margin-bottom:3px;">Scrap %</label>
+						<input type="text" id="manual-scrap" class="form-control form-control-sm" placeholder="17.51%">
+					</div>
+					<div>
+						<label style="font-size:12px; color:#555; display:block; margin-bottom:3px;">Sheets Area</label>
+						<input type="text" id="manual-sheets-area" class="form-control form-control-sm" placeholder="3.6 m²">
+					</div>
+					<div>
+						<label style="font-size:12px; color:#555; display:block; margin-bottom:3px;">Nested Mass %</label>
+						<input type="text" id="manual-nested-mass" class="form-control form-control-sm" placeholder="35.75%">
+					</div>
+					<div>
+						<label style="font-size:12px; color:#555; display:block; margin-bottom:3px;">Result Time</label>
+						<input type="text" id="manual-result-time" class="form-control form-control-sm" placeholder="0.1s">
+					</div>
+				</div>
+				<button id="apply-manual-stats" style="
+					margin-top:12px; background:#f59e0b; color:#fff; border:none;
+					border-radius:5px; padding:6px 18px; cursor:pointer; font-size:13px; font-weight:600;">
+					✅ Apply
+				</button>
+			</div>
+ 
+			<!-- STEP 2: Upload PDF Report -->
+			<div style="
+				background:#f0fff4; border:1px solid #a3d9a5;
+				border-radius:8px; padding:16px; margin-bottom:14px;">
+ 
+				<p style="font-weight:700; color:#155724; margin-bottom:6px; font-size:14px;">
+					📄 Step 2 — Nesting Center PDF Report upload karo
+				</p>
+				<p style="font-size:12px; color:#666; margin-bottom:10px;">
+					Nesting Center → Run complete → "Report" button dabao → PDF download karo → yahan upload karo
+				</p>
+				<input type="file" id="nesting-pdf-upload" accept=".pdf"
+					style="border:1px solid #bbb; padding:5px 8px; border-radius:5px;
+					font-size:13px; width:100%; background:#fff;">
+ 
+				<div id="pdf-viewer-area" style="margin-top:14px; display:none;">
+					<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+						<span style="font-weight:600; color:#155724; font-size:13px;">📋 PDF Report Preview:</span>
+						<a id="pdf-download-link" href="#" download="Nesting_Report.pdf" style="
+							background:#198754; color:#fff; border:none; border-radius:5px;
+							padding:5px 14px; font-size:13px; font-weight:600; text-decoration:none;">
+							⬇ Download PDF
+						</a>
+					</div>
+					<iframe id="nesting-pdf-frame"
+						style="width:100%; height:480px; border:1px solid #ccc; border-radius:6px;">
+					</iframe>
+				</div>
+			</div>
+ 
+			<!-- Toggle Manual -->
+			<div style="text-align:center;">
+				<button id="toggle-manual-entry" style="
+					background:none; border:1px dashed #aaa; color:#888;
+					border-radius:4px; padding:4px 14px; cursor:pointer; font-size:12px;">
+					✏️ JSON nahi hai? Manually enter karo
+				</button>
+			</div>
+		</div>
+	</div>
+	`;
+
+	$("body").append(modal_html);
+
+	// Close on overlay click or close button
+	$("#close-nesting-modal").on("click", function () {
+		$("#nesting-report-modal-overlay").remove();
+	});
+	$("#nesting-report-modal-overlay").on("click", function (e) {
+		if (e.target.id === "nesting-report-modal-overlay") {
+			$("#nesting-report-modal-overlay").remove();
+		}
+	});
+
+	// Toggle manual entry
+	$("#toggle-manual-entry").on("click", function () {
+		$("#manual-stats-area").toggle();
+	});
+
+	// Parse JSON button
+	$("#parse-nesting-json").on("click", function () {
+		let file = document.getElementById("nesting-result-json").files[0];
+		if (!file) { frappe.msgprint("Pehle JSON file select karo!"); return; }
+
+		let reader = new FileReader();
+		reader.onload = function (e) {
+			try {
+				let json = JSON.parse(e.target.result);
+				parse_nesting_result_json(json);
+			} catch (err) {
+				frappe.msgprint("JSON parse karne mein error aaya. Manually enter karo.");
+				$("#manual-stats-area").show();
+				console.error("JSON parse error:", err);
+			}
+		};
+		reader.readAsText(file);
+	});
+
+	// Apply manual stats
+	$("#apply-manual-stats").on("click", function () {
+		$("#stat-sheets").text($("#manual-sheets").val() || "—");
+		$("#stat-nested-parts").text($("#manual-nested-parts").val() || "—");
+		$("#stat-scrap").text($("#manual-scrap").val() || "—");
+		$("#stat-sheets-area").text($("#manual-sheets-area").val() || "—");
+		$("#stat-nested-mass").text($("#manual-nested-mass").val() || "—");
+		$("#stat-result-time").text($("#manual-result-time").val() || "—");
+		$("#nesting-stats-area").show();
+		$("#manual-stats-area").hide();
+		frappe.show_alert({ message: "Stats apply ho gaye!", indicator: "green" });
+	});
+
+	// PDF upload
+	$("#nesting-pdf-upload").on("change", function () {
+		let file = this.files[0];
+		if (!file) return;
+		let url = URL.createObjectURL(file);
+		$("#nesting-pdf-frame").attr("src", url);
+		$("#pdf-download-link").attr("href", url);
+		$("#pdf-viewer-area").show();
+		frappe.show_alert({ message: "PDF load ho gaya!", indicator: "green" });
+	});
+}
+
+
+// ================================================================
+// ✅ NEW FUNCTION: Nesting Center result JSON parser
+//    Multiple output formats handle karta hai
+// ================================================================
+function parse_nesting_result_json(json) {
+
+	let sheets = "—", nested_parts = "—", scrap = "—";
+	let sheets_area = "—", nested_mass = "—", result_time = "—";
+	let layouts = [];
+
+	// Format 1: { Result: { Sheets, NestedParts, TotalParts, Scrap, ... } }
+	if (json.Result) {
+		let r = json.Result;
+		sheets = r.Sheets || r.sheets || "—";
+		let np_done = r.NestedParts || r.nested_parts || r.PartsNested || 0;
+		let np_total = r.TotalParts || r.total_parts || r.Parts || 0;
+		nested_parts = np_total ? `${np_done} / ${np_total}` : String(np_done);
+		scrap = r.Scrap !== undefined ? `${parseFloat(r.Scrap).toFixed(2)}%` : "—";
+		sheets_area = r.SheetsArea !== undefined ? `${r.SheetsArea} m²` : "—";
+		nested_mass = r.NestedMass !== undefined ? `${parseFloat(r.NestedMass).toFixed(2)}%` : "—";
+		result_time = r.ResultTime !== undefined ? `${r.ResultTime}s` : "—";
+		layouts = r.Layouts || r.layouts || [];
+	}
+	// Format 2: Flat { Sheets, NestedParts, ... }
+	else if (json.Sheets !== undefined || json.sheets !== undefined) {
+		sheets = json.Sheets || json.sheets || "—";
+		let np_done = json.NestedParts || json.nested_parts || 0;
+		let np_total = json.TotalParts || json.total_parts || 0;
+		nested_parts = np_total ? `${np_done} / ${np_total}` : String(np_done);
+		scrap = json.Scrap !== undefined ? `${parseFloat(json.Scrap).toFixed(2)}%` : "—";
+		sheets_area = json.SheetsArea !== undefined ? `${json.SheetsArea} m²` : "—";
+		nested_mass = json.NestedMass !== undefined ? `${parseFloat(json.NestedMass).toFixed(2)}%` : "—";
+		result_time = json.ResultTime !== undefined ? `${json.ResultTime}s` : "—";
+		layouts = json.Layouts || json.layouts || [];
+	}
+	// Format 3: { Solution: { ... } }
+	else if (json.Solution) {
+		let s = json.Solution;
+		sheets = s.NumberOfSheets || s.Sheets || "—";
+		scrap = s.ScrapPercentage !== undefined ? `${parseFloat(s.ScrapPercentage).toFixed(2)}%` : "—";
+		layouts = s.Layouts || s.Sheets_list || [];
+	}
+	else {
+		frappe.msgprint("JSON format pehchana nahi gaya. Manually enter karo.");
+		$("#manual-stats-area").show();
+		return;
+	}
+
+	// Apply to stat cards
+	$("#stat-sheets").text(sheets);
+	$("#stat-nested-parts").text(nested_parts);
+	$("#stat-scrap").text(scrap);
+	$("#stat-sheets-area").text(sheets_area);
+	$("#stat-nested-mass").text(nested_mass);
+	$("#stat-result-time").text(result_time);
+	$("#nesting-stats-area").show();
+
+	// Per-sheet breakdown
+	if (layouts && layouts.length) {
+		let rows_html = "";
+		layouts.forEach((layout, idx) => {
+			let name = layout.Name || layout.RawPlateName || layout.name || `Sheet ${idx + 1}`;
+			let s_pct = layout.Scrap !== undefined
+				? `${parseFloat(layout.Scrap).toFixed(2)}%`
+				: layout.ScrapPercentage !== undefined
+					? `${parseFloat(layout.ScrapPercentage).toFixed(2)}%`
+					: "—";
+			let parts = layout.Parts || layout.NestedParts || layout.parts || "—";
+			rows_html += `
+				<tr>
+					<td style="text-align:center;">${idx + 1}</td>
+					<td>${name}</td>
+					<td style="text-align:center;">${s_pct}</td>
+					<td style="text-align:center;">${Array.isArray(parts) ? parts.length : parts}</td>
+				</tr>`;
+		});
+		$("#sheet-breakdown-rows").html(rows_html);
+		$("#sheet-breakdown").show();
+	}
+
+	frappe.show_alert({ message: "Nesting results parse ho gaye!", indicator: "green" });
+}
+
+
 
 
 

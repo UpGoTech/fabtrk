@@ -1,3 +1,5 @@
+// Copyright (c) 2026, UpGo Technologies and contributors
+// For license information, please see license.txt
 
 // isme THK ke liye check data type use kiya hai 
 frappe.ui.form.on("FT Stock RM List", {

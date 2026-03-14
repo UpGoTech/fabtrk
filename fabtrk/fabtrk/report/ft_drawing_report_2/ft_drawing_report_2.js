@@ -58,7 +58,6 @@ frappe.query_reports["FT Drawing Report 2"] = {
 						doctype: "FT Add Drawing",
 						filters: filters,
 						fields: ["name", "drawing_number"],
-						// limit_page_length: 500
 					}
 				}).then(r => {
 
@@ -71,8 +70,8 @@ frappe.query_reports["FT Drawing Report 2"] = {
 
 							result.push({
 								value: d.drawing_number,
-								label: d.drawing_number,       // sirf value show karega
-								description: ""                // undefined hatane ke liye
+								label: d.drawing_number,
+								description: ""
 							});
 						}
 					});
@@ -84,8 +83,6 @@ frappe.query_reports["FT Drawing Report 2"] = {
 				frappe.query_report.refresh();
 			}
 		},
-
-
 		{
 			fieldname: "is_active",
 			label: "Is Active",
