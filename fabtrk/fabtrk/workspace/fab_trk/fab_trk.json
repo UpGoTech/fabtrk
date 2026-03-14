@@ -160,7 +160,7 @@
    "type": "Link"
   }
  ],
- "modified": "2026-03-12 12:11:12.966843",
+ "modified": "2026-03-14 16:44:52.479759",
  "modified_by": "Administrator",
  "module": "Fabtrk",
  "name": "Fab Trk",
@@ -176,7 +176,7 @@
    "color": "Grey",
    "doc_view": "List",
    "label": "Drawings",
-   "link_to": "FT Drawing Report 2",
+   "link_to": "FT Drawings",
    "type": "Report"
   },
   {

@@ -1,41 +1,18 @@
 # # Copyright (c) 2026, UpGo Technologies and contributors
 # # For license information, please see license.txt
 
-# # import frappe
-
-
-# def execute(filters=None):
-# 	columns, data = [], []
-# 	return columns, data
-
-
-# # Copyright (c) 2026, UpGo Technologies and contributors
-# # For license information, please see license.txt
-
-# # import frappe
-
-
-# def execute(filters=None):
-# 	columns, data = [], []
-# 	return columns, data
-
-# Copyright (c) 2026, UpGo Technologies
-# For license information, please see license.txt
-
 import frappe
-from frappe.utils import fmt_money
 
 def execute(filters=None):
-
     filters = filters or {}
 
     columns = [
-        {"label": "Project", "fieldname": "project_number", "fieldtype": "Link", "options": "FT Project", "width": 200},
-        {"label": "Drawing Number", "fieldname": "drawing_number", "width": 200},
-        {"label": "PO Serial No", "fieldname": "po_serial_no", "width": 190},
-        {"label": "Unit Weight", "fieldname": "unit_weight", "fieldtype": "Float", "width": 200},
-        {"label": "Required Qty", "fieldname": "required_qty", "fieldtype": "Float", "width": 190},
-        {"label": "Total Weight", "fieldname": "total_weight", "fieldtype": "Float", "width": 200},
+        {"label": "Project", "fieldname": "project_name", "fieldtype": "Link", "options": "FT Project", "width": 200},
+        {"label": "Drawing Number", "fieldname": "drawing_number", "fieldtype": "Data", "width": 200, "align": "center"},
+        {"label": "PO Serial No", "fieldname": "po_serial_no", "fieldtype": "Data", "width": 190, "align": "center"},
+        {"label": "Unit Weight", "fieldname": "unit_weight", "fieldtype": "Float", "width": 200, "align": "center"},
+        {"label": "Required Qty", "fieldname": "quantity", "fieldtype": "Int", "width": 190, "align": "center"},
+        {"label": "Total Weight", "fieldname": "total_weight", "fieldtype": "Float", "width": 200, "align": "center"},
     ]
 
     conditions = ""
@@ -46,44 +23,65 @@ def execute(filters=None):
         values["project_number"] = tuple(filters.get("project_number"))
 
     if filters.get("drawing_number"):
-        conditions += " AND pod.drawing_number IN %(drawing_number)s"
+        conditions += " AND ad.drawing_number IN %(drawing_number)s"
         values["drawing_number"] = tuple(filters.get("drawing_number"))
 
     if filters.get("is_active"):
         conditions += " AND p.is_active = 1"
 
-    data = frappe.db.sql(f"""
+    query = f"""
         SELECT
-            p.name as project_number,
-            ad.drawing_number,
-            pod.po_serial_no,
-            IFNULL(pod.unit_weight,0) as unit_weight,
-            IFNULL(pod.required_qty,0) as required_qty,
-            IFNULL(pod.total_weight,0) as total_weight
+            p.name AS project_name,
+            ad.name as drawing_id,
+            ad.drawing_number AS drawing_number,
+            pod.po_serial_no AS po_serial_no,
+            IFNULL(ad.unit_weight, 0) AS unit_weight,
+            IFNULL(pod.required_qty, 0) AS quantity,
+            (IFNULL(pod.unit_weight,0) * IFNULL(pod.required_qty,0)) AS total_weight
         FROM `tabFT Project` p
-        LEFT JOIN `tabFT Po Drawing` pod
-            ON p.name = pod.project_number
         LEFT JOIN `tabFT Add Drawing` ad
-            ON ad.name = pod.drawing_number
+            ON ad.project_number = p.name
+        LEFT JOIN `tabFT Po Drawing` pod
+            ON pod.drawing_number = ad.name
         WHERE 1=1 {conditions}
-        ORDER BY p.name, CAST(pod.po_serial_no AS UNSIGNED)
-    """, values, as_dict=True)
+        ORDER BY CAST(pod.po_serial_no AS UNSIGNED) ASC
+    """
 
-    total_unit_weight = sum(d.get("unit_weight", 0) for d in data)
-    total_qty         = sum(d.get("required_qty", 0) for d in data)
-    total_weight      = sum(d.get("total_weight", 0) for d in data)
+    raw_data = frappe.db.sql(query, values, as_dict=1) or []
 
-    data.append({
-        "project_number": "TOTAL",
-        "drawing_number": "",
-        "po_serial_no":   "",
-        "unit_weight":    total_unit_weight,
-        "required_qty":   total_qty,
-        "total_weight":   total_weight
+    total_unit_weight  = sum(d.get("unit_weight", 0) for d in raw_data)
+    total_total_weight = sum(d.get("total_weight", 0) for d in raw_data)
+
+    # ---------------- PROJECT TOTAL WEIGHT FROM tabFT Project ----------------
+    project_conditions = ""
+    project_values = {}
+
+    if filters.get("project_number"):
+        project_conditions += " AND name IN %(project_number)s"
+        project_values["project_number"] = tuple(filters.get("project_number"))
+
+    if filters.get("is_active"):
+        project_conditions += " AND is_active = 1"
+
+    project_total_weight_result = frappe.db.sql(
+        f"SELECT IFNULL(SUM(total_weight), 0) FROM `tabFT Project` WHERE 1=1 {project_conditions}",
+        project_values
+    )
+    project_total_weight = project_total_weight_result[0][0] if project_total_weight_result else 0
+
+    raw_data.append({
+        "project_name":        "TOTAL",
+        "drawing_id":          "",
+        "drawing_number":      "",
+        "po_serial_no":        "",
+        "unit_weight":         total_unit_weight,
+        "quantity":            None,
+        "total_weight":        total_total_weight,
+        # JS ko pass karne ke liye extra field
+        "project_total_weight": float(project_total_weight)
     })
 
-    return columns, data, None, None, None
-
+    return columns, raw_data, None, None, None
 
 @frappe.whitelist()
 def download_drawing_excel(filters):
@@ -252,4 +250,3 @@ def download_drawing_excel(filters):
 	frappe.response['filecontent'] = file_stream.getvalue()
 	frappe.response['type'] = 'binary'
 
-   
