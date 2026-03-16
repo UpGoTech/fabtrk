@@ -310,8 +310,36 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 			fieldname: "project_number",
 			label: "Project Number",
 			fieldtype: "MultiSelectList",
+			// get_data: function (txt) {
+			// 	return frappe.db.get_link_options("FT Project", txt);
+			// },
 			get_data: function (txt) {
-				return frappe.db.get_link_options("FT Project", txt);
+				let is_active = frappe.query_report.get_filter_value("is_active");
+				let filters = [];
+
+				if (txt) {
+					filters.push(["name", "like", "%" + txt + "%"]);
+				}
+
+				if (is_active) {
+					filters.push(["is_active", "=", 1]);
+				}
+
+				return frappe.call({
+					method: "frappe.client.get_list",
+					args: {
+						doctype: "FT Project",
+						fields: ["name"],
+						filters: filters,
+						limit_page_length: 0
+					}
+				}).then(r => {
+					return (r.message || []).map(d => ({
+						value: d.name,
+						label: d.name,
+						description: ""
+					}));
+				});
 			},
 			on_change() {
 				frappe.query_report.set_filter_value("drawing_number", []);
