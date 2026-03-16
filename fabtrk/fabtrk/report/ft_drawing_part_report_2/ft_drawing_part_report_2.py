@@ -268,7 +268,7 @@ def execute(filters=None):
             "datatype": "HTML",
         }
     ]
-    return columns, data, None, None, report_summary
+    
     # =====================================================
     # ✅ ADD GRAND TOTAL ROW (After Summary Calculation)
     # =====================================================
