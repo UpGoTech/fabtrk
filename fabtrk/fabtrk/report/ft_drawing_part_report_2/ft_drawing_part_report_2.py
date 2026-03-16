@@ -123,7 +123,6 @@ def execute(filters=None):
         """
         
     # 5---------------- SUMMARY ----------------
-    # total_projects = len({d["project_name"] for d in data if d.get("project_name")})
     # ✅ FIXED: Total Projects (works even if drawing parts = 0)
     project_count_query = """
         SELECT COUNT(DISTINCT p.name)
@@ -296,9 +295,7 @@ def execute(filters=None):
 
 
 # 10 ---------------- ITEM DETAILS ----------------
-# ==========================================
 # Details button click hone par call hota hai, Ek specific project + item ka detail data deta hai, Drawing Parts → Add Drawing → Project → Po Drawing join, Same rows ko group karta hai (duplicate avoid), Total row bhi add karta hai end mein
-# ==========================================
 @frappe.whitelist()
 def get_item_details(project, item, drawing_numbers=None):
     from collections import defaultdict
@@ -416,6 +413,7 @@ def get_item_details(project, item, drawing_numbers=None):
     item_name = frappe.db.get_value("FT Stock RM List", item, "computed_name") or item
 
     return {"item_name": item_name, "data": rows}
+
 
 # 11 ---------------- EXCEL EXPORT ----------------
 # Only show Summary Details 
@@ -605,6 +603,7 @@ def download_item_excel(filters):
     frappe.response["filename"] = "Summary_Report.xlsx"
     frappe.response["filecontent"] = file_stream.getvalue()
     frappe.response["type"] = "binary"
+
 
 #12 three sheet Excel
 @frappe.whitelist()
@@ -968,6 +967,7 @@ def get_all_details_for_export(filters):
 
     return file_doc.file_url
 
+
 #13 item details EXCEL    
 @frappe.whitelist()
 def download_item_details_excel(filters):
@@ -1194,100 +1194,8 @@ def download_item_details_excel(filters):
     frappe.response['filecontent'] = file_stream.getvalue()
     frappe.response['type'] = 'download'   
   
+  
 # --------------------- GENERATE JSON FOR NESTING CENTER ---------------------
-# @frappe.whitelist()
-# def export_nesting_json(filters=None):
-
-#     import json
-
-#     filters = frappe.parse_json(filters)
-
-#     project = filters.get("project")
-#     item = filters.get("item")
-
-#     item_name = frappe.db.get_value(
-#         "FT Stock RM List",
-#         item,
-#         "computed_name"
-#     )
-
-#     rows = frappe.db.sql("""
-#         SELECT
-#             dp.quantity,
-#             dp.lenght,
-#             dp.width,
-#             dp.part_no
-#         FROM `tabFT Drawing Parts` dp
-#         LEFT JOIN `tabFT Add Drawing` ad ON ad.name = dp.drawing_number
-#         WHERE ad.project_number=%s
-#         AND dp.item_id=%s
-#     """,(project,item),as_dict=1)
-
-#     parts = []
-
-#     for row in rows:
-
-#         parts.append({
-#             "Quantity": int(row.quantity or 0),
-#             "RectangularShape": {
-#                 "Length": str(row.lenght or 0),
-#                 "Width": str(row.width or 0)
-#             },
-#             "Name": f"{row.part_no}",
-#             "Colour": "#8C704D"
-#         })
-
-
-#     data = {
-
-#         "Settings": {
-#             "DimensionLimit": None,
-#             "DistancePartPart": "0",
-#             "DistancePartRawPlate": "0",
-#             "MirrorControl": "Allow",
-#             "NestingInHoles": True,
-#             "RotationControl": "Free",
-#             "SortRawPlates": True,
-#             "GroupLayouts": True,
-#             "PlacementDirection": "LeftDown",
-#             "RotationTwist": {"Deg": 0},
-#             "NestingMode": "General",
-#             "SettingsStrips": {"Sorting": "Length"},
-#             "LayoutDuplicationAuto": False
-#         },
-
-#         "Problem": {
-
-#             "Parts": parts,
-
-#             "RawPlates": [
-#                 {
-#                     "Quantity": 10,
-#                     "RectangularShape": {
-#                         "Length": "12000",
-#                         "Width": "100"
-#                     },
-#                     "Name": item_name
-#                 }
-#             ]
-#         },
-
-#         "StopConditions": {
-#             "AllPartsNested": False,
-#             "Scrap": False,
-#             "ScrapValue": 0,
-#             "Scrap2": False,
-#             "Scrap2Value": 0,
-#             "SmartStop": False,
-#             "Timeout": True,
-#             "TimeoutValue": 300
-#         }
-#     }
-
-#     frappe.response["filename"] = "nesting_data.json"
-#     frappe.response["filecontent"] = json.dumps(data, indent=4)
-#     frappe.response["type"] = "download"
-
 @frappe.whitelist()
 def export_nesting_json(filters=None):
 
@@ -1440,17 +1348,97 @@ def export_nesting_json(filters=None):
 
 
 
-    # frappe.response["filename"]    = f"Row_Export_{drawing_number}_{position_no}.xlsx"
-    # frappe.response["filecontent"] = file_stream.getvalue()
-    # frappe.response["type"]        = "binary"
+#     frappe.response["filename"]    = f"Row_Export_{drawing_number}_{position_no}.xlsx"
+#     frappe.response["filecontent"] = file_stream.getvalue()
+#     frappe.response["type"]        = "binary"
     
     
     
     
     
     
-#16 /////save compaire utton//    # 
+#16 /////save compaire button//    #
+ 
+# isme id set nhi hai
+# @frappe.whitelist()
+# def save_row_data(sr_no, project, item_name, item_count, quantity, lenght, width, total_weight):
+#     import json
+#     from frappe.utils import now_datetime
 
+#     timestamp = now_datetime().strftime("%d/%m/%Y (%H:%M:%S)")
+
+#     new_entry = {
+#         "timestamp": timestamp,
+#         "total_entries": float(item_count or 0),
+#         "total_qty": float(quantity or 0),
+#         "total_length": float(lenght or 0),
+#         "total_width": float(width or 0),
+#         "total_weight": float(total_weight or 0)
+#     }
+
+#     existing = frappe.db.exists(
+#         "FT Store Revision Data",
+#         {
+#             "project_number": project,
+#             "item": item_name
+#         }
+#     )
+
+#     if existing:
+#         doc = frappe.get_doc("FT Store Revision Data", existing)
+
+#         # Load existing revision log
+#         try:
+#             revision_log = json.loads(doc.revision_log or "[]")
+#         except Exception:
+#             revision_log = []
+
+#         # Check if data actually changed compared to last saved
+#         if revision_log:
+#             last = revision_log[-1]
+#             changed = (
+#                 float(last.get("total_entries") or 0) != float(item_count or 0) or
+#                 float(last.get("total_qty") or 0) != float(quantity or 0) or
+#                 float(last.get("total_length") or 0) != float(lenght or 0) or
+#                 float(last.get("total_width") or 0) != float(width or 0) or
+#                 float(last.get("total_weight") or 0) != float(total_weight or 0)
+#             )
+#             if not changed:
+#                 return {"status": "success", "msg": "Data same hai, koi change nahi hua"}
+
+#         revision_log.append(new_entry)
+
+#         doc.sr_no = sr_no
+#         doc.total_entries = item_count
+#         doc.total_qty = quantity
+#         doc.total_length = lenght
+#         doc.total_width = width
+#         doc.total_weight = total_weight
+#         doc.revision_log = json.dumps(revision_log)
+
+#         doc.save(ignore_permissions=True)
+
+#     else:
+#         revision_log = [new_entry]
+
+#         doc = frappe.get_doc({
+#             "doctype": "FT Store Revision Data",
+#             "sr_no": sr_no,
+#             "project_number": project,
+#             "item": item_name,
+#             "total_entries": item_count,
+#             "total_qty": quantity,
+#             "total_length": lenght,
+#             "total_width": width,
+#             "total_weight": total_weight,
+#             "revision_log": json.dumps(revision_log)
+#         })
+#         doc.insert(ignore_permissions=True)
+
+#     frappe.db.commit()
+#     return {"status": "success", "msg": "✅ Data saved successfully!"}
+
+# Revision-1-Flat 070MM X 06 THK IS808 IS2062 E250BR-001,item show hore hai id me 
 @frappe.whitelist()
 def save_row_data(sr_no, project, item_name, item_count, quantity, lenght, width, total_weight):
     import json
@@ -1459,75 +1447,179 @@ def save_row_data(sr_no, project, item_name, item_count, quantity, lenght, width
     timestamp = now_datetime().strftime("%d/%m/%Y (%H:%M:%S)")
 
     new_entry = {
-        "timestamp": timestamp,
-        "total_entries": float(item_count or 0),
-        "total_qty": float(quantity or 0),
-        "total_length": float(lenght or 0),
-        "total_width": float(width or 0),
-        "total_weight": float(total_weight or 0)
+        "timestamp":     timestamp,
+        "total_entries": float(item_count   or 0),
+        "total_qty":     float(quantity     or 0),
+        "total_length":  float(lenght       or 0),
+        "total_width":   float(width        or 0),
+        "total_weight":  float(total_weight or 0)
     }
 
     existing = frappe.db.exists(
         "FT Store Revision Data",
         {
             "project_number": project,
-            "item": item_name
+            "item":           item_name
         }
     )
+
+    # Item name clean karo — spaces aur / ko - se replace karo
+    clean_item = item_name.replace(" ", "-").replace("/", "-")
 
     if existing:
         doc = frappe.get_doc("FT Store Revision Data", existing)
 
-        # Load existing revision log
         try:
             revision_log = json.loads(doc.revision_log or "[]")
         except Exception:
             revision_log = []
 
-        # Check if data actually changed compared to last saved
         if revision_log:
             last = revision_log[-1]
             changed = (
-                float(last.get("total_entries") or 0) != float(item_count or 0) or
-                float(last.get("total_qty") or 0) != float(quantity or 0) or
-                float(last.get("total_length") or 0) != float(lenght or 0) or
-                float(last.get("total_width") or 0) != float(width or 0) or
-                float(last.get("total_weight") or 0) != float(total_weight or 0)
+                float(last.get("total_entries") or 0) != float(item_count   or 0) or
+                float(last.get("total_qty")     or 0) != float(quantity     or 0) or
+                float(last.get("total_length")  or 0) != float(lenght       or 0) or
+                float(last.get("total_width")   or 0) != float(width        or 0) or
+                float(last.get("total_weight")  or 0) != float(total_weight or 0)
             )
             if not changed:
-                return {"status": "success", "msg": "Data same hai, koi change nahihua"}
+                return {"status": "success", "msg": "Data same hai, koi change nahi hua"}
 
         revision_log.append(new_entry)
 
-        doc.sr_no = sr_no
-        doc.total_entries = item_count
-        doc.total_qty = quantity
-        doc.total_length = lenght
-        doc.total_width = width
-        doc.total_weight = total_weight
-        doc.revision_log = json.dumps(revision_log)
+        next_revision = len(revision_log)
+        new_name      = f"Revision-{next_revision}-{clean_item}-{str(sr_no).zfill(3)}"
 
+        frappe.rename_doc(
+            "FT Store Revision Data",
+            existing,
+            new_name,
+            force=True
+        )
+
+        doc = frappe.get_doc("FT Store Revision Data", new_name)
+        doc.sr_no         = sr_no
+        doc.total_entries = item_count
+        doc.total_qty     = quantity
+        doc.total_length  = lenght
+        doc.total_width   = width
+        doc.total_weight  = total_weight
+        doc.revision_log  = json.dumps(revision_log)
         doc.save(ignore_permissions=True)
 
     else:
         revision_log = [new_entry]
+        new_name     = f"Revision-1-{clean_item}-{str(sr_no).zfill(3)}"
 
         doc = frappe.get_doc({
-            "doctype": "FT Store Revision Data",
-            "sr_no": sr_no,
+            "doctype":        "FT Store Revision Data",
+            "name":           new_name,
+            "sr_no":          sr_no,
             "project_number": project,
-            "item": item_name,
-            "total_entries": item_count,
-            "total_qty": quantity,
-            "total_length": lenght,
-            "total_width": width,
-            "total_weight": total_weight,
-            "revision_log": json.dumps(revision_log)
+            "item":           item_name,
+            "total_entries":  item_count,
+            "total_qty":      quantity,
+            "total_length":   lenght,
+            "total_width":    width,
+            "total_weight":   total_weight,
+            "revision_log":   json.dumps(revision_log)
         })
         doc.insert(ignore_permissions=True)
 
     frappe.db.commit()
     return {"status": "success", "msg": "✅ Data saved successfully!"}
+
+# isme id = Revision-1-001,Revision-1-002;Revision-2-001,...
+# @frappe.whitelist()
+# def save_row_data(sr_no, project, item_name, item_count, quantity, lenght, width, total_weight):
+#     import json
+#     from frappe.utils import now_datetime
+
+#     timestamp = now_datetime().strftime("%d/%m/%Y (%H:%M:%S)")
+
+#     new_entry = {
+#         "timestamp":     timestamp,
+#         "total_entries": float(item_count   or 0),
+#         "total_qty":     float(quantity     or 0),
+#         "total_length":  float(lenght       or 0),
+#         "total_width":   float(width        or 0),
+#         "total_weight":  float(total_weight or 0)
+#     }
+
+#     existing = frappe.db.exists(
+#         "FT Store Revision Data",
+#         {
+#             "project_number": project,
+#             "item":           item_name
+#         }
+#     )
+
+#     if existing:
+#         doc = frappe.get_doc("FT Store Revision Data", existing)
+
+#         try:
+#             revision_log = json.loads(doc.revision_log or "[]")
+#         except Exception:
+#             revision_log = []
+
+#         if revision_log:
+#             last = revision_log[-1]
+#             changed = (
+#                 float(last.get("total_entries") or 0) != float(item_count   or 0) or
+#                 float(last.get("total_qty")     or 0) != float(quantity     or 0) or
+#                 float(last.get("total_length")  or 0) != float(lenght       or 0) or
+#                 float(last.get("total_width")   or 0) != float(width        or 0) or
+#                 float(last.get("total_weight")  or 0) != float(total_weight or 0)
+#             )
+#             if not changed:
+#                 return {"status": "success", "msg": "Data same hai, koi change nahi hua"}
+
+#         revision_log.append(new_entry)
+
+#         next_revision = len(revision_log)
+#         new_name      = f"Revision-{next_revision}-{str(sr_no).zfill(3)}"
+
+#         # Frappe 15 mein sirf force=True
+#         frappe.rename_doc(
+#             "FT Store Revision Data",
+#             existing,
+#             new_name,
+#             force=True
+#         )
+
+#         doc = frappe.get_doc("FT Store Revision Data", new_name)
+#         doc.sr_no         = sr_no
+#         doc.total_entries = item_count
+#         doc.total_qty     = quantity
+#         doc.total_length  = lenght
+#         doc.total_width   = width
+#         doc.total_weight  = total_weight
+#         doc.revision_log  = json.dumps(revision_log)
+#         doc.save(ignore_permissions=True)
+
+#     else:
+#         revision_log = [new_entry]
+#         new_name     = f"Revision-1-{str(sr_no).zfill(3)}"
+
+#         doc = frappe.get_doc({
+#             "doctype":        "FT Store Revision Data",
+#             "name":           new_name,
+#             "sr_no":          sr_no,
+#             "project_number": project,
+#             "item":           item_name,
+#             "total_entries":  item_count,
+#             "total_qty":      quantity,
+#             "total_length":   lenght,
+#             "total_width":    width,
+#             "total_weight":   total_weight,
+#             "revision_log":   json.dumps(revision_log)
+#         })
+#         doc.insert(ignore_permissions=True)
+
+#     frappe.db.commit()
+#     return {"status": "success", "msg": "✅ Data saved successfully!"}
+
 
 
 @frappe.whitelist()

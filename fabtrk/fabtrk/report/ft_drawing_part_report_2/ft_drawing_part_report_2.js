@@ -1,4 +1,3 @@
-
 frappe.query_reports["FT Drawing Part Report 2"] = {
 
 	onload(report) {
@@ -6,7 +5,9 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 		frappe.query_report.set_filter_value("drawing_number", []);
 		frappe.query_report.set_filter_value("item", []);
 		frappe.query_report.set_filter_value("is_active", 1);
-		// Add download item details button to summary table
+
+
+		// Add download item details button to summary table - Header button
 		report.page.add_inner_button("Download Summary", function () {
 			let filters = report.get_values();
 
@@ -37,48 +38,8 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 
 		});
 
+
 		// SAVE SNAPSHOT BUTTON - Header button
-		// report.page.add_inner_button("💾 Save Snapshot", function () {
-		// 	let report_data = frappe.query_report.data || [];
-
-		// 	// Filter out TOTAL row
-		// 	let rows_to_save = report_data.filter(d =>
-		// 		d.project_name && d.project_name !== "TOTAL" && d.item_id
-		// 	);
-
-		// 	if (!rows_to_save.length) {
-		// 		frappe.msgprint("Koi data nahi hai save karne ke liye");
-		// 		return;
-		// 	}
-
-		// 	frappe.confirm(
-		// 		`Kya aap ${rows_to_save.length} rows ka snapshot save karna chahte ho?`,
-		// 		function () {
-		// 			let promises = rows_to_save.map((row, i) => {
-		// 				return frappe.call({
-		// 					method: "fabtrk.fabtrk.report.ft_drawing_part_report_2.ft_drawing_part_report_2.save_row_data",
-		// 					args: {
-		// 						sr_no: i + 1,
-		// 						project: row.project_name,
-		// 						item_name: row.item_name,
-		// 						item_count: row.item_count,
-		// 						quantity: row.quantity,
-		// 						lenght: row.lenght,
-		// 						width: row.width,
-		// 						total_weight: row.total_weight
-		// 					}
-		// 				});
-		// 			});
-
-		// 			Promise.all(promises).then(() => {
-		// 				frappe.show_alert({
-		// 					message: `✅ ${rows_to_save.length} rows saved successfully!`,
-		// 					indicator: "green"
-		// 				});
-		// 			});
-		// 		}
-		// 	);
-		// });
 		report.page.add_inner_button("💾 Save Snapshot", function () {
 			let report_data = frappe.query_report.data || [];
 
@@ -139,7 +100,7 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 						// Kuch save hue, kuch same the
 						else if (saved_count > 0 && no_change_count > 0) {
 							frappe.show_alert({
-								message: `✅ ${saved_count} rows saved | ⏭️ ${no_change_count} rows mein koi change nahi hai`,
+								message: `✅ ${saved_count} rows saved | ⏭️ ${no_change_count} No Chnages in the row`,
 								indicator: "blue"
 							});
 						}
@@ -361,6 +322,7 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 			}
 		},
 
+		// ---------------- DRAWING ----------------
 		{
 			fieldname: "drawing_number",
 			label: "Drawing Number",
@@ -612,7 +574,7 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 			}
 		},
 
-		// ----------------- Section Type 
+		// ----------------- Section Type ----------------
 		{
 			fieldname: "stock_rm_type",
 			label: "Section Type",
@@ -706,41 +668,6 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 								total_weight_style = "text-align:center; color:#000; font-weight:700; font-size:15px;";
 							}
 
-							// is_total_row check ke baad row build karte waqt:
-
-							// let action_buttons = "";
-
-							// if (!is_total_row) {
-							// 	action_buttons = `
-							// 			<td style="text-align:center;">
-							// 				<div style="display:flex; gap:6px; justify-content:center;">
-							// 					<button class="btn btn-xs btn-success row-import-btn"
-							// 						style="min-width:60px;"
-							// 						data-project="${d.project_number || ''}"
-							// 						data-drawing="${d.drawing_number || ''}"
-							// 						data-position="${d.position_no || ''}"
-							// 						data-part-no="${d.part_no || ''}"
-							// 						data-item="${item}">
-							// 						Import (show drawings)
-							// 					</button>
-							// 					<button class="btn btn-xs btn-warning row-export-btn"
-							// 						style="min-width:60px;"
-							// 						data-project="${d.project_number || ''}"
-							// 						data-drawing="${d.drawing_number || ''}"
-							// 						data-position="${d.position_no || ''}"
-							// 						data-part-no="${d.part_no || ''}"
-							// 						data-item="${item}">
-							// 						Export DXF/DWG
-							// 					</button>
-							// 				</div>
-							// 			</td>
-							// 		`;
-							// } else {
-							// 	action_buttons = `<td></td>`;
-							// }
-							// ${action_buttons}
-							// <th style="text-align: center;">Actions</th>
-
 							rows += `
 								<tr style="${row_style}">
 									<td style="text-align:center;">${d.serial_no || ""}</td>
@@ -821,6 +748,7 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 					}
 				});
 			});
+
 		// Dynamic button click
 		$(document).off("click", ".summary-download")
 			.on("click", ".summary-download", function () {
@@ -840,10 +768,7 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 				window.location.href = url;
 			});
 
-		// ===============================
 		// Export DXF Button Click
-		// ===============================
-
 		$(document).off("click", ".nesting-export")
 			.on("click", ".nesting-export", function () {
 
@@ -862,9 +787,7 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 
 			});
 
-		// ================================================================
-		// ✅ NEW: Nesting Report button click handler
-		// ================================================================
+		// Nesting Report button click handler
 		$(document).off("click", ".nesting-report-btn")
 			.on("click", ".nesting-report-btn", function () {
 				let item_name = $(this).data("item");
@@ -872,53 +795,6 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 				let display_name = $(this).data("item-name") || item_name;
 				show_nesting_report_modal(item_name, project_name, display_name);
 			});
-
-		// $(document).off("click", ".row-export-btn")
-		// 	.on("click", ".row-export-btn", function () {
-
-		// 		let project = $(this).data("project");
-		// 		let drawing = $(this).data("drawing");
-		// 		let position = $(this).data("position");
-		// 		let item = $(this).data("item");   // FIX
-
-		// 		let row = $(this).closest("tr");
-
-		// 		let length = row.find("td").eq(8).text().trim();
-		// 		let width = row.find("td").eq(9).text().trim();
-
-		// 		frappe.call({
-		// 			method: "fabtrk.api.api.export_dxf",
-		// 			args: {
-		// 				project: project,
-		// 				drawing: drawing,
-		// 				position: position,
-		// 				length: length,
-		// 				width: width,
-		// 				item: item
-		// 			},
-		// 			callback: function (r) {
-
-		// 				if (r.message) {
-
-		// 					frappe.show_alert({
-		// 						message: "DXF Generated",
-		// 						indicator: "green"
-		// 					});
-
-		// 					window.open(r.message);
-
-		// 				} else {
-
-		// 					frappe.show_alert({
-		// 						message: "DXF Generation Failed",
-		// 						indicator: "red"
-		// 					});
-
-		// 				}
-		// 			}
-		// 		});
-
-		// 	});
 
 		setTimeout(() => {
 
@@ -947,7 +823,7 @@ function clear_item_details() {
 	$(".view-btn").removeClass("active-detail");
 }
 
-// download current item details in Excel
+// EXCEL download current item details in Excel
 function download_item_details(item_name, project_name) {
 
 	let filters = {
@@ -966,7 +842,7 @@ function download_item_details(item_name, project_name) {
 	document.body.removeChild(link);
 }
 
-// download full report both summary and detail tables in Excel with two defferent sheet for detail and summary
+// EXCEL download full report both summary and detail tables in Excel with two defferent sheet for detail and summary
 function download_full_report(report) {
 	if (!report.data || !report.data.length) {
 		frappe.msgprint("No data to export");
@@ -1055,11 +931,8 @@ if (!window.XLSX) {
 }
 
 
-
-// ================================================================
 // ✅ NEW FUNCTION: Nesting Report Modal
 // "Nesting Report" button click karne par ye open hota hai
-// ================================================================
 function show_nesting_report_modal(item, project, item_display_name) {
 
 	$("#nesting-report-modal-overlay").remove();
@@ -1310,10 +1183,8 @@ function show_nesting_report_modal(item, project, item_display_name) {
 }
 
 
-// ================================================================
 // ✅ NEW FUNCTION: Nesting Center result JSON parser
 //    Multiple output formats handle karta hai
-// ================================================================
 function parse_nesting_result_json(json) {
 
 	let sheets = "—", nested_parts = "—", scrap = "—";
@@ -1394,9 +1265,6 @@ function parse_nesting_result_json(json) {
 }
 
 
-
-
-
 $(`<style>
 
 .datatable .dt-scrollable {
@@ -1413,80 +1281,79 @@ $(`<style>
 }
 	
 .report-summary .summary-item{
-		max-width: 100%;
-		min-width: 100%;
-		height: 100%;
-		display: block;
-		place-content: unset;
-		margin: 0;
-	}
+	max-width: 100%;
+	min-width: 100%;
+	height: 100%;
+	display: block;
+	place-content: unset;
+	margin: 0;
+}
+.summary-container{
+	display: grid;
+	grid-template-columns: repeat(1, 1fr) !important;
+	gap: 20px;
+}
+@media (min-width: 768px) and (max-width: 1023px) {
 	.summary-container{
-		display: grid;
-		grid-template-columns: repeat(1, 1fr) !important;
-		// place-items: center;
-		gap: 20px;
+		grid-template-columns: repeat(2, 1fr) !important;
 	}
-	@media (min-width: 768px) and (max-width: 1023px) {
-		.summary-container{
-			grid-template-columns: repeat(2, 1fr) !important;
-		}
+}
+@media (min-width: 1024px) {
+	.summary-container{
+		grid-template-columns: repeat(5, 1fr) !important;
 	}
-	@media (min-width: 1024px) {
-		.summary-container{
-			grid-template-columns: repeat(5, 1fr) !important;
-		}
-	}
-	.report-summary .summary-value .summary-container {
-		padding: 20px;
-	}
-	.summary-section{
-		width: 100%;
-		background: #fff;
-		padding: 20px;
-		border-radius: 10px;
-		text-align: center;
-		transition: all 0.2s ease;
-		border: 2px solid #eef0f4;
-	}
-	.section-content-count p{
-		font-size: 14px;
-		font-weight: 400;
-		color: #525252;
-	}
-	.section-content-count span{
-		font-size: 16px;
-		font-weight: 600;
-		line-height: 20px;
-		padding-top: 12px;
-		padding-bottom: 5px;
-		color: #000;
-	}
-	.report-summary {
-		background-color: none;
-		border-radius: 0;
-		border-bottom: 0;
-		margin: 0;
-		padding: 0;
-		display: block;
-		flex-wrap: unset;
-		align-items: unset;
-		justify-content: unset;
-		gap: 0px;
-	}
-	.table{
-		width: 100% !important;
-	}
-	/* button view active color*/
-	.view-btn.active-detail {
-		background-color: #0c5c70 !important;
-		color: #fff !important;
-		border-color: #0c5c70  !important;
-		box-shadow: 0 0 0 2px rgba(21, 54, 102, 0.25);
-	}
+}
+.report-summary .summary-value .summary-container {
+	padding: 20px;
+}
+.summary-section{
+	width: 100%;
+	background: #fff;
+	padding: 20px;
+	border-radius: 10px;
+	text-align: center;
+	transition: all 0.2s ease;
+	border: 2px solid #eef0f4;
+}
+.section-content-count p{
+	font-size: 14px;
+	font-weight: 400;
+	color: #525252;
+}
+.section-content-count span{
+	font-size: 16px;
+	font-weight: 600;
+	line-height: 20px;
+	padding-top: 12px;
+	padding-bottom: 5px;
+	color: #000;
+}
+.report-summary {
+	background-color: none;
+	border-radius: 0;
+	border-bottom: 0;
+	margin: 0;
+	padding: 0;
+	display: block;
+	flex-wrap: unset;
+	align-items: unset;
+	justify-content: unset;
+	gap: 0px;
+}
+.table{
+	width: 100% !important;
+}
+
+/* button view active color*/
+.view-btn.active-detail {
+	background-color: #0c5c70 !important;
+	color: #fff !important;
+	border-color: #0c5c70  !important;
+	box-shadow: 0 0 0 2px rgba(21, 54, 102, 0.25);
+}
 
 
 /* ===== FIX ROW NUMBER COLUMN ===== */
-
 .datatable .dt-cell--col-0 {
     min-width: 50px !important;
     width: 50px !important;
@@ -1501,5 +1368,4 @@ $(`<style>
 	padding: 0 !important;
 }
 </style>`).appendTo("head");
-
 
