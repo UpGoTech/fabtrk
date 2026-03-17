@@ -329,7 +329,7 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 					method: "frappe.client.get_list",
 					args: {
 						doctype: "FT Project",
-						fields: ["name"],
+						fields: ["name", "description"],
 						filters: filters,
 						limit_page_length: 0
 					}
@@ -337,7 +337,7 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 					return (r.message || []).map(d => ({
 						value: d.name,
 						label: d.name,
-						description: ""
+						description: d.description || ""
 					}));
 				});
 			},
@@ -797,23 +797,75 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 			});
 
 		// Export DXF Button Click
+		// $(document).off("click", ".nesting-export")
+		// 	.on("click", ".nesting-export", function () {
+
+		// 		let item_name = $(".summary-download").data("item");
+		// 		let project_name = $(".summary-download").data("project");
+
+		// 		let filters = {
+		// 			item: item_name,
+		// 			project: project_name
+		// 		};
+
+		// 		let url = "/api/method/fabtrk.fabtrk.report.ft_drawing_part_report_2.ft_drawing_part_report_2.export_nesting_json"
+		// 			+ "?filters=" + encodeURIComponent(JSON.stringify(filters));
+
+		// 		window.location.href = url;
+
+		// 	});
 		$(document).off("click", ".nesting-export")
 			.on("click", ".nesting-export", function () {
 
 				let item_name = $(".summary-download").data("item");
 				let project_name = $(".summary-download").data("project");
 
-				let filters = {
-					item: item_name,
-					project: project_name
-				};
+				// ✅ User se plate dimensions puchho
+				frappe.prompt([
+					{
+						fieldname: "plate_length",
+						label: "Plate Length (mm)",
+						fieldtype: "Int",
+						default: 12000,
+						reqd: 1
+					},
+					{
+						fieldname: "plate_width",
+						label: "Plate Width (mm)",
+						fieldtype: "Int",
+						default: 100,
+						reqd: 1
+					},
+					{
+						fieldname: "plate_qty",
+						label: "Plate Quantity",
+						fieldtype: "Int",
+						default: 10,
+						reqd: 1
+					}
+				],
+					function (values) {
 
-				let url = "/api/method/fabtrk.fabtrk.report.ft_drawing_part_report_2.ft_drawing_part_report_2.export_nesting_json"
-					+ "?filters=" + encodeURIComponent(JSON.stringify(filters));
+						let filters = {
+							item: item_name,
+							project: project_name,
+							plate_length: values.plate_length,
+							plate_width: values.plate_width,
+							plate_qty: values.plate_qty
+						};
 
-				window.location.href = url;
+						let url = "/api/method/fabtrk.fabtrk.report.ft_drawing_part_report_2.ft_drawing_part_report_2.export_nesting_json"
+							+ "?filters=" + encodeURIComponent(JSON.stringify(filters));
 
+						window.location.href = url;
+					},
+					"Plate Dimensions",   // dialog title
+					"Export"              // button label
+				);
 			});
+
+
+
 
 		// Nesting Report button click handler
 		$(document).off("click", ".nesting-report-btn")
@@ -1396,4 +1448,3 @@ $(`<style>
 	padding: 0 !important;
 }
 </style>`).appendTo("head");
-

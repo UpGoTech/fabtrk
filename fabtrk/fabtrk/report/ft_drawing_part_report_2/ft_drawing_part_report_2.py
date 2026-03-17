@@ -1211,6 +1211,11 @@ def export_nesting_json(filters=None):
     project = filters.get("project")
     item = filters.get("item")
 
+    plate_length = str(int(filters.get("plate_length") or 12000))
+    plate_width  = str(int(filters.get("plate_width") or 100))
+    plate_qty    = int(filters.get("plate_qty") or 10)
+    
+    
     item_name = frappe.db.get_value(
         "FT Stock RM List",
         item,
@@ -1236,13 +1241,17 @@ def export_nesting_json(filters=None):
         # ---------- DEFAULT WIDTH ----------
         width = int(row.width) if row.width and int(row.width) != 0 else 100
 
+        length_val = int(row.lenght or 0)
+        width_val = int(row.width or 0)
+        
         parts.append({
             "Quantity": int(row.quantity or 0),
             "RectangularShape": {
                 "Length": str(int(row.lenght or 0)),
                 "Width": str(width)
             },
-            "Name": f"{row.part_no}",
+           
+            "Name": f"{row.part_no}-L-{length_val}/W-{width_val}",
             "Colour": get_random_color()   
         })
 
@@ -1269,17 +1278,32 @@ def export_nesting_json(filters=None):
 
             "Parts": parts,
 
+            # "RawPlates": [
+            #     {
+            #         "Quantity": 10,
+            #         "RectangularShape": {
+            #             "Length": "12000",
+            #             "Width": "100"
+            #         },
+            #         "Name": item_name,
+            #         "Colour": get_random_color()   
+            #     }
+            # ]
+            
+
+            # RawPlates mein use karo:
             "RawPlates": [
                 {
-                    "Quantity": 10,
+                    "Quantity": plate_qty,
                     "RectangularShape": {
-                        "Length": "12000",
-                        "Width": "100"
+                        "Length": plate_length,
+                        "Width": plate_width
                     },
                     "Name": item_name,
-                    "Colour": get_random_color()   
+                    "Colour": get_random_color()
                 }
             ]
+            
         },
 
         "StopConditions": {
@@ -1298,64 +1322,9 @@ def export_nesting_json(filters=None):
     frappe.response["filecontent"] = json.dumps(data, indent=4)
     frappe.response["type"] = "download"
 
-# ----------------- GENERATING DATA IN DXF FILE -----------------
-# data generate on dxffile and import to nesting center
-# @frappe.whitelist()
-# def import_row_data(project, drawing_number, position_no, item):
 
-#     print("PROJECT:", project)
-#     print("DRAWING:", drawing_number)
-#     print("POSITION:", position_no)
-#     print("ITEM:", item)
-
-#     rows = frappe.get_all(
-#         "FT Drawing Parts",
-#         fields=["name","drawing_number","position_no","item_id"],
-#         filters=[
-#             ["drawing_number", "like", f"%{drawing_number}%"],
-#             ["position_no", "=", position_no]
-#         ],
-#         limit=1
-#     )
-
-#     if not rows:
-#         frappe.throw("Part not found")
-
-#     part = rows[0]
-
-#     file = frappe.get_value(
-#         "File",
-#         {
-#             "attached_to_doctype": "FT Drawing Parts",
-#             "attached_to_name": part["name"],
-#             "file_name": ["like", "%.dxf"]
-#         },
-#         "file_url"
-#     )
-
-#     if not file:
-#         frappe.throw("DXF file not attached with this part")
-
-#     nesting_json = {
-#         "project": project,
-#         "drawing_number": drawing_number,
-#         "position_no": position_no,
-#         "item": item,
-#         "dxf_file": file
-#     }
-
-#     return nesting_json
-
-
-
-#     frappe.response["filename"]    = f"Row_Export_{drawing_number}_{position_no}.xlsx"
-#     frappe.response["filecontent"] = file_stream.getvalue()
-#     frappe.response["type"]        = "binary"
     
-    
-    
-    
-    
+
     
 #16 /////save compaire button//    #
  
@@ -1953,3 +1922,15 @@ def export_compare_snapshot_excel(snapshot_data):
 
 # ////save compaire utton//    #
  
+
+
+
+
+
+
+
+
+
+
+
+
