@@ -1,4 +1,3 @@
- 
 import frappe
 from frappe.utils import get_url
 
@@ -411,8 +410,7 @@ def get_item_details(project, item, drawing_numbers=None):
 
     return {"item_name": item_name, "data": rows}
 
-
-# # ---------------- EXCEL EXPORT ----------------
+# ---------------- EXCEL EXPORT ----------------
 # Only show Summary Details 
 @frappe.whitelist()
 def download_item_excel(filters):
@@ -1190,105 +1188,10 @@ def download_item_details_excel(filters):
     frappe.response['type'] = 'download'   
   
 # --------------------- GENERATE JSON FOR NESTING CENTER ---------------------
-# @frappe.whitelist()
-# def export_nesting_json(filters=None):
-
-#     import json
-
-#     filters = frappe.parse_json(filters)
-
-#     project = filters.get("project")
-#     item = filters.get("item")
-
-#     item_name = frappe.db.get_value(
-#         "FT Stock RM List",
-#         item,
-#         "computed_name"
-#     )
-
-#     rows = frappe.db.sql("""
-#         SELECT
-#             dp.quantity,
-#             dp.lenght,
-#             dp.width,
-#             dp.part_no
-#         FROM `tabFT Drawing Parts` dp
-#         LEFT JOIN `tabFT Add Drawing` ad ON ad.name = dp.drawing_number
-#         WHERE ad.project_number=%s
-#         AND dp.item_id=%s
-#     """,(project,item),as_dict=1)
-
-#     parts = []
-
-#     for row in rows:
-
-#         parts.append({
-#             "Quantity": int(row.quantity or 0),
-#             "RectangularShape": {
-#                 "Length": str(row.lenght or 0),
-#                 "Width": str(row.width or 0)
-#             },
-#             "Name": f"{row.part_no}",
-#             "Colour": "#8C704D"
-#         })
-
-
-#     data = {
-
-#         "Settings": {
-#             "DimensionLimit": None,
-#             "DistancePartPart": "0",
-#             "DistancePartRawPlate": "0",
-#             "MirrorControl": "Allow",
-#             "NestingInHoles": True,
-#             "RotationControl": "Free",
-#             "SortRawPlates": True,
-#             "GroupLayouts": True,
-#             "PlacementDirection": "LeftDown",
-#             "RotationTwist": {"Deg": 0},
-#             "NestingMode": "General",
-#             "SettingsStrips": {"Sorting": "Length"},
-#             "LayoutDuplicationAuto": False
-#         },
-
-#         "Problem": {
-
-#             "Parts": parts,
-
-#             "RawPlates": [
-#                 {
-#                     "Quantity": 10,
-#                     "RectangularShape": {
-#                         "Length": "12000",
-#                         "Width": "100"
-#                     },
-#                     "Name": item_name
-#                 }
-#             ]
-#         },
-
-#         "StopConditions": {
-#             "AllPartsNested": False,
-#             "Scrap": False,
-#             "ScrapValue": 0,
-#             "Scrap2": False,
-#             "Scrap2Value": 0,
-#             "SmartStop": False,
-#             "Timeout": True,
-#             "TimeoutValue": 300
-#         }
-#     }
-
-#     frappe.response["filename"] = "nesting_data.json"
-#     frappe.response["filecontent"] = json.dumps(data, indent=4)
-#     frappe.response["type"] = "download"
-
 @frappe.whitelist()
 def export_nesting_json(filters=None):
-
     import json
     import random
-
     # ---------- RANDOM COLOR FUNCTION ----------
     def get_random_color():
         return "#{:06x}".format(random.randint(0, 0xFFFFFF))
@@ -1384,54 +1287,3 @@ def export_nesting_json(filters=None):
     frappe.response["filename"] = "nesting_data.json"
     frappe.response["filecontent"] = json.dumps(data, indent=4)
     frappe.response["type"] = "download"
-
-# ----------------- GENERATING DATA IN DXF FILE -----------------
-# data generate on dxffile and import to nesting center
-# @frappe.whitelist()
-# def import_row_data(project, drawing_number, position_no, item):
-
-#     print("PROJECT:", project)
-#     print("DRAWING:", drawing_number)
-#     print("POSITION:", position_no)
-#     print("ITEM:", item)
-
-#     rows = frappe.get_all(
-#         "FT Drawing Parts",
-#         fields=["name","drawing_number","position_no","item_id"],
-#         filters=[
-#             ["drawing_number", "like", f"%{drawing_number}%"],
-#             ["position_no", "=", position_no]
-#         ],
-#         limit=1
-#     )
-
-#     if not rows:
-#         frappe.throw("Part not found")
-
-#     part = rows[0]
-
-#     file = frappe.get_value(
-#         "File",
-#         {
-#             "attached_to_doctype": "FT Drawing Parts",
-#             "attached_to_name": part["name"],
-#             "file_name": ["like", "%.dxf"]
-#         },
-#         "file_url"
-#     )
-
-#     if not file:
-#         frappe.throw("DXF file not attached with this part")
-
-#     nesting_json = {
-#         "project": project,
-#         "drawing_number": drawing_number,
-#         "position_no": position_no,
-#         "item": item,
-#         "dxf_file": file
-#     }
-
-#     return nesting_json
-
-
-

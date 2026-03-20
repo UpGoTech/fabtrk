@@ -1101,10 +1101,6 @@ function parse_nesting_result_json(json) {
 	frappe.show_alert({ message: "Nesting results parse ho gaye!", indicator: "green" });
 }
 
-
-
-
-
 $(`<style>
 
 .datatable .dt-scrollable {
