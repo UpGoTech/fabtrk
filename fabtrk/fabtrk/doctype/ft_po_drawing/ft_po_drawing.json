@@ -47,6 +47,7 @@
    "fieldname": "project_number",
    "fieldtype": "Link",
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Project Number",
    "options": "FT Project"
   },
@@ -54,6 +55,7 @@
    "fieldname": "drawing_number",
    "fieldtype": "Link",
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Drawing Number",
    "options": "FT Add Drawing"
   },
@@ -61,12 +63,13 @@
    "fieldname": "po_description",
    "fieldtype": "Small Text",
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "PO Description "
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-23 13:33:24.866471",
+ "modified": "2026-03-18 15:00:24.293773",
  "modified_by": "Administrator",
  "module": "Fabtrk",
  "name": "FT Po Drawing",

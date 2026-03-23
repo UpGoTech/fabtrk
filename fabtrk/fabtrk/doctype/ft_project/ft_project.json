@@ -1,5 +1,6 @@
 {
  "actions": [],
+ "allow_import": 1,
  "autoname": "field:project_name",
  "creation": "2026-01-12 11:01:02.465433",
  "doctype": "DocType",
@@ -33,6 +34,7 @@
    "fieldname": "project_name",
    "fieldtype": "Data",
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Project Name",
    "unique": 1
   },
@@ -40,6 +42,7 @@
    "fieldname": "description",
    "fieldtype": "Small Text",
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Description"
   },
   {
@@ -147,6 +150,7 @@
    "fieldname": "customer_name",
    "fieldtype": "Link",
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Customer Name",
    "options": "FT Customer"
   },
@@ -163,7 +167,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-02-23 17:14:05.650174",
+ "modified": "2026-03-23 14:05:05.651473",
  "modified_by": "Administrator",
  "module": "Fabtrk",
  "name": "FT Project",

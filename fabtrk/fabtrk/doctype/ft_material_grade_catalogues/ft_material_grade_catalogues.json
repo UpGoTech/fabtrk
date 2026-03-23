@@ -1,5 +1,6 @@
 {
  "actions": [],
+ "allow_import": 1,
  "allow_rename": 1,
  "autoname": "format:MGC-{###}",
  "creation": "2026-02-03 13:46:45.074984",
@@ -63,7 +64,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-10 14:15:17.470320",
+ "modified": "2026-03-23 14:03:43.904300",
  "modified_by": "Administrator",
  "module": "Fabtrk",
  "name": "FT Material Grade Catalogues",

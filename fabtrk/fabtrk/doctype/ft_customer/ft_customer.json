@@ -1,5 +1,6 @@
 {
  "actions": [],
+ "allow_import": 1,
  "allow_rename": 1,
  "autoname": "field:customer_name",
  "creation": "2026-01-14 16:30:20.364585",
@@ -19,7 +20,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-10 13:32:40.710449",
+ "modified": "2026-03-23 14:02:34.310412",
  "modified_by": "Administrator",
  "module": "Fabtrk",
  "name": "FT Customer",

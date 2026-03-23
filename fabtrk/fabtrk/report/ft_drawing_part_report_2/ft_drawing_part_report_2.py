@@ -1,4 +1,4 @@
- 
+
 import frappe
 from frappe.utils import get_url
 
@@ -8,6 +8,7 @@ def execute(filters=None):
     columns = [
         {"label": "Project", "fieldname": "project_name", "fieldtype": "Link", "options": "FT Project", "width": 90},
         {"label": "Item", "fieldname": "item_name", "width": 350},
+        {"label": "PO No",         "fieldname": "po_no",        "fieldtype": "Int",   "width": 80,  "align": "center"},
         {"label": "Total Entries", "fieldname": "item_count", "fieldtype": "Int", "width": 110, "align": "center"},
         {"label": "Total Qty", "fieldname": "quantity", "fieldtype": "Int", "width": 85, "align": "center"},
         {"label": "Total Length", "fieldname": "lenght", "fieldtype": "Float", "width": 110, "align": "center"},
@@ -28,7 +29,12 @@ def execute(filters=None):
     if filters.get("drawing_number"):
         conditions += " AND ad.name IN %(drawing_number)s"
         values["drawing_number"] = tuple(filters.get("drawing_number"))
-
+ 
+    # po_no filter — directly FT Drawing Parts ke dp.po_no se
+    if filters.get("po_no"):
+        conditions += " AND dp.po_no IN %(po_no)s"
+        values["po_no"] = tuple(int(p) for p in filters.get("po_no"))
+    
     if filters.get("item"):
         conditions += " AND dp.item_id IN %(item)s"
         values["item"] = tuple(filters.get("item"))
@@ -46,6 +52,7 @@ def execute(filters=None):
         p.name AS project_name,
         dp.item_id AS item_id,
         rm.computed_name AS item_name,
+        dp.po_no AS po_no,
         COALESCE(CAST(st.sort_key AS UNSIGNED), 9999) AS sort_key,        
         CAST(REGEXP_SUBSTR(rm.computed_name, '[0-9]+') AS UNSIGNED) AS item_sort,        
         COUNT(dp.name) AS item_count,
@@ -60,7 +67,7 @@ def execute(filters=None):
     LEFT JOIN `tabFT Section Type` st ON st.name = rm.stock_rm_type
     WHERE 1=1
         {conditions}
-    GROUP BY p.name, dp.item_id, rm.computed_name, st.sort_key
+    GROUP BY p.name, dp.item_id, rm.computed_name, dp.po_no, st.sort_key
     HAVING 
         dp.item_id IS NOT NULL
         OR (
@@ -72,7 +79,7 @@ def execute(filters=None):
                 WHERE ad2.project_number = p.name
             )
         )
-    ORDER BY p.name, sort_key ASC,item_sort ASC
+    ORDER BY p.name, sort_key ASC,item_sort ASC, dp.po_no ASC
     """
 
     data = frappe.db.sql(query, values, as_dict=True) or []
@@ -90,13 +97,14 @@ def execute(filters=None):
                 ON ad.project_number = p.name
             WHERE ad.name IN %(drawing_number)s
         """, {
-            "drawing_number": tuple(filters.get("drawing_number"))
+            "drawing_number": tuple(filters.get("drawing_number")) 
         }, as_dict=True)
 
         for proj in blank_projects:
             data.append({
                 "project_name": proj.name,
                 "item_name": "-",
+                "po_no": "",
                 "item_count": 0,
                 "quantity": 0,
                 "lenght": 0,
@@ -112,6 +120,7 @@ def execute(filters=None):
         row["width"] = row.get("width") or 0
         row["total_weight"] = row.get("total_weight") or 0
         row["item_name"] = row.get("item_name") or "-"
+        row["po_no"]        = row.get("po_no") or ""
         row["view"] = f"""
             <div class="d-grid gap-2 col-6 mx-auto">
                 <button class="btn btn-xs btn-info view-btn"
@@ -282,6 +291,7 @@ def execute(filters=None):
         data.append({
             "project_name": "TOTAL",
             "item_name": "",
+            "po_no":        "",
             "item_count": grand_total_entries,
             "quantity": grand_total_qty,
             "lenght": grand_total_length,
@@ -294,8 +304,68 @@ def execute(filters=None):
     return columns, data, None, None, report_summary  
 
 
-# 10 ---------------- ITEM DETAILS ----------------
-# Details button click hone par call hota hai, Ek specific project + item ka detail data deta hai, Drawing Parts → Add Drawing → Project → Po Drawing join, Same rows ko group karta hai (duplicate avoid), Total row bhi add karta hai end mein
+# ──────────────────────────────────────────────
+# PO Number dropdown ke liye whitelist method
+# FT Drawing Parts ke dp.po_no field se unique values
+# ──────────────────────────────────────────────
+@frappe.whitelist()
+def get_po_numbers(txt="", drawings=None, projects=None, is_active=0):
+    import json
+
+    if isinstance(drawings, str):
+        try: drawings = json.loads(drawings)
+        except: drawings = []
+    if isinstance(projects, str):
+        try: projects = json.loads(projects)
+        except: projects = []
+
+    drawings  = drawings or []
+    projects  = projects or []
+    is_active = int(is_active or 0)
+
+    conditions = "WHERE dp.po_no IS NOT NULL AND dp.po_no != 0"
+    values = {}
+
+    if drawings:
+        # Drawing selected — sirf unke po_no
+        conditions += " AND dp.drawing_number IN %(drawings)s"
+        values["drawings"] = tuple(drawings)
+
+    elif projects:
+        # Project selected — unke drawings ke po_no
+        conditions += """
+            AND dp.drawing_number IN (
+                SELECT name FROM `tabFT Add Drawing`
+                WHERE project_number IN %(projects)s
+            )
+        """
+        values["projects"] = tuple(projects)
+
+    elif is_active:
+        # Only is_active — active projects ke drawings ke po_no
+        conditions += """
+            AND dp.drawing_number IN (
+                SELECT ad.name FROM `tabFT Add Drawing` ad
+                INNER JOIN `tabFT Project` p ON p.name = ad.project_number
+                WHERE p.is_active = 1
+            )
+        """
+
+    if txt:
+        conditions += " AND CAST(dp.po_no AS CHAR) LIKE %(txt)s"
+        values["txt"] = f"%{txt}%"
+
+    rows = frappe.db.sql(f"""
+        SELECT DISTINCT dp.po_no
+        FROM `tabFT Drawing Parts` dp
+        {conditions}
+        ORDER BY dp.po_no ASC
+    """, values, as_list=True)
+
+    return [str(r[0]) for r in rows if r[0]]
+
+
+# 10 ---------------- ITEM DETAILS Button----------------
 @frappe.whitelist()
 def get_item_details(project, item, drawing_numbers=None):
     from collections import defaultdict
@@ -1198,10 +1268,8 @@ def download_item_details_excel(filters):
 # --------------------- GENERATE JSON FOR NESTING CENTER ---------------------
 @frappe.whitelist()
 def export_nesting_json(filters=None):
-
     import json
     import random
-
     # ---------- RANDOM COLOR FUNCTION ----------
     def get_random_color():
         return "#{:06x}".format(random.randint(0, 0xFFFFFF))
@@ -1211,11 +1279,6 @@ def export_nesting_json(filters=None):
     project = filters.get("project")
     item = filters.get("item")
 
-    plate_length = str(int(filters.get("plate_length") or 12000))
-    plate_width  = str(int(filters.get("plate_width") or 100))
-    plate_qty    = int(filters.get("plate_qty") or 10)
-    
-    
     item_name = frappe.db.get_value(
         "FT Stock RM List",
         item,
@@ -1241,17 +1304,13 @@ def export_nesting_json(filters=None):
         # ---------- DEFAULT WIDTH ----------
         width = int(row.width) if row.width and int(row.width) != 0 else 100
 
-        length_val = int(row.lenght or 0)
-        width_val = int(row.width or 0)
-        
         parts.append({
             "Quantity": int(row.quantity or 0),
             "RectangularShape": {
                 "Length": str(int(row.lenght or 0)),
                 "Width": str(width)
             },
-           
-            "Name": f"{row.part_no}-L-{length_val}/W-{width_val}",
+            "Name": f"{row.part_no}",
             "Colour": get_random_color()   
         })
 
@@ -1278,32 +1337,17 @@ def export_nesting_json(filters=None):
 
             "Parts": parts,
 
-            # "RawPlates": [
-            #     {
-            #         "Quantity": 10,
-            #         "RectangularShape": {
-            #             "Length": "12000",
-            #             "Width": "100"
-            #         },
-            #         "Name": item_name,
-            #         "Colour": get_random_color()   
-            #     }
-            # ]
-            
-
-            # RawPlates mein use karo:
             "RawPlates": [
                 {
-                    "Quantity": plate_qty,
+                    "Quantity": 10,
                     "RectangularShape": {
-                        "Length": plate_length,
-                        "Width": plate_width
+                        "Length": "12000",
+                        "Width": "100"
                     },
                     "Name": item_name,
-                    "Colour": get_random_color()
+                    "Colour": get_random_color()   
                 }
             ]
-            
         },
 
         "StopConditions": {
@@ -1323,91 +1367,7 @@ def export_nesting_json(filters=None):
     frappe.response["type"] = "download"
 
 
-    
-
-    
-#16 /////save compaire button//    #
- 
-# isme id set nhi hai
-# @frappe.whitelist()
-# def save_row_data(sr_no, project, item_name, item_count, quantity, lenght, width, total_weight):
-#     import json
-#     from frappe.utils import now_datetime
-
-#     timestamp = now_datetime().strftime("%d/%m/%Y (%H:%M:%S)")
-
-#     new_entry = {
-#         "timestamp": timestamp,
-#         "total_entries": float(item_count or 0),
-#         "total_qty": float(quantity or 0),
-#         "total_length": float(lenght or 0),
-#         "total_width": float(width or 0),
-#         "total_weight": float(total_weight or 0)
-#     }
-
-#     existing = frappe.db.exists(
-#         "FT Store Revision Data",
-#         {
-#             "project_number": project,
-#             "item": item_name
-#         }
-#     )
-
-#     if existing:
-#         doc = frappe.get_doc("FT Store Revision Data", existing)
-
-#         # Load existing revision log
-#         try:
-#             revision_log = json.loads(doc.revision_log or "[]")
-#         except Exception:
-#             revision_log = []
-
-#         # Check if data actually changed compared to last saved
-#         if revision_log:
-#             last = revision_log[-1]
-#             changed = (
-#                 float(last.get("total_entries") or 0) != float(item_count or 0) or
-#                 float(last.get("total_qty") or 0) != float(quantity or 0) or
-#                 float(last.get("total_length") or 0) != float(lenght or 0) or
-#                 float(last.get("total_width") or 0) != float(width or 0) or
-#                 float(last.get("total_weight") or 0) != float(total_weight or 0)
-#             )
-#             if not changed:
-#                 return {"status": "success", "msg": "Data same hai, koi change nahi hua"}
-
-#         revision_log.append(new_entry)
-
-#         doc.sr_no = sr_no
-#         doc.total_entries = item_count
-#         doc.total_qty = quantity
-#         doc.total_length = lenght
-#         doc.total_width = width
-#         doc.total_weight = total_weight
-#         doc.revision_log = json.dumps(revision_log)
-
-#         doc.save(ignore_permissions=True)
-
-#     else:
-#         revision_log = [new_entry]
-
-#         doc = frappe.get_doc({
-#             "doctype": "FT Store Revision Data",
-#             "sr_no": sr_no,
-#             "project_number": project,
-#             "item": item_name,
-#             "total_entries": item_count,
-#             "total_qty": quantity,
-#             "total_length": lenght,
-#             "total_width": width,
-#             "total_weight": total_weight,
-#             "revision_log": json.dumps(revision_log)
-#         })
-#         doc.insert(ignore_permissions=True)
-
-#     frappe.db.commit()
-#     return {"status": "success", "msg": "✅ Data saved successfully!"}
-
-# Revision-1-Flat 070MM X 06 THK IS808 IS2062 E250BR-001,item show hore hai id me 
+#---------------------- Snapshort /Compaire =>Revision-1 /Revision2 ka difference ----------------
 @frappe.whitelist()
 def save_row_data(sr_no, project, item_name, item_count, quantity, lenght, width, total_weight):
     import json
@@ -1498,97 +1458,6 @@ def save_row_data(sr_no, project, item_name, item_count, quantity, lenght, width
 
     frappe.db.commit()
     return {"status": "success", "msg": "✅ Data saved successfully!"}
-
-# isme id = Revision-1-001,Revision-1-002;Revision-2-001,...
-# @frappe.whitelist()
-# def save_row_data(sr_no, project, item_name, item_count, quantity, lenght, width, total_weight):
-#     import json
-#     from frappe.utils import now_datetime
-
-#     timestamp = now_datetime().strftime("%d/%m/%Y (%H:%M:%S)")
-
-#     new_entry = {
-#         "timestamp":     timestamp,
-#         "total_entries": float(item_count   or 0),
-#         "total_qty":     float(quantity     or 0),
-#         "total_length":  float(lenght       or 0),
-#         "total_width":   float(width        or 0),
-#         "total_weight":  float(total_weight or 0)
-#     }
-
-#     existing = frappe.db.exists(
-#         "FT Store Revision Data",
-#         {
-#             "project_number": project,
-#             "item":           item_name
-#         }
-#     )
-
-#     if existing:
-#         doc = frappe.get_doc("FT Store Revision Data", existing)
-
-#         try:
-#             revision_log = json.loads(doc.revision_log or "[]")
-#         except Exception:
-#             revision_log = []
-
-#         if revision_log:
-#             last = revision_log[-1]
-#             changed = (
-#                 float(last.get("total_entries") or 0) != float(item_count   or 0) or
-#                 float(last.get("total_qty")     or 0) != float(quantity     or 0) or
-#                 float(last.get("total_length")  or 0) != float(lenght       or 0) or
-#                 float(last.get("total_width")   or 0) != float(width        or 0) or
-#                 float(last.get("total_weight")  or 0) != float(total_weight or 0)
-#             )
-#             if not changed:
-#                 return {"status": "success", "msg": "Data same hai, koi change nahi hua"}
-
-#         revision_log.append(new_entry)
-
-#         next_revision = len(revision_log)
-#         new_name      = f"Revision-{next_revision}-{str(sr_no).zfill(3)}"
-
-#         # Frappe 15 mein sirf force=True
-#         frappe.rename_doc(
-#             "FT Store Revision Data",
-#             existing,
-#             new_name,
-#             force=True
-#         )
-
-#         doc = frappe.get_doc("FT Store Revision Data", new_name)
-#         doc.sr_no         = sr_no
-#         doc.total_entries = item_count
-#         doc.total_qty     = quantity
-#         doc.total_length  = lenght
-#         doc.total_width   = width
-#         doc.total_weight  = total_weight
-#         doc.revision_log  = json.dumps(revision_log)
-#         doc.save(ignore_permissions=True)
-
-#     else:
-#         revision_log = [new_entry]
-#         new_name     = f"Revision-1-{str(sr_no).zfill(3)}"
-
-#         doc = frappe.get_doc({
-#             "doctype":        "FT Store Revision Data",
-#             "name":           new_name,
-#             "sr_no":          sr_no,
-#             "project_number": project,
-#             "item":           item_name,
-#             "total_entries":  item_count,
-#             "total_qty":      quantity,
-#             "total_length":   lenght,
-#             "total_width":    width,
-#             "total_weight":   total_weight,
-#             "revision_log":   json.dumps(revision_log)
-#         })
-#         doc.insert(ignore_permissions=True)
-
-#     frappe.db.commit()
-#     return {"status": "success", "msg": "✅ Data saved successfully!"}
-
 
 
 @frappe.whitelist()
@@ -1919,18 +1788,6 @@ def export_compare_snapshot_excel(snapshot_data):
     )
 
     return file_doc.file_url
-
-# ////save compaire utton//    #
- 
-
-
-
-
-
-
-
-
-
 
 
 

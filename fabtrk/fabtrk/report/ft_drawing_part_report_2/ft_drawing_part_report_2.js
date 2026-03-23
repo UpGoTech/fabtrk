@@ -1,8 +1,10 @@
+
 frappe.query_reports["FT Drawing Part Report 2"] = {
 
 	onload(report) {
 		frappe.query_report.set_filter_value("project_number", []);
 		frappe.query_report.set_filter_value("drawing_number", []);
+		frappe.query_report.set_filter_value("po_no", []);
 		frappe.query_report.set_filter_value("item", []);
 		frappe.query_report.set_filter_value("is_active", 1);
 
@@ -35,7 +37,6 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 					}
 				}
 			});
-
 		});
 
 
@@ -310,9 +311,7 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 			fieldname: "project_number",
 			label: "Project Number",
 			fieldtype: "MultiSelectList",
-			// get_data: function (txt) {
-			// 	return frappe.db.get_link_options("FT Project", txt);
-			// },
+
 			get_data: function (txt) {
 				let is_active = frappe.query_report.get_filter_value("is_active");
 				let filters = [];
@@ -343,6 +342,7 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 			},
 			on_change() {
 				frappe.query_report.set_filter_value("drawing_number", []);
+				frappe.query_report.set_filter_value("po_no", []);
 				frappe.query_report.set_filter_value("item", []);
 				frappe.query_report.refresh();
 
@@ -355,90 +355,192 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 			fieldname: "drawing_number",
 			label: "Drawing Number",
 			fieldtype: "MultiSelectList",
-
 			get_data: function (txt) {
-
 				let projects = frappe.query_report.get_filter_value("project_number") || [];
-				let filters = [];
+				let is_active = frappe.query_report.get_filter_value("is_active");
 
-				if (txt) {
-					filters.push(["name", "like", "%" + txt + "%"]);
-				}
-
-				if (projects.length) {
-					filters.push(["project_number", "in", projects]);
-				}
-
-				return frappe.call({
-					method: "frappe.client.get_list",
-					args: {
-						doctype: "FT Add Drawing",
-						fields: ["name"],
-						filters: filters,
-					}
-				}).then(r => {
-
-					let result = (r.message || []).map(d => ({
-						value: d.name,
-						label: d.name,
-						description: ""
-					}));
-
-					// Add Select All on top
-					if (result.length) {
-						result.unshift({
-							value: "__all",
-							label: "Select All",
-							description: ""
-						});
-					}
-
-					return result;
-				});
-			},
-
-			on_change() {
-
-				let selected = frappe.query_report.get_filter_value("drawing_number") || [];
-
-				// 🔁 If Select All clicked
-				if (selected.includes("__all")) {
-
-					let projects = frappe.query_report.get_filter_value("project_number") || [];
-					let filters = [];
-
+				let get_project_names = () => {
 					if (projects.length) {
-						filters.push(["project_number", "in", projects]);
+						return Promise.resolve(projects);
+					} else if (is_active) {
+						return frappe.call({
+							method: "frappe.client.get_list",
+							args: {
+								doctype: "FT Project",
+								fields: ["name"],
+								filters: [["is_active", "=", 1]],
+								limit_page_length: 0
+							}
+						}).then(r => (r.message || []).map(d => d.name));
+					} else {
+						return Promise.resolve([]);
 					}
+				};
 
-					frappe.call({
+				return get_project_names().then(project_names => {
+					let filters = [];
+					if (txt) filters.push(["name", "like", "%" + txt + "%"]);
+					if (project_names.length) filters.push(["project_number", "in", project_names]);
+					return frappe.call({
 						method: "frappe.client.get_list",
 						args: {
 							doctype: "FT Add Drawing",
 							fields: ["name"],
 							filters: filters,
+							limit_page_length: 0
 						}
 					}).then(r => {
-
-						let all_ids = (r.message || []).map(d => d.name);
-
-						// 🔁 Toggle Logic
-						if (selected.length - 1 === all_ids.length) {
-							// All already selected → unselect all
-							frappe.query_report.set_filter_value("drawing_number", []);
-						} else {
-							// Select all
-							frappe.query_report.set_filter_value("drawing_number", all_ids);
+						let result = (r.message || []).map(d => ({
+							value: d.name,
+							label: d.name,
+							description: ""
+						}));
+						if (result.length) {
+							result.unshift({ value: "__all", label: "Select All", description: "" });
 						}
-
-						frappe.query_report.refresh();
+						return result;
 					});
+				});
+			},
+			on_change() {
+				let selected = frappe.query_report.get_filter_value("drawing_number") || [];
 
+				if (selected.includes("__all")) {
+					let projects = frappe.query_report.get_filter_value("project_number") || [];
+					let is_active = frappe.query_report.get_filter_value("is_active");
+
+					let get_project_names = () => {
+						if (projects.length) {
+							return Promise.resolve(projects);
+						} else if (is_active) {
+							return frappe.call({
+								method: "frappe.client.get_list",
+								args: {
+									doctype: "FT Project",
+									fields: ["name"],
+									filters: [["is_active", "=", 1]],
+									limit_page_length: 0
+								}
+							}).then(r => (r.message || []).map(d => d.name));
+						} else {
+							return Promise.resolve([]);
+						}
+					};
+
+					get_project_names().then(project_names => {
+						let filters = [];
+						if (project_names.length) filters.push(["project_number", "in", project_names]);
+						frappe.call({
+							method: "frappe.client.get_list",
+							args: {
+								doctype: "FT Add Drawing",
+								fields: ["name"],
+								filters: filters,
+								limit_page_length: 0
+							}
+						}).then(r => {
+							let all_ids = (r.message || []).map(d => d.name);
+							if (selected.length - 1 === all_ids.length) {
+								frappe.query_report.set_filter_value("drawing_number", []);
+							} else {
+								frappe.query_report.set_filter_value("drawing_number", all_ids);
+							}
+							frappe.query_report.set_filter_value("po_no", []);
+							frappe.query_report.refresh();
+						});
+					});
 					return;
 				}
 
-				// Normal selection refresh
+				frappe.query_report.set_filter_value("po_no", []);
 				frappe.query_report.refresh();
+			}
+		},
+
+		// ---------------- PO NUMBER ----------------
+		{
+			fieldname: "po_no",
+			label: "PO Number",
+			fieldtype: "MultiSelectList",
+			get_data: function (txt) {
+				let drawings = frappe.query_report.get_filter_value("drawing_number") || [];
+				let projects = frappe.query_report.get_filter_value("project_number") || [];
+				let is_active = frappe.query_report.get_filter_value("is_active");
+
+				let get_active_projects = () => {
+					if (projects.length) {
+						return Promise.resolve(projects);
+					} else if (is_active) {
+						return frappe.call({
+							method: "frappe.client.get_list",
+							args: {
+								doctype: "FT Project",
+								fields: ["name"],
+								filters: [["is_active", "=", 1]],
+								limit_page_length: 0
+							}
+						}).then(r => (r.message || []).map(d => d.name));
+					} else {
+						return Promise.resolve([]);
+					}
+				};
+
+				// CASE 1: Drawing selected — sirf unke PO Numbers
+				if (drawings.length) {
+					let filters = [["drawing_number", "in", drawings]];
+					if (txt) filters.push(["po_no", "like", "%" + txt + "%"]);
+
+					return frappe.call({
+						method: "frappe.client.get_list",
+						args: {
+							doctype: "FT Drawing Parts",
+							fields: ["po_no"],
+							filters: filters,
+							limit_page_length: 0
+						}
+					}).then(r => {
+						let unique = {};
+						(r.message || []).forEach(d => {
+							if (d.po_no && !unique[d.po_no]) unique[d.po_no] = true;
+						});
+						return Object.keys(unique).map(po => ({
+							value: po,
+							label: po,
+							description: ""
+						}));
+					});
+				}
+
+				// CASE 2: Project / is_active se filter
+				return get_active_projects().then(project_names => {
+					let filters = [];
+					if (txt) filters.push(["po_no", "like", "%" + txt + "%"]);
+					if (project_names.length) filters.push(["project_number", "in", project_names]);
+
+					return frappe.call({
+						method: "frappe.client.get_list",
+						args: {
+							doctype: "FT Drawing Parts",
+							fields: ["po_no"],
+							filters: filters,
+							limit_page_length: 0
+						}
+					}).then(r => {
+						let unique = {};
+						(r.message || []).forEach(d => {
+							if (d.po_no && !unique[d.po_no]) unique[d.po_no] = true;
+						});
+						return Object.keys(unique).map(po => ({
+							value: po,
+							label: po,
+							description: ""
+						}));
+					});
+				});
+			},
+			on_change() {
+				frappe.query_report.refresh();
+				clear_item_details();
 			}
 		},
 
@@ -447,60 +549,49 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 			fieldname: "item",
 			label: "Drawing Parts",
 			fieldtype: "MultiSelectList",
-
 			get_data: function (txt) {
-
 				let projects = frappe.query_report.get_filter_value("project_number") || [];
 				let drawings = frappe.query_report.get_filter_value("drawing_number") || [];
 				let stock_types = frappe.query_report.get_filter_value("stock_rm_type") || [];
+				let is_active = frappe.query_report.get_filter_value("is_active");
 
-				// ---------------- CASE 1 ----------------
-				// Nothing selected → show all items
-				if (!projects.length && !drawings.length) {
-
-					let filters = [["computed_name", "like", "%" + txt + "%"]];
-
-					if (stock_types.length) {
-						filters.push(["stock_rm_type", "in", stock_types]);
+				let get_active_projects = () => {
+					if (projects.length) {
+						return Promise.resolve(projects);
+					} else if (is_active) {
+						return frappe.call({
+							method: "frappe.client.get_list",
+							args: {
+								doctype: "FT Project",
+								fields: ["name"],
+								filters: [["is_active", "=", 1]],
+								limit_page_length: 0
+							}
+						}).then(r => (r.message || []).map(d => d.name));
+					} else {
+						return Promise.resolve([]);
 					}
+				};
 
-					return frappe.call({
-						method: "frappe.client.get_list",
-						args: {
-							doctype: "FT Stock RM List",
-							fields: ["name", "computed_name"],
-							filters: filters
-						}
-					}).then(r => {
-						return (r.message || []).map(d => ({
-							value: d.name,
-							label: d.computed_name,
-							description: ""
-						}));
-					});
-				}
-
-				// ---------------- CASE 2 ----------------
-				// Project selected but no drawing
-				if (projects.length && !drawings.length) {
-
+				let get_items_from_drawings = (drawing_names) => {
 					return frappe.call({
 						method: "frappe.client.get_list",
 						args: {
 							doctype: "FT Drawing Parts",
 							fields: ["item_id"],
-							filters: [["project_number", "in", projects]]
+							filters: [["drawing_number", "in", drawing_names]],
+							limit_page_length: 0
 						}
 					}).then(r => {
-
-						let unique_items = [...new Set((r.message || []).map(d => d.item_id))];
+						let unique_items = [...new Set(
+							(r.message || []).map(d => d.item_id).filter(Boolean)
+						)];
 						if (!unique_items.length) return [];
 
 						let filters = [
 							["name", "in", unique_items],
 							["computed_name", "like", "%" + txt + "%"]
 						];
-
 						if (stock_types.length) {
 							filters.push(["stock_rm_type", "in", stock_types]);
 						}
@@ -510,94 +601,57 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 							args: {
 								doctype: "FT Stock RM List",
 								fields: ["name", "computed_name"],
-								filters: filters
+								filters: filters,
+								limit_page_length: 0
 							}
-						}).then(res => {
-							return (res.message || []).map(d => ({
-								value: d.name,
-								label: d.computed_name,
-								description: ""
-							}));
-						});
-
+						}).then(res => (res.message || []).map(d => ({
+							value: d.name,
+							label: d.computed_name,
+							description: ""
+						})));
 					});
+				};
+
+				if (drawings.length) {
+					return get_items_from_drawings(drawings);
 				}
 
+				return get_active_projects().then(project_names => {
+					if (!project_names.length) {
+						let filters = [["computed_name", "like", "%" + txt + "%"]];
+						if (stock_types.length) filters.push(["stock_rm_type", "in", stock_types]);
+						return frappe.call({
+							method: "frappe.client.get_list",
+							args: {
+								doctype: "FT Stock RM List",
+								fields: ["name", "computed_name"],
+								filters: filters,
+								limit_page_length: 0
+							}
+						}).then(r => (r.message || []).map(d => ({
+							value: d.name,
+							label: d.computed_name,
+							description: ""
+						})));
+					}
 
-				// ---------------- CASE 3 ----------------
-				// Drawing selected
-				if (drawings.length) {
-
-					// Step 1: Get FT Add Drawing document names
 					return frappe.call({
 						method: "frappe.client.get_list",
 						args: {
 							doctype: "FT Add Drawing",
 							fields: ["name"],
-							filters: [
-								["name", "in", drawings]
-							],
+							filters: [["project_number", "in", project_names]],
 							limit_page_length: 0
 						}
-					}).then(res => {
-
-						let drawing_docnames = (res.message || []).map(d => d.name);
-						if (!drawing_docnames.length) return [];
-
-						// Step 2: Get item_id from Drawing Parts using correct link
-						return frappe.call({
-							method: "frappe.client.get_list",
-							args: {
-								doctype: "FT Drawing Parts",
-								fields: ["item_id"],
-								filters: [
-									["drawing_number", "in", drawing_docnames]
-								],
-								limit_page_length: 0
-							}
-						}).then(r => {
-
-							let unique_items = [...new Set(
-								(r.message || [])
-									.map(d => d.item_id)
-									.filter(Boolean)
-							)];
-
-							if (!unique_items.length) return [];
-
-							let filters = [
-								["name", "in", unique_items],
-								["computed_name", "like", "%" + txt + "%"]
-							];
-
-							if (stock_types.length) {
-								filters.push(["stock_rm_type", "in", stock_types]);
-							}
-
-							return frappe.call({
-								method: "frappe.client.get_list",
-								args: {
-									doctype: "FT Stock RM List",
-									fields: ["name", "computed_name"],
-									filters: filters,
-									limit_page_length: 0
-								}
-							}).then(res2 => {
-								return (res2.message || []).map(d => ({
-									value: d.name,
-									label: d.computed_name,
-									description: ""
-								}));
-							});
-
-						});
-
+					}).then(r => {
+						let drawing_names = (r.message || []).map(d => d.name);
+						if (!drawing_names.length) return [];
+						return get_items_from_drawings(drawing_names);
 					});
-				}
+				});
 			},
-
 			on_change() {
-				clear_item_details();   // 👈 ADD THIS
+				clear_item_details();
 				frappe.query_report.refresh();
 			}
 		},
@@ -623,6 +677,9 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 			fieldtype: "Check",
 			default: 1,
 			on_change() {
+				frappe.query_report.set_filter_value("drawing_number", []);
+				frappe.query_report.set_filter_value("po_no", []);
+				frappe.query_report.set_filter_value("item", []);
 				frappe.query_report.refresh();
 				clear_item_details();
 			}
@@ -777,7 +834,7 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 				});
 			});
 
-		// Dynamic button click
+		//Excel Dynamic button click
 		$(document).off("click", ".summary-download")
 			.on("click", ".summary-download", function () {
 
@@ -796,76 +853,24 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 				window.location.href = url;
 			});
 
-		// Export DXF Button Click
-		// $(document).off("click", ".nesting-export")
-		// 	.on("click", ".nesting-export", function () {
-
-		// 		let item_name = $(".summary-download").data("item");
-		// 		let project_name = $(".summary-download").data("project");
-
-		// 		let filters = {
-		// 			item: item_name,
-		// 			project: project_name
-		// 		};
-
-		// 		let url = "/api/method/fabtrk.fabtrk.report.ft_drawing_part_report_2.ft_drawing_part_report_2.export_nesting_json"
-		// 			+ "?filters=" + encodeURIComponent(JSON.stringify(filters));
-
-		// 		window.location.href = url;
-
-		// 	});
+		// ── Nesting 
 		$(document).off("click", ".nesting-export")
 			.on("click", ".nesting-export", function () {
 
 				let item_name = $(".summary-download").data("item");
 				let project_name = $(".summary-download").data("project");
 
-				// ✅ User se plate dimensions puchho
-				frappe.prompt([
-					{
-						fieldname: "plate_length",
-						label: "Plate Length (mm)",
-						fieldtype: "Int",
-						default: 12000,
-						reqd: 1
-					},
-					{
-						fieldname: "plate_width",
-						label: "Plate Width (mm)",
-						fieldtype: "Int",
-						default: 100,
-						reqd: 1
-					},
-					{
-						fieldname: "plate_qty",
-						label: "Plate Quantity",
-						fieldtype: "Int",
-						default: 10,
-						reqd: 1
-					}
-				],
-					function (values) {
+				let filters = {
+					item: item_name,
+					project: project_name
+				};
 
-						let filters = {
-							item: item_name,
-							project: project_name,
-							plate_length: values.plate_length,
-							plate_width: values.plate_width,
-							plate_qty: values.plate_qty
-						};
+				let url = "/api/method/fabtrk.fabtrk.report.ft_drawing_part_report_2.ft_drawing_part_report_2.export_nesting_json"
+					+ "?filters=" + encodeURIComponent(JSON.stringify(filters));
 
-						let url = "/api/method/fabtrk.fabtrk.report.ft_drawing_part_report_2.ft_drawing_part_report_2.export_nesting_json"
-							+ "?filters=" + encodeURIComponent(JSON.stringify(filters));
+				window.location.href = url;
 
-						window.location.href = url;
-					},
-					"Plate Dimensions",   // dialog title
-					"Export"              // button label
-				);
 			});
-
-
-
 
 		// Nesting Report button click handler
 		$(document).off("click", ".nesting-report-btn")
@@ -1011,8 +1016,10 @@ if (!window.XLSX) {
 }
 
 
+// ── Nesting Report Modal ──
 // ✅ NEW FUNCTION: Nesting Report Modal
 // "Nesting Report" button click karne par ye open hota hai
+
 function show_nesting_report_modal(item, project, item_display_name) {
 
 	$("#nesting-report-modal-overlay").remove();
@@ -1087,18 +1094,6 @@ function show_nesting_report_modal(item, project, item_display_name) {
 						<div style="font-size:11px; color:#666; margin-bottom:4px; text-transform:uppercase; letter-spacing:.5px;">Scrap</div>
 						<div id="stat-scrap" style="font-size:28px; font-weight:800; color:#e63946;">—</div>
 					</div>
-					<div style="background:#fdf3e8; border-radius:8px; padding:14px; text-align:center;">
-						<div style="font-size:11px; color:#666; margin-bottom:4px; text-transform:uppercase; letter-spacing:.5px;">Sheets Area</div>
-						<div id="stat-sheets-area" style="font-size:22px; font-weight:700; color:#f4a261;">—</div>
-					</div>
-					<div style="background:#f3e8fd; border-radius:8px; padding:14px; text-align:center;">
-						<div style="font-size:11px; color:#666; margin-bottom:4px; text-transform:uppercase; letter-spacing:.5px;">Nested Mass</div>
-						<div id="stat-nested-mass" style="font-size:22px; font-weight:700; color:#9b5de5;">—</div>
-					</div>
-					<div style="background:#e8fdf9; border-radius:8px; padding:14px; text-align:center;">
-						<div style="font-size:11px; color:#666; margin-bottom:4px; text-transform:uppercase; letter-spacing:.5px;">Result Time</div>
-						<div id="stat-result-time" style="font-size:22px; font-weight:700; color:#0d9488;">—</div>
-					</div>
 				</div>
  
 				<!-- Per-Sheet Breakdown Table -->
@@ -1139,18 +1134,6 @@ function show_nesting_report_modal(item, project, item_display_name) {
 						<label style="font-size:12px; color:#555; display:block; margin-bottom:3px;">Scrap %</label>
 						<input type="text" id="manual-scrap" class="form-control form-control-sm" placeholder="17.51%">
 					</div>
-					<div>
-						<label style="font-size:12px; color:#555; display:block; margin-bottom:3px;">Sheets Area</label>
-						<input type="text" id="manual-sheets-area" class="form-control form-control-sm" placeholder="3.6 m²">
-					</div>
-					<div>
-						<label style="font-size:12px; color:#555; display:block; margin-bottom:3px;">Nested Mass %</label>
-						<input type="text" id="manual-nested-mass" class="form-control form-control-sm" placeholder="35.75%">
-					</div>
-					<div>
-						<label style="font-size:12px; color:#555; display:block; margin-bottom:3px;">Result Time</label>
-						<input type="text" id="manual-result-time" class="form-control form-control-sm" placeholder="0.1s">
-					</div>
 				</div>
 				<button id="apply-manual-stats" style="
 					margin-top:12px; background:#f59e0b; color:#fff; border:none;
@@ -1187,15 +1170,6 @@ function show_nesting_report_modal(item, project, item_display_name) {
 						style="width:100%; height:480px; border:1px solid #ccc; border-radius:6px;">
 					</iframe>
 				</div>
-			</div>
- 
-			<!-- Toggle Manual -->
-			<div style="text-align:center;">
-				<button id="toggle-manual-entry" style="
-					background:none; border:1px dashed #aaa; color:#888;
-					border-radius:4px; padding:4px 14px; cursor:pointer; font-size:12px;">
-					✏️ JSON nahi hai? Manually enter karo
-				</button>
 			</div>
 		</div>
 	</div>
@@ -1242,9 +1216,6 @@ function show_nesting_report_modal(item, project, item_display_name) {
 		$("#stat-sheets").text($("#manual-sheets").val() || "—");
 		$("#stat-nested-parts").text($("#manual-nested-parts").val() || "—");
 		$("#stat-scrap").text($("#manual-scrap").val() || "—");
-		$("#stat-sheets-area").text($("#manual-sheets-area").val() || "—");
-		$("#stat-nested-mass").text($("#manual-nested-mass").val() || "—");
-		$("#stat-result-time").text($("#manual-result-time").val() || "—");
 		$("#nesting-stats-area").show();
 		$("#manual-stats-area").hide();
 		frappe.show_alert({ message: "Stats apply ho gaye!", indicator: "green" });
@@ -1262,13 +1233,12 @@ function show_nesting_report_modal(item, project, item_display_name) {
 	});
 }
 
-
 // ✅ NEW FUNCTION: Nesting Center result JSON parser
 //    Multiple output formats handle karta hai
+
 function parse_nesting_result_json(json) {
 
 	let sheets = "—", nested_parts = "—", scrap = "—";
-	let sheets_area = "—", nested_mass = "—", result_time = "—";
 	let layouts = [];
 
 	// Format 1: { Result: { Sheets, NestedParts, TotalParts, Scrap, ... } }
@@ -1279,9 +1249,6 @@ function parse_nesting_result_json(json) {
 		let np_total = r.TotalParts || r.total_parts || r.Parts || 0;
 		nested_parts = np_total ? `${np_done} / ${np_total}` : String(np_done);
 		scrap = r.Scrap !== undefined ? `${parseFloat(r.Scrap).toFixed(2)}%` : "—";
-		sheets_area = r.SheetsArea !== undefined ? `${r.SheetsArea} m²` : "—";
-		nested_mass = r.NestedMass !== undefined ? `${parseFloat(r.NestedMass).toFixed(2)}%` : "—";
-		result_time = r.ResultTime !== undefined ? `${r.ResultTime}s` : "—";
 		layouts = r.Layouts || r.layouts || [];
 	}
 	// Format 2: Flat { Sheets, NestedParts, ... }
@@ -1291,9 +1258,6 @@ function parse_nesting_result_json(json) {
 		let np_total = json.TotalParts || json.total_parts || 0;
 		nested_parts = np_total ? `${np_done} / ${np_total}` : String(np_done);
 		scrap = json.Scrap !== undefined ? `${parseFloat(json.Scrap).toFixed(2)}%` : "—";
-		sheets_area = json.SheetsArea !== undefined ? `${json.SheetsArea} m²` : "—";
-		nested_mass = json.NestedMass !== undefined ? `${parseFloat(json.NestedMass).toFixed(2)}%` : "—";
-		result_time = json.ResultTime !== undefined ? `${json.ResultTime}s` : "—";
 		layouts = json.Layouts || json.layouts || [];
 	}
 	// Format 3: { Solution: { ... } }
@@ -1313,9 +1277,6 @@ function parse_nesting_result_json(json) {
 	$("#stat-sheets").text(sheets);
 	$("#stat-nested-parts").text(nested_parts);
 	$("#stat-scrap").text(scrap);
-	$("#stat-sheets-area").text(sheets_area);
-	$("#stat-nested-mass").text(nested_mass);
-	$("#stat-result-time").text(result_time);
 	$("#nesting-stats-area").show();
 
 	// Per-sheet breakdown
@@ -1344,7 +1305,7 @@ function parse_nesting_result_json(json) {
 	frappe.show_alert({ message: "Nesting results parse ho gaye!", indicator: "green" });
 }
 
-
+// ── Nesting Report Modal ──
 $(`<style>
 
 .datatable .dt-scrollable {
@@ -1394,19 +1355,45 @@ $(`<style>
 	text-align: center;
 	transition: all 0.2s ease;
 	border: 2px solid #eef0f4;
+
+	overflow: visible;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    box-sizing: border-box;
+}
+.section-content-count {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
 }
 .section-content-count p{
-	font-size: 14px;
-	font-weight: 400;
-	color: #525252;
+	font-size: 13px;
+    font-weight: 400;
+    color: #525252;
+    margin: 0 0 4px 0;
+    white-space: normal;
+    word-break: break-word;
+    overflow-wrap: break-word;
+    overflow: visible;
+    text-align: center;
+    width: 100%;
+    line-height: 1.5;
 }
 .section-content-count span{
 	font-size: 16px;
 	font-weight: 600;
 	line-height: 20px;
-	padding-top: 12px;
-	padding-bottom: 5px;
-	color: #000;
+	padding-top: 4px;
+    padding-bottom: 5px;
+    color: #000;
+    display: block;
+    width: 100%;
+    text-align: center;
 }
 .report-summary {
 	background-color: none;
@@ -1448,3 +1435,5 @@ $(`<style>
 	padding: 0 !important;
 }
 </style>`).appendTo("head");
+
+
