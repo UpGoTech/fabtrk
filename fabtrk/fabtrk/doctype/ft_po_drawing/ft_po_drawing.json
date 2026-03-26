@@ -27,20 +27,23 @@
    "fieldname": "unit_weight",
    "fieldtype": "Float",
    "in_list_view": 1,
-   "label": "Unit Weight"
+   "label": "Unit Weight",
+   "precision": "3"
   },
   {
    "default": "1",
    "fieldname": "required_qty",
    "fieldtype": "Float",
    "in_list_view": 1,
-   "label": "Required Qty"
+   "label": "Required Qty",
+   "precision": "3"
   },
   {
    "fieldname": "total_weight",
    "fieldtype": "Float",
    "in_list_view": 1,
    "label": "Total Weight",
+   "precision": "3",
    "read_only": 1
   },
   {
@@ -69,7 +72,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-18 15:00:24.293773",
+ "modified": "2026-03-26 13:30:32.048135",
  "modified_by": "Administrator",
  "module": "Fabtrk",
  "name": "FT Po Drawing",

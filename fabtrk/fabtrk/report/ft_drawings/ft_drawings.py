@@ -7,7 +7,7 @@ def execute(filters=None):
     filters = filters or {}
 
     columns = [
-        {"label": "Project", "fieldname": "project_name", "fieldtype": "Link", "options": "FT Project", "width": 200},
+        {"label": "Project", "fieldname": "project_name", "fieldtype": "Link", "options": "FT Project", "width": 190},
         {"label": "Drawing Number", "fieldname": "drawing_number", "fieldtype": "Data", "width": 200, "align": "center"},
         {"label": "PO Serial No", "fieldname": "po_serial_no", "fieldtype": "Data", "width": 190, "align": "center"},
         {"label": "Unit Weight", "fieldname": "unit_weight", "fieldtype": "Float", "width": 200, "align": "center"},
@@ -25,6 +25,9 @@ def execute(filters=None):
     if filters.get("drawing_number"):
         conditions += " AND ad.drawing_number IN %(drawing_number)s"
         values["drawing_number"] = tuple(filters.get("drawing_number"))
+    if filters.get("po_serial_no"):
+        conditions += " AND pod.po_serial_no IN %(po_serial_no)s"
+        values["po_serial_no"] = tuple(str(x) for x in filters.get("po_serial_no"))
 
     if filters.get("is_active"):
         conditions += " AND p.is_active = 1"
@@ -249,4 +252,93 @@ def download_drawing_excel(filters):
 	frappe.response['filename'] = "Drawing_Report.xlsx"
 	frappe.response['filecontent'] = file_stream.getvalue()
 	frappe.response['type'] = 'binary'
+
+
+@frappe.whitelist()
+def get_drawing_numbers(project_number=None, txt=None):
+    filters = {}
+    
+    if project_number:
+        import json
+        projects = json.loads(project_number) if isinstance(project_number, str) else project_number
+        if projects:
+            filters["project_number"] = ["in", projects]
+    
+    results = frappe.db.get_all(
+        "FT Add Drawing",
+        filters=filters,
+        fields=["drawing_number"],
+        limit=0  # frappe.db.get_all mein limit=0 KAAM KARTA HAI
+    )
+    
+    # Unique drawing numbers
+    seen = set()
+    unique = []
+    for r in results:
+        val = r.get("drawing_number")
+        if val and val not in seen:
+            seen.add(val)
+            unique.append({"value": val, "label": val, "description": ""})
+    
+    if txt:
+        txt_lower = txt.lower()
+        unique = [u for u in unique if txt_lower in u["label"].lower()]
+    
+    return unique
+
+
+@frappe.whitelist()
+def get_po_serial_numbers(project_number=None, drawing_number=None, txt=None):
+    import json
+
+    project_list = []
+    drawing_list = []
+
+    if project_number:
+        project_list = json.loads(project_number) if isinstance(project_number, str) else project_number
+
+    if drawing_number:
+        drawing_list = json.loads(drawing_number) if isinstance(drawing_number, str) else drawing_number
+
+    # ✅ SQL query — FT Add Drawing se join karke filter karo
+    conditions = "WHERE 1=1"
+    values = {}
+
+    if project_list:
+        conditions += " AND pod.project_number IN %(project_list)s"
+        values["project_list"] = tuple(project_list)
+
+    if drawing_list:
+        # drawing_list mein drawing_number strings hain (e.g. "301PP-TC-0037-B1")
+        # pod.drawing_number FT Add Drawing ka name (id) store karta hai
+        # isliye pehle FT Add Drawing se name fetch karo
+        conditions += " AND pod.drawing_number IN (SELECT name FROM `tabFT Add Drawing` WHERE drawing_number IN %(drawing_list)s)"
+        values["drawing_list"] = tuple(drawing_list)
+
+    query = f"""
+        SELECT DISTINCT pod.po_serial_no
+        FROM `tabFT Po Drawing` pod
+        {conditions}
+        ORDER BY CAST(pod.po_serial_no AS UNSIGNED) ASC
+    """
+
+    results = frappe.db.sql(query, values, as_dict=True)
+
+    unique = []
+    for r in results:
+        val = r.get("po_serial_no")
+        if val is not None:
+            val_str = str(val)
+            unique.append({"value": val_str, "label": val_str, "description": ""})
+
+    if txt:
+        txt_lower = txt.lower()
+        unique = [u for u in unique if txt_lower in u["label"].lower()]
+
+    return unique
+
+
+
+
+
 

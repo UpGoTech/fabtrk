@@ -330,7 +330,7 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 						doctype: "FT Project",
 						fields: ["name", "description"],
 						filters: filters,
-						limit_page_length: 0
+						
 					}
 				}).then(r => {
 					return (r.message || []).map(d => ({
@@ -369,7 +369,7 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 								doctype: "FT Project",
 								fields: ["name"],
 								filters: [["is_active", "=", 1]],
-								limit_page_length: 0
+								
 							}
 						}).then(r => (r.message || []).map(d => d.name));
 					} else {
@@ -387,7 +387,7 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 							doctype: "FT Add Drawing",
 							fields: ["name"],
 							filters: filters,
-							limit_page_length: 0
+							
 						}
 					}).then(r => {
 						let result = (r.message || []).map(d => ({
@@ -419,7 +419,7 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 									doctype: "FT Project",
 									fields: ["name"],
 									filters: [["is_active", "=", 1]],
-									limit_page_length: 0
+									
 								}
 							}).then(r => (r.message || []).map(d => d.name));
 						} else {
@@ -436,7 +436,7 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 								doctype: "FT Add Drawing",
 								fields: ["name"],
 								filters: filters,
-								limit_page_length: 0
+								
 							}
 						}).then(r => {
 							let all_ids = (r.message || []).map(d => d.name);
@@ -477,7 +477,7 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 								doctype: "FT Project",
 								fields: ["name"],
 								filters: [["is_active", "=", 1]],
-								limit_page_length: 0
+								
 							}
 						}).then(r => (r.message || []).map(d => d.name));
 					} else {
@@ -496,7 +496,7 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 							doctype: "FT Drawing Parts",
 							fields: ["po_no"],
 							filters: filters,
-							limit_page_length: 0
+							
 						}
 					}).then(r => {
 						let unique = {};
@@ -523,7 +523,7 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 							doctype: "FT Drawing Parts",
 							fields: ["po_no"],
 							filters: filters,
-							limit_page_length: 0
+							
 						}
 					}).then(r => {
 						let unique = {};
@@ -565,7 +565,7 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 								doctype: "FT Project",
 								fields: ["name"],
 								filters: [["is_active", "=", 1]],
-								limit_page_length: 0
+								
 							}
 						}).then(r => (r.message || []).map(d => d.name));
 					} else {
@@ -580,7 +580,7 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 							doctype: "FT Drawing Parts",
 							fields: ["item_id"],
 							filters: [["drawing_number", "in", drawing_names]],
-							limit_page_length: 0
+							
 						}
 					}).then(r => {
 						let unique_items = [...new Set(
@@ -602,7 +602,7 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 								doctype: "FT Stock RM List",
 								fields: ["name", "computed_name"],
 								filters: filters,
-								limit_page_length: 0
+								
 							}
 						}).then(res => (res.message || []).map(d => ({
 							value: d.name,
@@ -626,7 +626,7 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 								doctype: "FT Stock RM List",
 								fields: ["name", "computed_name"],
 								filters: filters,
-								limit_page_length: 0
+								
 							}
 						}).then(r => (r.message || []).map(d => ({
 							value: d.name,
@@ -641,7 +641,7 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 							doctype: "FT Add Drawing",
 							fields: ["name"],
 							filters: [["project_number", "in", project_names]],
-							limit_page_length: 0
+							
 						}
 					}).then(r => {
 						let drawing_names = (r.message || []).map(d => d.name);
@@ -900,6 +900,22 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 
 		}, 100);
 	},
+
+	formatter: function (value, row, column, data, default_formatter) {
+
+    if (data && data.project_name === "TOTAL") {
+
+        // ✅ Serial number — bilkul hide
+        if (column.id === "_index") {
+            return `<span style="visibility:hidden;">0</span>`;
+        }
+
+        value = default_formatter(value, row, column, data);
+        return `<span style="font-weight:bold; background:#f2f2f2;">${value}</span>`;
+    }
+
+    return default_formatter(value, row, column, data);
+}
 };
 
 // table refresh
@@ -1341,7 +1357,7 @@ $(`<style>
 }
 @media (min-width: 1024px) {
 	.summary-container{
-		grid-template-columns: repeat(5, 1fr) !important;
+		grid-template-columns: repeat(6, 1fr) !important;
 	}
 }
 .report-summary .summary-value .summary-container {

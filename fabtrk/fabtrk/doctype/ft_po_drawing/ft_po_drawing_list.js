@@ -1,10 +1,3 @@
-// frappe.listview_settings["FT Po Drawing"] = {   
-//     onload(listview) {
-//         listview.page.add_inner_button("Export", function() {
-//             window.open("/app/data-export/new-data-export?reference_doctype=FT Po Drawing");
-//         });
-//     }
-// };
 
 frappe.listview_settings["FT Po Drawing"] = {
     onload(listview) {
