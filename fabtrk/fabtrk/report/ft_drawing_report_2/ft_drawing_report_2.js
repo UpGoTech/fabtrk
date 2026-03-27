@@ -7,7 +7,7 @@ frappe.query_reports["FT Drawing Report 2"] = {
 		frappe.query_report.set_filter_value("drawing_number", []);
 		frappe.query_report.set_filter_value("is_active", 1);
 
-		report.page.add_inner_button("Download Drawing Excel", function () {
+		report.page.add_inner_button("Drawing Excel", function () {
 
 			let filters = report.get_values();
 
@@ -122,6 +122,10 @@ frappe.query_reports["FT Drawing Report 2"] = {
 		return value;
 	}
 };
+
+
+
+
 
 $(`<style>
 

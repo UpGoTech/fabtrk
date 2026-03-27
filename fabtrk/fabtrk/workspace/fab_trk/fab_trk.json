@@ -1,6 +1,6 @@
 {
  "charts": [],
- "content": "[{\"id\":\"nODy7KBzB7\",\"type\":\"card\",\"data\":{\"card_name\":\"Customer Master \",\"col\":4}},{\"id\":\"tQ-xGQIfWi\",\"type\":\"card\",\"data\":{\"card_name\":\"Raw Material Master\",\"col\":4}},{\"id\":\"C-CdGnQA5C\",\"type\":\"card\",\"data\":{\"card_name\":\"Project Master\",\"col\":4}},{\"id\":\"v270zy698r\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"UM6iMJgOWS\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Reports</b></span>\",\"col\":12}},{\"id\":\"4yf-S8zJPU\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Drawings\",\"col\":7}},{\"id\":\"ia3Yl3cnx2\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Drawings MRP\",\"col\":7}}]",
+ "content": "[{\"id\":\"nODy7KBzB7\",\"type\":\"card\",\"data\":{\"card_name\":\"Customer Master \",\"col\":4}},{\"id\":\"tQ-xGQIfWi\",\"type\":\"card\",\"data\":{\"card_name\":\"Raw Material Master\",\"col\":4}},{\"id\":\"C-CdGnQA5C\",\"type\":\"card\",\"data\":{\"card_name\":\"Project Master\",\"col\":4}},{\"id\":\"v270zy698r\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"UM6iMJgOWS\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Reports</b></span>\",\"col\":12}},{\"id\":\"4yf-S8zJPU\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Drawings\",\"col\":7}},{\"id\":\"ia3Yl3cnx2\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Drawings MRP\",\"col\":7}},{\"id\":\"Mgdh6M-4M-\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"oquJS_BNoY\",\"type\":\"card\",\"data\":{\"card_name\":\"Report Store Data\",\"col\":6}},{\"id\":\"Ht_717svoS\",\"type\":\"card\",\"data\":{\"card_name\":\"Go To Doctype\",\"col\":6}}]",
  "creation": "2026-02-17 11:42:12.136765",
  "custom_blocks": [],
  "docstatus": 0,
@@ -139,9 +139,47 @@
    "link_type": "DocType",
    "onboard": 0,
    "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Report Store Data",
+   "link_count": 1,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Store Revision Data",
+   "link_count": 0,
+   "link_to": "FT Store Revision Data",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Go To Doctype",
+   "link_count": 1,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "doctype",
+   "link_count": 0,
+   "link_to": "DocType",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
   }
  ],
- "modified": "2026-03-10 15:13:46.924809",
+ "modified": "2026-03-16 16:30:22.289892",
  "modified_by": "Administrator",
  "module": "Fabtrk",
  "name": "Fab Trk",
@@ -157,7 +195,7 @@
    "color": "Grey",
    "doc_view": "List",
    "label": "Drawings",
-   "link_to": "FT Drawing Report 2",
+   "link_to": "FT Drawings",
    "type": "Report"
   },
   {

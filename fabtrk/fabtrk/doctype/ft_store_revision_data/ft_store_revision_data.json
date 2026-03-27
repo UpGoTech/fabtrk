@@ -1,0 +1,90 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2026-03-11 16:08:52.066082",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "sr_no",
+  "project_number",
+  "item",
+  "total_entries",
+  "total_qty",
+  "total_length",
+  "total_width",
+  "total_weight",
+  "revision_log"
+ ],
+ "fields": [
+  {
+   "fieldname": "sr_no",
+   "fieldtype": "Data",
+   "label": "Sr No."
+  },
+  {
+   "fieldname": "project_number",
+   "fieldtype": "Data",
+   "label": "Project Number"
+  },
+  {
+   "fieldname": "item",
+   "fieldtype": "Data",
+   "label": "Item"
+  },
+  {
+   "fieldname": "total_entries",
+   "fieldtype": "Data",
+   "label": "Total Entries"
+  },
+  {
+   "fieldname": "total_qty",
+   "fieldtype": "Data",
+   "label": "Total Qty"
+  },
+  {
+   "fieldname": "total_length",
+   "fieldtype": "Data",
+   "label": "Total Length"
+  },
+  {
+   "fieldname": "total_weight",
+   "fieldtype": "Data",
+   "label": " Total Weight"
+  },
+  {
+   "fieldname": "total_width",
+   "fieldtype": "Data",
+   "label": "Total Width"
+  },
+  {
+   "fieldname": "revision_log",
+   "fieldtype": "Long Text",
+   "label": "Revision Log"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-03-14 18:07:00.473751",
+ "modified_by": "Administrator",
+ "module": "Fabtrk",
+ "name": "FT Store Revision Data",
+ "naming_rule": "By script",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

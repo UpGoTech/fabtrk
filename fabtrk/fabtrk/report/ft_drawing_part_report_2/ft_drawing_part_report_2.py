@@ -5,18 +5,18 @@ def execute(filters=None):
     filters = filters or {}
 
     columns = [
-        {"label": "Project", "fieldname": "project_name", "fieldtype": "Link", "options": "FT Project", "width": 100},
-        {"label": "Item", "fieldname": "item_name", "width": 420},
+        {"label": "Project", "fieldname": "project_name", "fieldtype": "Link", "options": "FT Project", "width": 90},
+        {"label": "Item", "fieldname": "item_name", "width": 350},
         {"label": "Total Entries", "fieldname": "item_count", "fieldtype": "Int", "width": 110, "align": "center"},
         {"label": "Total Qty", "fieldname": "quantity", "fieldtype": "Int", "width": 85, "align": "center"},
         {"label": "Total Length", "fieldname": "lenght", "fieldtype": "Float", "width": 110, "align": "center"},
-        {"label": "Total Width", "fieldname": "width", "fieldtype": "Float", "width": 120, "align": "center"},
+        {"label": "Total Width", "fieldname": "width", "fieldtype": "Float", "width": 110, "align": "center"},
         {"label": "Total Weight", "fieldname": "total_weight", "fieldtype": "Float", "width": 110, "align": "center"},
-        {"label": "Details", "fieldname": "view", "fieldtype": "HTML", "width": 130, "align": "center"},
+        {"label": "Details", "fieldname": "view", "fieldtype": "HTML", "width": 200, "align": "center"},
     ]
  
            
-    # ---------------- CONDITIONS ----------------
+    #2 ---------------- CONDITIONS ----------------
     conditions = ""
     values = {}
 
@@ -39,7 +39,7 @@ def execute(filters=None):
     if filters.get("is_active"):
         conditions += " AND p.is_active = 1"
 
-    # ---------------- MAIN DATA ----------------
+    #3 ---------------- MAIN DATA ----------------
     query = f"""
     SELECT
         p.name AS project_name,
@@ -76,11 +76,10 @@ def execute(filters=None):
 
     data = frappe.db.sql(query, values, as_dict=True) or []
     
-    # -------------------------------------------------
+    #4 -------------------------------------------------
     # If no data rows but drawing is selected,
     # show blank row instead of "Nothing to show"
-    # -------------------------------------------------
-
+    # ------------------------------------------------- 
     if not data and filters.get("drawing_number"):
         
         blank_projects = frappe.db.sql("""
@@ -104,7 +103,8 @@ def execute(filters=None):
                 "total_weight": 0.000,
             })
 
-    for row in data:
+    # for row in data:
+    for i, row in enumerate(data, start=1):
         row["item_count"] = row.get("item_count") or 0
         row["quantity"] = row.get("quantity") or 0
         row["lenght"] = row.get("lenght") or 0
@@ -112,16 +112,16 @@ def execute(filters=None):
         row["total_weight"] = row.get("total_weight") or 0
         row["item_name"] = row.get("item_name") or "-"
         row["view"] = f"""
-        <div class="d-grid gap-2 col-6 mx-auto">
-            <button class="btn btn-xs btn-info view-btn"
-                data-project="{row.get('project_name')}"
-                data-item="{row.get('item_id') or ''}">
-                Details
-            </button>
-        </div>
+            <div class="d-grid gap-2 col-6 mx-auto">
+                <button class="btn btn-xs btn-info view-btn"
+                    data-project="{row.get('project_name')}"
+                    data-item="{row.get('item_id') or ''}">
+                    Details
+                </button>
+            </div>
         """
-    # ---------------- SUMMARY ----------------
-    # total_projects = len({d["project_name"] for d in data if d.get("project_name")})
+        
+    # 5---------------- SUMMARY ----------------
     # ✅ FIXED: Total Projects (works even if drawing parts = 0)
     project_count_query = """
         SELECT COUNT(DISTINCT p.name)
@@ -145,7 +145,7 @@ def execute(filters=None):
 
     total_projects = frappe.db.sql(project_count_query, project_count_values)[0][0] or 0
 
-    # Total Drawings
+    #6 Total Drawings Count
     drawing_query = f"""
     SELECT COUNT(DISTINCT ad.name)
     FROM `tabFT Project` p
@@ -170,13 +170,14 @@ def execute(filters=None):
     if filters.get("is_active"):
         project_conditions += " AND is_active = 1"
 
+    #7 FT Project table se project ka total weight fetch karta hai Ye weight customer ke liye set kiya hua weight hai
     project_total_weight = frappe.db.sql(
         f"SELECT SUM(total_weight) FROM `tabFT Project` WHERE 1=1 {project_conditions}",
         project_values
     )
     project_total_weight = project_total_weight[0][0] if project_total_weight and project_total_weight[0][0] else 0
 
-    # ---------------- PO Drawing Summary (FINAL FIX ADDED HERE) ----------------
+    #8 ---------------- PO Drawing Summary (FINAL FIX ADDED HERE) ----------------
     po_conditions = ""
     po_values = {}
 
@@ -265,7 +266,7 @@ def execute(filters=None):
             "datatype": "HTML",
         }
     ]
-    return columns, data, None, None, report_summary
+    
     # =====================================================
     # ✅ ADD GRAND TOTAL ROW (After Summary Calculation)
     # =====================================================
@@ -291,7 +292,8 @@ def execute(filters=None):
 
     return columns, data, None, None, report_summary  
 
-# ---------------- ITEM DETAILS ----------------
+# 10 ---------------- ITEM DETAILS ----------------
+# Details button click hone par call hota hai, Ek specific project + item ka detail data deta hai, Drawing Parts → Add Drawing → Project → Po Drawing join, Same rows ko group karta hai (duplicate avoid), Total row bhi add karta hai end mein
 @frappe.whitelist()
 def get_item_details(project, item, drawing_numbers=None):
     from collections import defaultdict
@@ -410,7 +412,7 @@ def get_item_details(project, item, drawing_numbers=None):
 
     return {"item_name": item_name, "data": rows}
 
-# ---------------- EXCEL EXPORT ----------------
+# 11 ---------------- EXCEL EXPORT ----------------
 # Only show Summary Details 
 @frappe.whitelist()
 def download_item_excel(filters):
@@ -599,7 +601,7 @@ def download_item_excel(filters):
     frappe.response["filecontent"] = file_stream.getvalue()
     frappe.response["type"] = "binary"
 
-# three sheet Excel
+#12 three sheet Excel
 @frappe.whitelist()
 def get_all_details_for_export(filters):
 
@@ -961,7 +963,7 @@ def get_all_details_for_export(filters):
 
     return file_doc.file_url
 
-# item details EXCEL    
+#13 item details EXCEL    
 @frappe.whitelist()
 def download_item_details_excel(filters):
     import frappe
@@ -1187,26 +1189,128 @@ def download_item_details_excel(filters):
     frappe.response['filecontent'] = file_stream.getvalue()
     frappe.response['type'] = 'download'   
   
+  
 # --------------------- GENERATE JSON FOR NESTING CENTER ---------------------
+# @frappe.whitelist()
+# def export_nesting_json(filters=None):
+#     import json
+#     import random
+#     # ---------- RANDOM COLOR FUNCTION ----------
+#     def get_random_color():
+#         return "#{:06x}".format(random.randint(0, 0xFFFFFF))
+
+#     filters = frappe.parse_json(filters)
+
+#     project = filters.get("project")
+#     item = filters.get("item")
+
+#     item_name = frappe.db.get_value(
+#         "FT Stock RM List",
+#         item,
+#         "computed_name"
+#     )
+
+#     rows = frappe.db.sql("""
+#         SELECT
+#             dp.quantity,
+#             dp.lenght,
+#             dp.width,
+#             dp.part_no
+#         FROM `tabFT Drawing Parts` dp
+#         LEFT JOIN `tabFT Add Drawing` ad ON ad.name = dp.drawing_number
+#         WHERE ad.project_number=%s
+#         AND dp.item_id=%s
+#     """,(project,item),as_dict=1)
+
+#     parts = []
+
+#     for row in rows:
+
+#         # ---------- DEFAULT WIDTH ----------
+#         width = int(row.width) if row.width and int(row.width) != 0 else 100
+
+#         parts.append({
+#             "Quantity": int(row.quantity or 0),
+#             "RectangularShape": {
+#                 "Length": str(int(row.lenght or 0)),
+#                 "Width": str(width)
+#             },
+#             "Name": f"{row.part_no}",
+#             "Colour": get_random_color()   
+#         })
+
+
+#     data = {
+
+#         "Settings": {
+#             "DimensionLimit": None,
+#             "DistancePartPart": "0",
+#             "DistancePartRawPlate": "0",
+#             "MirrorControl": "Allow",
+#             "NestingInHoles": True,
+#             "RotationControl": "Free",
+#             "SortRawPlates": True,
+#             "GroupLayouts": True,
+#             "PlacementDirection": "LeftDown",
+#             "RotationTwist": {"Deg": 0},
+#             "NestingMode": "General",
+#             "SettingsStrips": {"Sorting": "Length"},
+#             "LayoutDuplicationAuto": False
+#         },
+
+#         "Problem": {
+
+#             "Parts": parts,
+
+#             "RawPlates": [
+#                 {
+#                     "Quantity": 10,
+#                     "RectangularShape": {
+#                         "Length": "12000",
+#                         "Width": "100"
+#                     },
+#                     "Name": item_name,
+#                     "Colour": get_random_color()   
+#                 }
+#             ]
+#         },
+
+#         "StopConditions": {
+#             "AllPartsNested": False,
+#             "Scrap": False,
+#             "ScrapValue": 0,
+#             "Scrap2": False,
+#             "Scrap2Value": 0,
+#             "SmartStop": False,
+#             "Timeout": True,
+#             "TimeoutValue": 300
+#         }
+#     }
+
+#     frappe.response["filename"] = "nesting_data.json"
+#     frappe.response["filecontent"] = json.dumps(data, indent=4)
+#     frappe.response["type"] = "download"
+
+
+# NESTING JSON EXPORT — 1D aur 2D dono support karta hai
 @frappe.whitelist()
 def export_nesting_json(filters=None):
     import json
     import random
-    # ---------- RANDOM COLOR FUNCTION ----------
+
+    # ---------- RANDOM COLOR ----------
     def get_random_color():
         return "#{:06x}".format(random.randint(0, 0xFFFFFF))
 
-    filters = frappe.parse_json(filters)
+    # ---------- FILTERS ----------
+    filters  = frappe.parse_json(filters)
+    project  = filters.get("project")
+    item     = filters.get("item")
+    mode     = filters.get("mode", "1d")   # default: 1d
 
-    project = filters.get("project")
-    item = filters.get("item")
+    item_name = frappe.db.get_value("FT Stock RM List", item, "computed_name") or item
 
-    item_name = frappe.db.get_value(
-        "FT Stock RM List",
-        item,
-        "computed_name"
-    )
-
+    # ---------- DB SE PARTS FETCH ----------
     rows = frappe.db.sql("""
         SELECT
             dp.quantity,
@@ -1215,75 +1319,752 @@ def export_nesting_json(filters=None):
             dp.part_no
         FROM `tabFT Drawing Parts` dp
         LEFT JOIN `tabFT Add Drawing` ad ON ad.name = dp.drawing_number
-        WHERE ad.project_number=%s
-        AND dp.item_id=%s
-    """,(project,item),as_dict=1)
+        WHERE ad.project_number = %s
+          AND dp.item_id = %s
+    """, (project, item), as_dict=1)
 
-    parts = []
+    # MODE: 1D  —  purana RectangularShape format (kuch nahi badla)
+    if mode != "2d":
+
+        parts = []
+        for row in rows:
+            length = int(row.lenght or 0)
+            width  = int(row.width) if row.width and int(row.width) != 0 else 100
+
+            parts.append({
+                "Quantity": int(row.quantity or 0),
+                "RectangularShape": {
+                    "Length": str(length),
+                    "Width":  str(width)
+                },
+                "Name":   f"{row.part_no}",
+                "Colour": get_random_color()
+            })
+
+        data = {
+            "Settings": {
+                "DimensionLimit":        None,
+                "DistancePartPart":      "0",
+                "DistancePartRawPlate":  "0",
+                "MirrorControl":         "Allow",
+                "NestingInHoles":        True,
+                "RotationControl":       "Free",
+                "SortRawPlates":         True,
+                "GroupLayouts":          True,
+                "PlacementDirection":    "LeftDown",
+                "RotationTwist":         {"Deg": 0},
+                "NestingMode":           "General",
+                "SettingsStrips":        {"Sorting": "Length"},
+                "LayoutDuplicationAuto": False
+            },
+            "Problem": {
+                "Parts": parts,
+                "RawPlates": [
+                    {
+                        "Quantity": 10,
+                        "RectangularShape": {
+                            "Length": "12000",
+                            "Width":  "100"
+                        },
+                        "Name":   item_name,
+                        "Colour": get_random_color()
+                    }
+                ]
+            },
+            "StopConditions": {
+                "AllPartsNested": False,
+                "Scrap":          False,
+                "ScrapValue":     0,
+                "Scrap2":         False,
+                "Scrap2Value":    0,
+                "SmartStop":      False,
+                "Timeout":        True,
+                "TimeoutValue":   300
+            }
+        }
+
+        frappe.response["filename"]    = "nesting_data.json"
+        frappe.response["filecontent"] = json.dumps(data, indent=4)
+        frappe.response["type"]        = "download"
+        return
+
+
+    # ==============================================================
+    # MODE: 2D — LoopBulge Contours format (exact match)
+    # ==============================================================
+
+    import re
+
+    def extract_width_from_name(item_name):
+        if not item_name:
+            return 100
+        name_upper = str(item_name).upper()
+        angle_match = re.search(r'(\d+)\s*X\s*(\d+)', name_upper)
+        if angle_match:
+            return int(angle_match.group(1))
+        flat_match = re.search(r'0*(\d+)\s*MM', name_upper)
+        if flat_match:
+            return int(flat_match.group(1))
+        number_match = re.search(r'\b(\d{2,4})\b', name_upper)
+        if number_match:
+            return int(number_match.group(1))
+        return 100
+
+    parts_2d = []
 
     for row in rows:
+        length = int(row.lenght or 0)
+        db_width = int(row.width) if row.width and int(row.width) != 0 else 0
+        width = db_width if db_width > 0 else extract_width_from_name(item_name)
 
-        # ---------- DEFAULT WIDTH ----------
-        width = int(row.width) if row.width and int(row.width) != 0 else 100
-
-        parts.append({
+        # Rectangle → 4 vertices, B=0 (straight lines)
+        parts_2d.append({
             "Quantity": int(row.quantity or 0),
-            "RectangularShape": {
-                "Length": str(int(row.lenght or 0)),
-                "Width": str(width)
-            },
-            "Name": f"{row.part_no}",
-            "Colour": get_random_color()   
+            "Contours": [
+                {
+                    "Type": "LoopBulge",
+                    "Data": {
+                        "Vertices": [
+                            {"B": 0, "X": 0,      "Y": 0},
+                            {"B": 0, "X": length, "Y": 0},
+                            {"B": 0, "X": length, "Y": width},
+                            {"B": 0, "X": 0,      "Y": width}
+                        ]
+                    }
+                }
+            ],
+            "RefPt":  {"X": 0, "Y": 0},
+            "Name":   str(row.part_no or ""),
+            "Colour": get_random_color(),
+            "Layer":  "default"
         })
 
+    raw_plate_length = 12000
+    raw_plate_width  = extract_width_from_name(item_name)
 
-    data = {
-
+    data_2d = {
         "Settings": {
-            "DimensionLimit": None,
-            "DistancePartPart": "0",
-            "DistancePartRawPlate": "0",
-            "MirrorControl": "Allow",
-            "NestingInHoles": True,
-            "RotationControl": "Free",
-            "SortRawPlates": True,
-            "GroupLayouts": True,
-            "PlacementDirection": "LeftDown",
-            "RotationTwist": {"Deg": 0},
-            "NestingMode": "General",
-            "SettingsStrips": {"Sorting": "Length"},
+            "DimensionLimit":        None,
+            "DistancePartPart":      "0",
+            "DistancePartRawPlate":  "0",
+            "MirrorControl":         "Allow",
+            "NestingInHoles":        True,
+            "RotationControl":       "Free",
+            "SortRawPlates":         True,
+            "GroupLayouts":          True,
+            "PlacementDirection":    "LeftDown",
+            "RotationTwist":         {"Deg": 0},
+            "NestingMode":           "General",
+            "SettingsStrips":        {"Sorting": "Length"},
             "LayoutDuplicationAuto": False
         },
-
         "Problem": {
-
-            "Parts": parts,
-
+            "Parts": parts_2d,
             "RawPlates": [
                 {
                     "Quantity": 10,
                     "RectangularShape": {
-                        "Length": "12000",
-                        "Width": "100"
+                        "Length": str(raw_plate_length),
+                        "Width":  str(raw_plate_width)
                     },
-                    "Name": item_name,
-                    "Colour": get_random_color()   
+                    "Name": str(item_name or "")
                 }
             ]
         },
-
         "StopConditions": {
             "AllPartsNested": False,
-            "Scrap": False,
-            "ScrapValue": 0,
-            "Scrap2": False,
-            "Scrap2Value": 0,
-            "SmartStop": False,
-            "Timeout": True,
-            "TimeoutValue": 300
+            "Scrap":          False,
+            "ScrapValue":     0,
+            "Scrap2":         False,
+            "Scrap2Value":    0,
+            "SmartStop":      False,
+            "Timeout":        True,
+            "TimeoutValue":   300
         }
     }
 
-    frappe.response["filename"] = "nesting_data.json"
-    frappe.response["filecontent"] = json.dumps(data, indent=4)
-    frappe.response["type"] = "download"
+    frappe.response["filename"]    = "nesting_data_2d.json"
+    frappe.response["filecontent"] = json.dumps(data_2d, indent=4)
+    frappe.response["type"]        = "download"
+
+# # ================================================================
+# # YE POORA CODE apni existing ft_drawing_part_report_2.py ke
+# # BILKUL BOTTOM mein paste karo (last line ke baad)
+# # ================================================================
+
+# @frappe.whitelist()
+# def save_nesting_report(item, project, sheets, nested_parts, scrap, pdf_url=""):
+#     try:
+#         existing = frappe.db.get_value(
+#             "FT Nesting Report",
+#             {"item": item, "project": project},
+#             "name"
+#         )
+
+#         if existing:
+#             doc = frappe.get_doc("FT Nesting Report", existing)
+#         else:
+#             doc = frappe.new_doc("FT Nesting Report")
+#             doc.item    = item
+#             doc.project = project
+
+#         doc.sheets       = sheets
+#         doc.nested_parts = nested_parts
+#         doc.scrap        = scrap
+#         doc.pdf_url      = pdf_url
+
+#         doc.save(ignore_permissions=True)
+#         frappe.db.commit()
+
+#         return {"success": True, "name": doc.name}
+
+#     except Exception as e:
+#         frappe.log_error(frappe.get_traceback(), "save_nesting_report Error")
+#         return {"success": False, "error": str(e)}
+
+
+# @frappe.whitelist()
+# def get_nesting_report(item, project):
+#     try:
+#         name = frappe.db.get_value(
+#             "FT Nesting Report",
+#             {"item": item, "project": project},
+#             "name"
+#         )
+
+#         if not name:
+#             return {"found": False}
+
+#         doc = frappe.get_doc("FT Nesting Report", name)
+
+#         return {
+#             "found":        True,
+#             "sheets":       doc.sheets       or "—",
+#             "nested_parts": doc.nested_parts or "—",
+#             "scrap":        doc.scrap        or "—",
+#             "pdf_url":      doc.pdf_url      or "",
+#         }
+
+#     except Exception as e:
+#         frappe.log_error(frappe.get_traceback(), "get_nesting_report Error")
+#         return {"found": False, "error": str(e)}
+
+# ======================================================
+# SAVE (STRICT UPSERT — NO DUPLICATES)
+# ======================================================
+@frappe.whitelist()
+def save_nesting_report(item, project, sheets, nested_parts, scrap, pdf_url=""):
+    try:
+        if not item or not project:
+            return {"success": False, "error": "Item / Project missing"}
+
+        # 🔍 ALWAYS fetch existing EXACT match
+        existing = frappe.db.get_all(
+            "FT Nesting Report",
+            filters={"item": item, "project": project},
+            fields=["name"],
+            limit=1
+        )
+
+        if existing:
+            doc = frappe.get_doc("FT Nesting Report", existing[0].name)
+        else:
+            doc = frappe.new_doc("FT Nesting Report")
+            doc.item = item
+            doc.project = project
+
+        # ✅ Update fields
+        doc.sheets       = sheets or ""
+        doc.nested_parts = nested_parts or ""
+        doc.scrap        = scrap or ""
+
+        # ❗ IMPORTANT: PDF overwrite mat karo agar empty hai
+        if pdf_url:
+            doc.pdf_url = pdf_url
+
+        doc.save(ignore_permissions=True)
+
+        return {"success": True, "name": doc.name}
+
+    except Exception:
+        frappe.log_error(frappe.get_traceback(), "save_nesting_report Error")
+        return {"success": False}
+
+
+# ======================================================
+# LOAD (STRICT + DEBUG SAFE)
+# ======================================================
+@frappe.whitelist()
+def get_nesting_report(item, project):
+    try:
+        if not item or not project:
+            return {"found": False}
+
+        data = frappe.db.get_all(
+            "FT Nesting Report",
+            filters={"item": item, "project": project},
+            fields=["name", "sheets", "nested_parts", "scrap", "pdf_url"],
+            limit=1
+        )
+
+        if not data:
+            return {"found": False}
+
+        d = data[0]
+
+        return {
+            "found": True,
+            "name": d.name,
+            "sheets": d.sheets or "—",
+            "nested_parts": d.nested_parts or "—",
+            "scrap": d.scrap or "—",
+            "pdf_url": d.pdf_url or "",
+        }
+
+    except Exception:
+        frappe.log_error(frappe.get_traceback(), "get_nesting_report Error")
+        return {"found": False}
+
+
+
+
+
+# --------------------- GENERATE JSON FOR NESTING CENTER ---------------------
+
+# Revision-1-Flat 070MM X 06 THK IS808 IS2062 E250BR-001,item show hore hai id me 
+@frappe.whitelist()
+def save_row_data(sr_no, project, item_name, item_count, quantity, lenght, width, total_weight):
+    import json
+    from frappe.utils import now_datetime
+
+    timestamp = now_datetime().strftime("%d/%m/%Y (%H:%M:%S)")
+
+    new_entry = {
+        "timestamp":     timestamp,
+        "total_entries": float(item_count   or 0),
+        "total_qty":     float(quantity     or 0),
+        "total_length":  float(lenght       or 0),
+        "total_width":   float(width        or 0),
+        "total_weight":  float(total_weight or 0)
+    }
+
+    existing = frappe.db.exists(
+        "FT Store Revision Data",
+        {
+            "project_number": project,
+            "item":           item_name
+        }
+    )
+
+    # Item name clean karo — spaces aur / ko - se replace karo
+    clean_item = item_name.replace(" ", "-").replace("/", "-")
+
+    if existing:
+        doc = frappe.get_doc("FT Store Revision Data", existing)
+
+        try:
+            revision_log = json.loads(doc.revision_log or "[]")
+        except Exception:
+            revision_log = []
+
+        if revision_log:
+            last = revision_log[-1]
+            changed = (
+                float(last.get("total_entries") or 0) != float(item_count   or 0) or
+                float(last.get("total_qty")     or 0) != float(quantity     or 0) or
+                float(last.get("total_length")  or 0) != float(lenght       or 0) or
+                float(last.get("total_width")   or 0) != float(width        or 0) or
+                float(last.get("total_weight")  or 0) != float(total_weight or 0)
+            )
+            if not changed:
+                return {"status": "success", "msg": "Data same hai, koi change nahi hua"}
+
+        revision_log.append(new_entry)
+
+        next_revision = len(revision_log)
+        new_name      = f"Revision-{next_revision}-{clean_item}-{str(sr_no).zfill(3)}"
+
+        frappe.rename_doc(
+            "FT Store Revision Data",
+            existing,
+            new_name,
+            force=True
+        )
+
+        doc = frappe.get_doc("FT Store Revision Data", new_name)
+        doc.sr_no         = sr_no
+        doc.total_entries = item_count
+        doc.total_qty     = quantity
+        doc.total_length  = lenght
+        doc.total_width   = width
+        doc.total_weight  = total_weight
+        doc.revision_log  = json.dumps(revision_log)
+        doc.save(ignore_permissions=True)
+
+    else:
+        revision_log = [new_entry]
+        new_name     = f"Revision-1-{clean_item}-{str(sr_no).zfill(3)}"
+
+        doc = frappe.get_doc({
+            "doctype":        "FT Store Revision Data",
+            "name":           new_name,
+            "sr_no":          sr_no,
+            "project_number": project,
+            "item":           item_name,
+            "total_entries":  item_count,
+            "total_qty":      quantity,
+            "total_length":   lenght,
+            "total_width":    width,
+            "total_weight":   total_weight,
+            "revision_log":   json.dumps(revision_log)
+        })
+        doc.insert(ignore_permissions=True)
+
+    frappe.db.commit()
+    return {"status": "success", "msg": "✅ Data saved successfully!"}
+
+@frappe.whitelist()
+def compare_row_data(sr_no, project, item_name, item_count, quantity, lenght, width, total_weight):
+    import json
+    from frappe.utils import now_datetime
+
+    # ── Sirf item_name se saare projects ka data fetch karo ──
+    all_saved = frappe.db.get_all(
+        "FT Store Revision Data",
+        filters={"item": item_name},
+        fields=["project_number", "revision_log", "total_entries", 
+                "total_qty", "total_length", "total_width", "total_weight"]
+    )
+
+    if not all_saved:
+        return {"status": "error", "msg": "No saved data found. Pehle Save karo."}
+
+    # ── Saare projects ki list ──
+    all_projects = [d.project_number for d in all_saved if d.project_number]
+
+    # ── Max revisions dhundo ──
+    max_rev_count = 0
+    for d in all_saved:
+        try:
+            log = json.loads(d.revision_log or "[]")
+            max_rev_count = max(max_rev_count, len(log))
+        except:
+            pass
+
+    # ── Revision wise SUM calculate karo ──
+    fields = ["total_entries", "total_qty", "total_length", "total_width", "total_weight"]
+    
+    # Initialize revision sums
+    revision_sums = []
+    for ri in range(max_rev_count):
+        rev_sum = {f: 0.0 for f in fields}
+        rev_sum["timestamp"] = ""
+        for d in all_saved:
+            try:
+                log = json.loads(d.revision_log or "[]")
+                if ri < len(log):
+                    for f in fields:
+                        rev_sum[f] += float(log[ri].get(f) or 0)
+                    # Last project ka timestamp use karo
+                    if log[ri].get("timestamp"):
+                        rev_sum["timestamp"] = log[ri]["timestamp"]
+            except:
+                pass
+        revision_sums.append(rev_sum)
+
+    # ── Current values (jo abhi report mein dikh raha hai) ──
+    # Sirf current project ki value nahi, saare projects ka sum chahiye
+    # Isliye DB se fresh sum nikalte hain
+    db_sum = frappe.db.sql("""
+        SELECT
+            SUM(CAST(total_entries AS DECIMAL(20,3))) as total_entries,
+            SUM(CAST(total_qty AS DECIMAL(20,3)))     as total_qty,
+            SUM(CAST(total_length AS DECIMAL(20,3)))  as total_length,
+            SUM(CAST(total_width AS DECIMAL(20,3)))   as total_width,
+            SUM(CAST(total_weight AS DECIMAL(20,3)))  as total_weight
+        FROM `tabFT Store Revision Data`
+        WHERE item = %(item)s
+    """, {"item": item_name}, as_dict=True)
+
+    if db_sum and db_sum[0]:
+        current_values = {
+            "total_entries": float(db_sum[0].get("total_entries") or 0),
+            "total_qty":     float(db_sum[0].get("total_qty")     or 0),
+            "total_length":  float(db_sum[0].get("total_length")  or 0),
+            "total_width":   float(db_sum[0].get("total_width")   or 0),
+            "total_weight":  float(db_sum[0].get("total_weight")  or 0),
+        }
+    else:
+        current_values = {f: 0.0 for f in fields}
+
+    current_timestamp = now_datetime().strftime("%d/%m/%Y (%H:%M:%S)")
+
+    return {
+        "status":            "success",
+        "revision_log":      revision_sums,       # ← Summed revisions
+        "current":           current_values,       # ← Summed current
+        "current_timestamp": current_timestamp,
+        "project":           ", ".join(all_projects),  # ← "FXL-0001, FXL-0002, FXL-0003"
+        "project_count":     len(all_projects),    # ← 3
+        "item_name":         item_name
+    }     
+      
+@frappe.whitelist()
+def export_compare_snapshot_excel(snapshot_data):
+    import json
+    import openpyxl
+    from io import BytesIO
+    from frappe.utils.file_manager import save_file
+    from openpyxl.styles import Font, PatternFill, Border, Side, Alignment
+    from openpyxl.utils import get_column_letter
+
+    snapshot_data = frappe.parse_json(snapshot_data)
+
+    fields = ["total_entries", "total_qty", "total_length", "total_width", "total_weight"]
+    field_labels = {
+        "total_entries": "Total Entries",
+        "total_qty":     "Total Qty",
+        "total_length":  "Total Length",
+        "total_width":   "Total Width",
+        "total_weight":  "Total Weight"
+    }
+
+    # ── Max revisions across all items ──
+    max_revisions = 0
+    for item_data in snapshot_data:
+        max_revisions = max(max_revisions, len(item_data.get("revision_log") or []))
+
+    # ── Styles ──
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Compare Snapshot"
+
+    thin        = Side(style="thin")
+    border      = Border(left=thin, right=thin, top=thin, bottom=thin)
+    center      = Alignment(horizontal="center", vertical="center", wrap_text=True)
+    left_align  = Alignment(horizontal="left",   vertical="center", wrap_text=True)
+
+    title_font  = Font(bold=True, size=14, color="FFFFFF")
+    title_fill  = PatternFill("solid", fgColor="1F4E79")
+
+    header_font = Font(bold=True, size=11, color="FFFFFF")
+    header_fill = PatternFill("solid", fgColor="2F75B5")
+
+    diff_hfill  = PatternFill("solid", fgColor="7B2D8B")   # purple - difference header
+    diff_hfont  = Font(bold=True, size=11, color="FFFFFF")
+
+    changed_font   = Font(bold=True, color="C55A11")        # orange - revision changed
+    normal_font    = Font(size=11,   color="333333")
+    diff_pos_font  = Font(bold=True, color="1A7ABF")        # blue   - positive diff
+    diff_neg_font  = Font(bold=True, color="C00000")        # red    - negative diff
+    diff_zero_font = Font(size=11,   color="888888")        # grey   - no diff
+
+    yellow_fill = PatternFill("solid", fgColor="FFF8E1")
+    diff_pos_fill = PatternFill("solid", fgColor="E8F4FD")  # light blue
+    diff_neg_fill = PatternFill("solid", fgColor="FFE8E8")  # light red
+    white_fill  = PatternFill("solid", fgColor="FFFFFF")
+    sep_fill    = PatternFill("solid", fgColor="E8EDF2")
+
+    # total_cols = Projects + Item + Count + Field + revisions + Difference
+    total_cols = 4 + max_revisions + 1
+
+    # ── Title ──
+    ws.merge_cells(start_row=1, start_column=1, end_row=1, end_column=total_cols)
+    tc = ws.cell(row=1, column=1, value="Revision History — Grouped by Item")
+    tc.font      = title_font
+    tc.fill      = title_fill
+    tc.alignment = center
+    ws.row_dimensions[1].height = 26
+
+    # ── Headers ──
+    headers = ["Projects", "Item", "Project Count", "Field"]
+    for i in range(max_revisions):
+        headers.append(f"Revision {i+1}")
+    headers.append("Difference\n(Rev 1 - Rev 2)")
+    
+    for col, h in enumerate(headers, 1):
+        is_diff = col == total_cols
+        c = ws.cell(row=2, column=col, value=h)
+        c.font      = diff_hfont  if is_diff else header_font
+        c.fill      = diff_hfill  if is_diff else header_fill
+        c.border    = border
+        c.alignment = center
+    ws.row_dimensions[2].height = 30
+
+    # ── Data ──
+    data_row = 3
+
+    for item_data in snapshot_data:
+        if item_data.get("status") != "success":
+            continue
+
+        project         = item_data.get("project", "")
+        item_name_val   = item_data.get("item_name", "")
+        project_count   = item_data.get("project_count", 0)
+        revision_log    = item_data.get("revision_log") or []
+        current         = item_data.get("current") or {}
+        current_ts      = item_data.get("current_timestamp", "")
+
+        # ── Revision 1 values (base for difference) ──
+        rev1 = revision_log[0] if len(revision_log) > 0 else None
+        rev2 = revision_log[1] if len(revision_log) > 1 else None
+
+        start_row = data_row
+
+        for fi, f in enumerate(fields):
+            row_num  = data_row + fi
+
+            rev1_val = float(rev1.get(f) or 0) if rev1 else None
+            rev2_val = float(rev2.get(f) or 0) if rev2 else None
+            curr_val = float(current.get(f) or 0)
+
+            # Difference = Revision2 - Revision1 only
+            if rev1_val is not None and rev2_val is not None and rev2_val != 0:
+                diff_val = rev2_val - rev1_val
+            else:
+                diff_val = None
+
+            # Row fill - yellow if any revision changed
+            last = revision_log[-1] if revision_log else None
+            last_val = float(last.get(f) or 0) if last else None
+            row_changed = last_val is not None and last_val != curr_val
+            row_fill = yellow_fill if row_changed else white_fill
+
+            # ── Col 1: Projects (NO merge - write in every row) ──
+            c = ws.cell(row=row_num, column=1,
+                        value=project if fi == 0 else "")
+            c.font      = Font(bold=True, size=10, color="1F4E79")
+            c.border    = border
+            c.alignment = center
+            c.fill      = row_fill
+
+            # ── Col 2: Item (NO merge) ──
+            c = ws.cell(row=row_num, column=2,
+                        value=item_name_val if fi == 0 else "")
+            c.font      = Font(size=10)
+            c.border    = border
+            c.alignment = left_align
+            c.fill      = row_fill
+
+            # ── Col 3: Project Count (NO merge) ──
+            c = ws.cell(row=row_num, column=3,
+                        value=project_count if fi == 0 else "")
+            c.font      = Font(bold=True, size=13, color="2F75B5")
+            c.border    = border
+            c.alignment = center
+            c.fill      = row_fill
+
+            # ── Col 4: Field label ──
+            c = ws.cell(row=row_num, column=4, value=field_labels[f])
+            c.font      = Font(bold=True, size=11)
+            c.border    = border
+            c.alignment = center
+            c.fill      = row_fill
+
+            # ── Revision columns ──
+            for ri in range(max_revisions):
+                col_num = 5 + ri
+                if ri < len(revision_log):
+                    rev      = revision_log[ri]
+                    rev_val  = float(rev.get(f) or 0)
+                    rev_ts   = rev.get("timestamp", "")
+                    prev_val = float(revision_log[ri-1].get(f) or 0) if ri > 0 else None
+                    rev_chg  = prev_val is not None and prev_val != rev_val
+
+                    c = ws.cell(row=row_num, column=col_num,
+                                value=f"{rev_val}\n{rev_ts}")
+                    c.font      = changed_font if rev_chg else normal_font
+                    c.border    = border
+                    c.alignment = center
+                    c.fill      = row_fill
+                    c.number_format = '#,##0.###'
+                else:
+                    c = ws.cell(row=row_num, column=col_num, value="-")
+                    c.font      = Font(color="CCCCCC")
+                    c.border    = border
+                    c.alignment = center
+                    c.fill      = row_fill
+
+            # ── Difference column ──
+            diff_col = 5 + max_revisions
+
+            if diff_val is None:
+                diff_display = "0.000\n(No Changes)"
+                diff_font_use = diff_zero_font
+                diff_fill_use = white_fill
+            elif diff_val > 0:
+                diff_display = f"+{diff_val:.3f}\n(▲ Increased)"
+                diff_font_use = diff_pos_font
+                diff_fill_use = diff_pos_fill
+            elif diff_val < 0:
+                diff_display = f"{diff_val:.3f}\n(▼ Decreased)"
+                diff_font_use = diff_neg_font
+                diff_fill_use = diff_neg_fill
+            else:
+                diff_display = f"0.000\n(No Change)"
+                diff_font_use = diff_zero_font
+                diff_fill_use = white_fill
+
+            c = ws.cell(row=row_num, column=diff_col, value=diff_display)
+            c.font      = diff_font_use
+            c.border    = border
+            c.alignment = center
+            c.fill      = diff_fill_use
+            c.number_format = '#,##0.###'
+
+        # ── Row heights ──
+        for r in range(start_row, start_row + len(fields)):
+            ws.row_dimensions[r].height = 38
+
+        data_row += len(fields)
+
+        # ── Separator row ──
+        for col in range(1, total_cols + 1):
+            c = ws.cell(row=data_row, column=col, value="")
+            c.fill = sep_fill
+        ws.row_dimensions[data_row].height = 8
+        data_row += 1
+
+    # ── Column widths ──
+    col_widths = [30, 38, 14, 16]
+    for _ in range(max_revisions):
+        col_widths.append(22)
+    col_widths.append(22)  # Difference
+
+    for i, w in enumerate(col_widths, 1):
+        ws.column_dimensions[get_column_letter(i)].width = w
+
+    # ── Freeze header ──
+    ws.freeze_panes = "A3"
+
+    # ── Save ──
+    stream = BytesIO()
+    wb.save(stream)
+    stream.seek(0)
+
+    file_doc = save_file(
+        "Compare_Snapshot.xlsx",
+        stream.getvalue(),
+        None, None,
+        is_private=0
+    )
+
+    return file_doc.file_url
+
+# Revision-1-Flat 070MM X 06 THK IS808 IS2062 E250BR-001,item show hore hai id me 
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

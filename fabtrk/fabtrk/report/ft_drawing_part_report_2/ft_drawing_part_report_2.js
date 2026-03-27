@@ -1,4 +1,3 @@
-
 frappe.query_reports["FT Drawing Part Report 2"] = {
 
 	onload(report) {
@@ -6,7 +5,8 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 		frappe.query_report.set_filter_value("drawing_number", []);
 		frappe.query_report.set_filter_value("item", []);
 		frappe.query_report.set_filter_value("is_active", 1);
-		// Add download item details button to summary table
+
+		// Add download item details button to summary table - Header button
 		report.page.add_inner_button("Download Summary", function () {
 			let filters = report.get_values();
 
@@ -17,10 +17,8 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 			// ✅ window.location.href — sabse reliable Frappe binary download ke liye
 			window.location.href = "/api/method/fabtrk.fabtrk.report.ft_drawing_part_report_2.ft_drawing_part_report_2.download_item_excel?" + params.toString();
 		});
-
-		// Add download full report button to both summary and detail tables in Excel with two different sheets for detail and summary
+		// DOWNLOAD FULL REPORT BUTTON - Header button
 		report.page.add_inner_button("Download Full Report", function () {
-
 			frappe.call({
 				method: "fabtrk.fabtrk.report.ft_drawing_part_report_2.ft_drawing_part_report_2.get_all_details_for_export",
 				args: { filters: report.get_values() },
@@ -38,11 +36,265 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 
 		});
 
+
+		// SAVE SNAPSHOT BUTTON - Header button
+		report.page.add_inner_button("💾 Save Snapshot", function () {
+			let report_data = frappe.query_report.data || [];
+
+			// Filter out TOTAL row
+			let rows_to_save = report_data.filter(d =>
+				d.project_name && d.project_name !== "TOTAL" && d.item_id
+			);
+
+			if (!rows_to_save.length) {
+				frappe.msgprint("Koi data nahi hai save karne ke liye");
+				return;
+			}
+
+			frappe.confirm(
+				`Kya aap ${rows_to_save.length} rows ka snapshot save karna chahte ho?`,
+				function () {
+
+					let promises = rows_to_save.map((row, i) => {
+						return frappe.call({
+							method: "fabtrk.fabtrk.report.ft_drawing_part_report_2.ft_drawing_part_report_2.save_row_data",
+							args: {
+								sr_no: i + 1,
+								project: row.project_name,
+								item_name: row.item_name,
+								item_count: row.item_count,
+								quantity: row.quantity,
+								lenght: row.lenght,
+								width: row.width,
+								total_weight: row.total_weight
+							}
+						});
+					});
+
+					Promise.all(promises).then(results => {
+
+						// Kitne actually save hue aur kitne same the
+						let saved_count = 0;
+						let no_change_count = 0;
+
+						results.forEach(r => {
+							if (r.message && r.message.status === "success") {
+								if (r.message.msg && r.message.msg.includes("same")) {
+									no_change_count++;
+								} else {
+									saved_count++;
+								}
+							}
+						});
+
+						// Sab same hain — koi change nahi
+						if (no_change_count === rows_to_save.length) {
+							frappe.msgprint({
+								title: "No Changes Found",
+								message: `⚠️ No changes were found in the data, so the snapshot was not saved. The previous snapshot remains unchanged.`,
+								indicator: "orange"
+							});
+						}
+						// Kuch save hue, kuch same the
+						else if (saved_count > 0 && no_change_count > 0) {
+							frappe.show_alert({
+								message: `✅ ${saved_count} rows saved | ⏭️ ${no_change_count} No Chnages in the row`,
+								indicator: "blue"
+							});
+						}
+						// Sab save ho gaye
+						else if (saved_count > 0) {
+							frappe.show_alert({
+								message: `✅ ${saved_count} rows saved successfully!`,
+								indicator: "green"
+							});
+						}
+					});
+				}
+			);
+		});
+		// COMPARE SNAPSHOT BUTTON - Header button
+		report.page.add_inner_button("📊 Compare Snapshot", function () {
+			let report_data = frappe.query_report.data || [];
+
+			let rows_to_compare = report_data.filter(d =>
+				d.project_name && d.project_name !== "TOTAL" && d.item_id
+			);
+
+			if (!rows_to_compare.length) {
+				frappe.msgprint("Koi data nahi hai compare karne ke liye");
+				return;
+			}
+
+			// Fetch all compare data
+			let promises = rows_to_compare.map(row => {
+				return frappe.call({
+					method: "fabtrk.fabtrk.report.ft_drawing_part_report_2.ft_drawing_part_report_2.compare_row_data",
+					args: {
+						sr_no: "",
+						project: row.project_name,
+						item_name: row.item_name,
+						item_count: row.item_count,
+						quantity: row.quantity,
+						lenght: row.lenght,
+						width: row.width,
+						total_weight: row.total_weight
+					}
+				});
+			});
+
+			Promise.all(promises).then(results => {
+				let field_labels = {
+					"total_entries": "Total Entries",
+					"total_qty": "Total Qty",
+					"total_length": "Total Length",
+					"total_width": "Total Width",
+					"total_weight": "Total Weight"
+				};
+				let fields = ["total_entries", "total_qty", "total_length", "total_width", "total_weight"];
+
+				// ── Unique items only (duplicate item_name skip karo) ──
+				let seen_items = new Set();
+				let unique_results = [];
+				results.forEach(r => {
+					if (r.message && r.message.status === "success") {
+						if (!seen_items.has(r.message.item_name)) {
+							seen_items.add(r.message.item_name);
+							unique_results.push(r);
+						}
+					}
+				});
+
+				// ── Max revisions ──
+				let max_revisions = 0;
+				unique_results.forEach(r => {
+					max_revisions = Math.max(max_revisions, (r.message.revision_log || []).length);
+				});
+
+				// ── Table header ──
+				let html = `
+					<div style="overflow-x:auto;">
+					<table class="table table-bordered" style="font-size:12px; min-width:1000px;">
+						<thead>
+							<tr style="background:#1F4E79; color:#fff; text-align:center;">
+								<th style="min-width:180px;">Projects</th>
+								<th style="min-width:200px;">Item</th>
+								<th style="min-width:80px;">Project Count</th>
+								<th style="min-width:110px;">Field</th>
+				`;
+
+				for (let i = 0; i < max_revisions; i++) {
+					html += `<th style="min-width:130px;">Revision ${i + 1}</th>`;
+				}
+				html += `<th style="min-width:140px; background:#0c5c70;">Current Value</th>`;
+				html += `</tr></thead><tbody>`;
+
+				// ── Data rows ──
+				unique_results.forEach(r => {
+					if (!r.message || r.message.status !== "success") return;
+
+					let { revision_log, current, current_timestamp, project, project_count, item_name } = r.message;
+					let last = revision_log.length ? revision_log[revision_log.length - 1] : null;
+
+					fields.forEach((f, fi) => {
+						let last_val = last ? parseFloat(last[f] || 0) : null;
+						let curr_val = parseFloat(current[f] || 0);
+						let field_changed = last_val !== null && last_val !== curr_val;
+						let row_bg = field_changed ? "#fff8e1" : "#fff";
+
+						let row = `<tr style="background:${row_bg};">`;
+
+						// ── Project, Item, Count — sirf first field row mein ──
+						if (fi === 0) {
+							row += `
+								<td rowspan="${fields.length}" style="vertical-align:middle; font-weight:600; 
+									text-align:center; font-size:11px; color:#1F4E79;">
+									${project}
+								</td>
+								<td rowspan="${fields.length}" style="vertical-align:middle; font-size:11px;">
+									${item_name}
+								</td>
+								<td rowspan="${fields.length}" style="vertical-align:middle; text-align:center; 
+									font-weight:700; font-size:14px; color:#2F75B5;">
+									${project_count}
+								</td>
+							`;
+						}
+
+						// Field label
+						row += `<td style="font-weight:600; text-align:center;">${field_labels[f]}</td>`;
+
+						// Revision columns
+						for (let i = 0; i < max_revisions; i++) {
+							let rev = revision_log[i];
+							if (rev) {
+								let val = parseFloat(rev[f] || 0);
+								let prev_val = i > 0 ? parseFloat(revision_log[i - 1][f] || 0) : null;
+								let changed = prev_val !== null && prev_val !== val;
+								let style = changed ? "color:#e65c00; font-weight:bold;" : "color:#333;";
+								row += `
+									<td style="text-align:center; ${style}">
+										${val}
+										<br><small style="color:#888; font-size:10px;">${rev.timestamp || ""}</small>
+									</td>
+								`;
+							} else {
+								row += `<td style="text-align:center; color:#ccc;">-</td>`;
+							}
+						}
+
+						// Current value
+						let curr_changed = last_val !== null && last_val !== curr_val;
+						let curr_style = curr_changed
+							? "color:#1a7abf; font-weight:bold; background:#e8f4fd;"
+							: "color:#555;";
+
+						row += `
+                				<td style="text-align:center; ${curr_style}">
+							${curr_val}
+							<br><small style="color:#888; font-size:10px;">${current_timestamp}</small>
+							${curr_changed
+								? '<br><small style="color:green; font-weight:bold;">▲ Changed</small>'
+								: '<br><small style="color:#aaa;">No Change</small>'}
+								</td>
+						`;
+
+						row += `</tr>`;
+						html += row;
+					});
+
+					// Separator
+					html += `<tr style="background:#e8edf2; height:6px;">
+						<td colspan="${max_revisions + 4}" style="padding:0;"></td>
+					</tr>`;
+				});
+
+				html += `</tbody></table></div>`;
+
+				let export_data = unique_results.map(r => r.message);
+
+				frappe.call({
+					method: "fabtrk.fabtrk.report.ft_drawing_part_report_2.ft_drawing_part_report_2.export_compare_snapshot_excel",
+					args: {
+						snapshot_data: JSON.stringify(export_data)
+					},
+					callback: function (res) {
+						if (res.message) {
+							const link = document.createElement("a");
+							link.href = res.message;
+							link.download = "Compare_Snapshot.xlsx";
+							document.body.appendChild(link);
+							link.click();
+							document.body.removeChild(link);
+						}
+					}
+				});
+			});
+		});
+
 		setTimeout(() => {
 			frappe.query_report.refresh();
 		}, 100);
-
-
 	},
 
 	filters: [
@@ -52,8 +304,36 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 			fieldname: "project_number",
 			label: "Project Number",
 			fieldtype: "MultiSelectList",
+			// get_data: function (txt) {
+			// 	return frappe.db.get_link_options("FT Project", txt);
+			// },
 			get_data: function (txt) {
-				return frappe.db.get_link_options("FT Project", txt);
+				let is_active = frappe.query_report.get_filter_value("is_active");
+				let filters = [];
+
+				if (txt) {
+					filters.push(["name", "like", "%" + txt + "%"]);
+				}
+
+				if (is_active) {
+					filters.push(["is_active", "=", 1]);
+				}
+
+				return frappe.call({
+					method: "frappe.client.get_list",
+					args: {
+						doctype: "FT Project",
+						fields: ["name", "description"],
+						filters: filters,
+						limit_page_length: 0
+					}
+				}).then(r => {
+					return (r.message || []).map(d => ({
+						value: d.name,
+						label: d.name,
+						description: d.description || ""
+					}));
+				});
 			},
 			on_change() {
 				frappe.query_report.set_filter_value("drawing_number", []);
@@ -64,6 +344,7 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 			}
 		},
 
+		// ---------------- DRAWING ----------------
 		{
 			fieldname: "drawing_number",
 			label: "Drawing Number",
@@ -154,7 +435,6 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 				frappe.query_report.refresh();
 			}
 		},
-
 
 		// ---------------- ITEM ----------------
 		{
@@ -248,9 +528,6 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 						args: {
 							doctype: "FT Add Drawing",
 							fields: ["name"],
-							// filters: [
-							// 	["drawing_number", "in", drawings]
-							// ],
 							filters: [
 								["name", "in", drawings]
 							],
@@ -319,7 +596,7 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 			}
 		},
 
-		// ----------------- Section Type 
+		// ----------------- Section Type ----------------
 		{
 			fieldname: "stock_rm_type",
 			label: "Section Type",
@@ -348,7 +625,7 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 	],
 
 	after_datatable_render(report) {
-
+		// ── VIEW BUTTON CLICK ──
 		$(report.wrapper)
 			.off("click", ".view-btn")
 			.on("click", ".view-btn", function () {
@@ -394,7 +671,6 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 
 						r.message.data.forEach(d => {
 							// Skip backend Total row from calculation
-							// let is_total_row = String(d.drawing_number).toLowerCase().includes("total");
 							let is_total_row = String(d.project_number).toLowerCase().includes("total");
 
 							// Qty / Length / Width → 2 digit format
@@ -413,41 +689,6 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 								row_style = "background-color:#f8f9fa; font-weight:600;";
 								total_weight_style = "text-align:center; color:#000; font-weight:700; font-size:15px;";
 							}
-
-							// is_total_row check ke baad row build karte waqt:
-
-							// let action_buttons = "";
-
-							// if (!is_total_row) {
-							// 	action_buttons = `
-							// 			<td style="text-align:center;">
-							// 				<div style="display:flex; gap:6px; justify-content:center;">
-							// 					<button class="btn btn-xs btn-success row-import-btn"
-							// 						style="min-width:60px;"
-							// 						data-project="${d.project_number || ''}"
-							// 						data-drawing="${d.drawing_number || ''}"
-							// 						data-position="${d.position_no || ''}"
-							// 						data-part-no="${d.part_no || ''}"
-							// 						data-item="${item}">
-							// 						Import (show drawings)
-							// 					</button>
-							// 					<button class="btn btn-xs btn-warning row-export-btn"
-							// 						style="min-width:60px;"
-							// 						data-project="${d.project_number || ''}"
-							// 						data-drawing="${d.drawing_number || ''}"
-							// 						data-position="${d.position_no || ''}"
-							// 						data-part-no="${d.part_no || ''}"
-							// 						data-item="${item}">
-							// 						Export DXF/DWG
-							// 					</button>
-							// 				</div>
-							// 			</td>
-							// 		`;
-							// } else {
-							// 	action_buttons = `<td></td>`;
-							// }
-							// ${action_buttons}
-							// <th style="text-align: center;">Actions</th>
 
 							rows += `
 								<tr style="${row_style}">
@@ -479,9 +720,16 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 								style="margin-top:20px; padding:20px; border:1px solid #ddd;">
 								<div style="display:flex;justify-content:space-between;align-items:center;">
 									<h4>Item Details - ${r.message.item_name}</h4>
-									<div style="display:flex; gap:20px;">
-										<button class="btn btn-xs btn-primary nesting-export">
-											Nesting data export
+									<div style="display:flex; gap:20px;">	
+																			
+										<button class="btn btn-xs btn-primary nesting-export nesting-export-1d" >
+											1D Nesting data export
+										</button>
+										<button class="btn btn-xs btn-primary nesting-export nesting-export-2d"
+											data-item="${item}"
+											data-project="${project}"
+											data-mode="2d">
+											2D Nesting data export
 										</button>
 										<!-- ✅ UPDATED: Nesting Report button with class + data attrs -->
 										<button class="btn btn-xs btn-primary nesting-report-btn"
@@ -529,7 +777,8 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 					}
 				});
 			});
-		// Dynamic button click
+
+		//Excel Dynamic button click 
 		$(document).off("click", ".summary-download")
 			.on("click", ".summary-download", function () {
 
@@ -540,7 +789,6 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 					item: item_name,
 					project: project_name
 				};
-
 				let url = "/api/method/fabtrk.fabtrk.report.ft_drawing_part_report_2.ft_drawing_part_report_2.download_item_details_excel"
 					+ "?filters=" + encodeURIComponent(JSON.stringify(filters));
 
@@ -548,85 +796,41 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 				window.location.href = url;
 			});
 
-		// ===============================
-		// Export DXF Button Click
-		// ===============================
-
-		$(document).off("click", ".nesting-export")
-			.on("click", ".nesting-export", function () {
-
-				let item_name = $(".summary-download").data("item");
-				let project_name = $(".summary-download").data("project");
-
+		// Nesting data export button click handler	
+			// ── 1D Nesting Export ──
+		$(document).off("click", ".nesting-export-1d")
+			.on("click", ".nesting-export-1d", function () {
 				let filters = {
-					item: item_name,
-					project: project_name
+					item: $(".summary-download").data("item"),
+					project: $(".summary-download").data("project"),
+					mode: "1d"
 				};
-
 				let url = "/api/method/fabtrk.fabtrk.report.ft_drawing_part_report_2.ft_drawing_part_report_2.export_nesting_json"
 					+ "?filters=" + encodeURIComponent(JSON.stringify(filters));
-
 				window.location.href = url;
-
 			});
 
-		// ================================================================
-		// ✅ NEW: Nesting Report button click handler
-		// ================================================================
+			// ── 2D Nesting Export ──
+		$(document).off("click", ".nesting-export-2d")
+			.on("click", ".nesting-export-2d", function () {
+				let filters = {
+					item: $(".summary-download").data("item"),
+					project: $(".summary-download").data("project"),
+					mode: "2d"
+				};
+				let url = "/api/method/fabtrk.fabtrk.report.ft_drawing_part_report_2.ft_drawing_part_report_2.export_nesting_json"
+					+ "?filters=" + encodeURIComponent(JSON.stringify(filters));
+				window.location.href = url;
+			});
+
+		// Nesting Report button click handler
 		$(document).off("click", ".nesting-report-btn")
 			.on("click", ".nesting-report-btn", function () {
-				let item_name     = $(this).data("item");
-				let project_name  = $(this).data("project");
-				let display_name  = $(this).data("item-name") || item_name;
+				let item_name = $(this).data("item");
+				let project_name = $(this).data("project");
+				let display_name = $(this).data("item-name") || item_name;
 				show_nesting_report_modal(item_name, project_name, display_name);
 			});
-
-		// $(document).off("click", ".row-export-btn")
-		// 	.on("click", ".row-export-btn", function () {
-
-		// 		let project = $(this).data("project");
-		// 		let drawing = $(this).data("drawing");
-		// 		let position = $(this).data("position");
-		// 		let item = $(this).data("item");   // FIX
-
-		// 		let row = $(this).closest("tr");
-
-		// 		let length = row.find("td").eq(8).text().trim();
-		// 		let width = row.find("td").eq(9).text().trim();
-
-		// 		frappe.call({
-		// 			method: "fabtrk.api.api.export_dxf",
-		// 			args: {
-		// 				project: project,
-		// 				drawing: drawing,
-		// 				position: position,
-		// 				length: length,
-		// 				width: width,
-		// 				item: item
-		// 			},
-		// 			callback: function (r) {
-
-		// 				if (r.message) {
-
-		// 					frappe.show_alert({
-		// 						message: "DXF Generated",
-		// 						indicator: "green"
-		// 					});
-
-		// 					window.open(r.message);
-
-		// 				} else {
-
-		// 					frappe.show_alert({
-		// 						message: "DXF Generation Failed",
-		// 						indicator: "red"
-		// 					});
-
-		// 				}
-		// 			}
-		// 		});
-
-		// 	});
 
 		setTimeout(() => {
 
@@ -654,8 +858,7 @@ function clear_item_details() {
 	$("#item-detail-container").remove();
 	$(".view-btn").removeClass("active-detail");
 }
-
-// download current item details in Excel
+// EXCEL download current item details in Excel
 function download_item_details(item_name, project_name) {
 
 	let filters = {
@@ -673,8 +876,7 @@ function download_item_details(item_name, project_name) {
 	link.click();
 	document.body.removeChild(link);
 }
-
-// download full report both summary and detail tables in Excel with two defferent sheet for detail and summary
+// EXCEL download full report both summary and detail tables in Excel with two defferent sheet for detail and summary
 function download_full_report(report) {
 	if (!report.data || !report.data.length) {
 		frappe.msgprint("No data to export");
@@ -755,19 +957,15 @@ function download_full_report(report) {
 
 	XLSX.writeFile(wb, "FT_Drawing_Part_Report.xlsx");
 }
-
 if (!window.XLSX) {
 	let script = document.createElement("script");
 	script.src = "https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js";
 	document.head.appendChild(script);
 }
 
+/**************************************************************** */
 
-
-// ================================================================
-// ✅ NEW FUNCTION: Nesting Report Modal
-// "Nesting Report" button click karne par ye open hota hai
-// ================================================================
+// NEW FUNCTION: Nesting Report Modal
 function show_nesting_report_modal(item, project, item_display_name) {
  
 	$("#nesting-report-modal-overlay").remove();
@@ -842,18 +1040,6 @@ function show_nesting_report_modal(item, project, item_display_name) {
 						<div style="font-size:11px; color:#666; margin-bottom:4px; text-transform:uppercase; letter-spacing:.5px;">Scrap</div>
 						<div id="stat-scrap" style="font-size:28px; font-weight:800; color:#e63946;">—</div>
 					</div>
-					<div style="background:#fdf3e8; border-radius:8px; padding:14px; text-align:center;">
-						<div style="font-size:11px; color:#666; margin-bottom:4px; text-transform:uppercase; letter-spacing:.5px;">Sheets Area</div>
-						<div id="stat-sheets-area" style="font-size:22px; font-weight:700; color:#f4a261;">—</div>
-					</div>
-					<div style="background:#f3e8fd; border-radius:8px; padding:14px; text-align:center;">
-						<div style="font-size:11px; color:#666; margin-bottom:4px; text-transform:uppercase; letter-spacing:.5px;">Nested Mass</div>
-						<div id="stat-nested-mass" style="font-size:22px; font-weight:700; color:#9b5de5;">—</div>
-					</div>
-					<div style="background:#e8fdf9; border-radius:8px; padding:14px; text-align:center;">
-						<div style="font-size:11px; color:#666; margin-bottom:4px; text-transform:uppercase; letter-spacing:.5px;">Result Time</div>
-						<div id="stat-result-time" style="font-size:22px; font-weight:700; color:#0d9488;">—</div>
-					</div>
 				</div>
  
 				<!-- Per-Sheet Breakdown Table -->
@@ -894,18 +1080,6 @@ function show_nesting_report_modal(item, project, item_display_name) {
 						<label style="font-size:12px; color:#555; display:block; margin-bottom:3px;">Scrap %</label>
 						<input type="text" id="manual-scrap" class="form-control form-control-sm" placeholder="17.51%">
 					</div>
-					<div>
-						<label style="font-size:12px; color:#555; display:block; margin-bottom:3px;">Sheets Area</label>
-						<input type="text" id="manual-sheets-area" class="form-control form-control-sm" placeholder="3.6 m²">
-					</div>
-					<div>
-						<label style="font-size:12px; color:#555; display:block; margin-bottom:3px;">Nested Mass %</label>
-						<input type="text" id="manual-nested-mass" class="form-control form-control-sm" placeholder="35.75%">
-					</div>
-					<div>
-						<label style="font-size:12px; color:#555; display:block; margin-bottom:3px;">Result Time</label>
-						<input type="text" id="manual-result-time" class="form-control form-control-sm" placeholder="0.1s">
-					</div>
 				</div>
 				<button id="apply-manual-stats" style="
 					margin-top:12px; background:#f59e0b; color:#fff; border:none;
@@ -945,11 +1119,41 @@ function show_nesting_report_modal(item, project, item_display_name) {
 			</div>
  
 			<!-- Toggle Manual -->
-			<div style="text-align:center;">
+			<div style="text-align:center; margin-bottom:14px;">
 				<button id="toggle-manual-entry" style="
 					background:none; border:1px dashed #aaa; color:#888;
 					border-radius:4px; padding:4px 14px; cursor:pointer; font-size:12px;">
 					✏️ JSON nahi hai? Manually enter karo
+				</button>
+			</div>
+ 
+			<!-- Previously Saved Data Banner -->
+			<div id="saved-data-banner" style="display:none;
+				background:#e8f5e9; border:1px solid #66bb6a;
+				border-radius:8px; padding:12px 16px; margin-bottom:14px;">
+				<p style="font-weight:700; color:#2e7d32; margin-bottom:6px; font-size:13px;">
+					💾 Pehle se Saved Nesting Report:
+				</p>
+				<div style="display:flex; gap:24px; flex-wrap:wrap; margin-bottom:8px;">
+					<span style="font-size:13px;">📋 <b>Sheets:</b> <span id="saved-stat-sheets">—</span></span>
+					<span style="font-size:13px;">🔧 <b>Nested Parts:</b> <span id="saved-stat-nested-parts">—</span></span>
+					<span style="font-size:13px;">🗑️ <b>Scrap:</b> <span id="saved-stat-scrap">—</span></span>
+				</div>
+				<div id="saved-pdf-link-area" style="display:none;">
+					<a id="saved-pdf-link" href="#" target="_blank" style="
+						color:#1565c0; font-size:13px; font-weight:600; text-decoration:underline;">
+						📄 Saved PDF Report dekho / download karo
+					</a>
+				</div>
+			</div>
+ 
+			<!-- Save Button -->
+			<div style="display:flex; justify-content:flex-end; gap:10px;">
+				<button id="save-nesting-report" style="
+					background:#2e7d32; color:#fff; border:none; border-radius:6px;
+					padding:9px 24px; cursor:pointer; font-size:14px; font-weight:700;
+					box-shadow: 0 2px 6px rgba(46,125,50,0.4);">
+					💾 Save Report
 				</button>
 			</div>
 		</div>
@@ -997,9 +1201,6 @@ function show_nesting_report_modal(item, project, item_display_name) {
 		$("#stat-sheets").text($("#manual-sheets").val() || "—");
 		$("#stat-nested-parts").text($("#manual-nested-parts").val() || "—");
 		$("#stat-scrap").text($("#manual-scrap").val() || "—");
-		$("#stat-sheets-area").text($("#manual-sheets-area").val() || "—");
-		$("#stat-nested-mass").text($("#manual-nested-mass").val() || "—");
-		$("#stat-result-time").text($("#manual-result-time").val() || "—");
 		$("#nesting-stats-area").show();
 		$("#manual-stats-area").hide();
 		frappe.show_alert({ message: "Stats apply ho gaye!", indicator: "green" });
@@ -1013,19 +1214,142 @@ function show_nesting_report_modal(item, project, item_display_name) {
 		$("#nesting-pdf-frame").attr("src", url);
 		$("#pdf-download-link").attr("href", url);
 		$("#pdf-viewer-area").show();
-		frappe.show_alert({ message: "PDF load ho gaya!", indicator: "green" });
+		frappe.show_alert({ message: "PDF save!", indicator: "green" });
+	});
+ 
+	// ================================================================
+	// ✅ LOAD: Modal open hone par pehle se saved data load karo
+	// ================================================================
+	frappe.call({
+		method: "fabtrk.fabtrk.report.ft_drawing_part_report_2.ft_drawing_part_report_2.get_nesting_report",
+		args: { item: item, project: project },
+		callback: function (r) {
+			if (r.message && r.message.found) {
+				let d = r.message;
+ 
+				// Stats cards fill karo (previously saved)
+				$("#stat-sheets").text(d.sheets || "—");
+				$("#stat-nested-parts").text(d.nested_parts || "—");
+				$("#stat-scrap").text(d.scrap || "—");
+				$("#nesting-stats-area").show();
+ 
+				// Saved banner show karo
+				$("#saved-stat-sheets").text(d.sheets || "—");
+				$("#saved-stat-nested-parts").text(d.nested_parts || "—");
+				$("#saved-stat-scrap").text(d.scrap || "—");
+ 
+				if (d.pdf_url) {
+					$("#saved-pdf-link").attr("href", d.pdf_url);
+					$("#saved-pdf-link-area").show();
+ 
+					// PDF iframe mein bhi load karo
+					$("#nesting-pdf-frame").attr("src", d.pdf_url);
+					$("#pdf-download-link").attr("href", d.pdf_url);
+					$("#pdf-viewer-area").show();
+				}
+ 
+				$("#saved-data-banner").show();
+			}
+		}
+	});
+ 
+	// ================================================================
+	// ✅ SAVE: Stats + PDF Frappe server pe save karo
+	// ================================================================
+	$("#save-nesting-report").on("click", function () {
+ 
+		let sheets       = $("#stat-sheets").text().trim();
+		let nested_parts = $("#stat-nested-parts").text().trim();
+		let scrap        = $("#stat-scrap").text().trim();
+ 
+		if (sheets === "—" && nested_parts === "—" && scrap === "—") {
+			frappe.msgprint("Pehle stats enter ya parse karo, phir save karo!");
+			return;
+		}
+ 
+		let pdf_file = document.getElementById("nesting-pdf-upload").files[0];
+ 
+		let save_btn = document.getElementById("save-nesting-report");
+		save_btn.disabled = true;
+		save_btn.textContent = "⏳ Saving...";
+ 
+		// ---- PDF hai toh pehle upload karo ----
+		if (pdf_file) {
+			let form_data = new FormData();
+			form_data.append("file", pdf_file, pdf_file.name);
+			form_data.append("is_private", 0);
+			form_data.append("doctype",    "FT Stock RM List");
+			form_data.append("docname",    item);
+			form_data.append("fieldname",  "nesting_pdf");
+ 
+			fetch("/api/method/upload_file", {
+				method: "POST",
+				headers: { "X-Frappe-CSRF-Token": frappe.csrf_token },
+				body: form_data
+			})
+			.then(res => res.json())
+			.then(res => {
+				let pdf_url = res.message ? res.message.file_url : null;
+				save_nesting_stats_to_backend(item, project, sheets, nested_parts, scrap, pdf_url, save_btn);
+			})
+			.catch(err => {
+				console.error("PDF upload error:", err);
+				// PDF upload fail ho toh bhi stats save karo (without PDF)
+				save_nesting_stats_to_backend(item, project, sheets, nested_parts, scrap, null, save_btn);
+			});
+ 
+		} else {
+			// PDF nahi hai — sirf stats save karo
+			save_nesting_stats_to_backend(item, project, sheets, nested_parts, scrap, null, save_btn);
+		}
 	});
 }
+// HELPER: Stats ko Frappe backend mein save karo
+function save_nesting_stats_to_backend(item, project, sheets, nested_parts, scrap, pdf_url, save_btn) {
+	frappe.call({
+		method: "fabtrk.fabtrk.report.ft_drawing_part_report_2.ft_drawing_part_report_2.save_nesting_report",
+		args: {
+			item:         item,
+			project:      project,
+			sheets:       sheets,
+			nested_parts: nested_parts,
+			scrap:        scrap,
+			pdf_url:      pdf_url || ""
+		},
+		callback: function (r) {
+			save_btn.disabled    = false;
+			save_btn.textContent = "💾 Save Report";
  
+			if (r.message && r.message.success) {
+				frappe.show_alert({ message: "✅ Nesting Report save!", indicator: "green" });
  
-// ================================================================
-// ✅ NEW FUNCTION: Nesting Center result JSON parser
-//    Multiple output formats handle karta hai
-// ================================================================
+				// Banner update karo
+				$("#saved-stat-sheets").text(sheets);
+				$("#saved-stat-nested-parts").text(nested_parts);
+				$("#saved-stat-scrap").text(scrap);
+ 
+				if (pdf_url) {
+					$("#saved-pdf-link").attr("href", pdf_url);
+					$("#saved-pdf-link-area").show();
+				}
+ 
+				$("#saved-data-banner").show();
+			} else {
+				// frappe.msgprint("Save karne mein error aaya. Console check karo.");
+				return;
+			}
+		},
+		error: function () {
+			save_btn.disabled    = false;
+			save_btn.textContent = "💾 Save Report";
+			frappe.msgprint("Server error. Python method check karo.");
+		}
+	});
+}  
+// NEW FUNCTION: Nesting Center result JSON parser multiple output formats handle karta hai
 function parse_nesting_result_json(json) {
  
 	let sheets = "—", nested_parts = "—", scrap = "—";
-	let sheets_area = "—", nested_mass = "—", result_time = "—";
 	let layouts = [];
  
 	// Format 1: { Result: { Sheets, NestedParts, TotalParts, Scrap, ... } }
@@ -1035,10 +1359,7 @@ function parse_nesting_result_json(json) {
 		let np_done  = r.NestedParts   || r.nested_parts  || r.PartsNested  || 0;
 		let np_total = r.TotalParts    || r.total_parts   || r.Parts        || 0;
 		nested_parts = np_total ? `${np_done} / ${np_total}` : String(np_done);
-		scrap        = r.Scrap         !== undefined ? `${parseFloat(r.Scrap).toFixed(2)}%`        : "—";
-		sheets_area  = r.SheetsArea    !== undefined ? `${r.SheetsArea} m²`                        : "—";
-		nested_mass  = r.NestedMass    !== undefined ? `${parseFloat(r.NestedMass).toFixed(2)}%`   : "—";
-		result_time  = r.ResultTime    !== undefined ? `${r.ResultTime}s`                          : "—";
+		scrap        = r.Scrap         !== undefined ? `${parseFloat(r.Scrap).toFixed(2)}%` : "—";
 		layouts      = r.Layouts || r.layouts || [];
 	}
 	// Format 2: Flat { Sheets, NestedParts, ... }
@@ -1047,10 +1368,7 @@ function parse_nesting_result_json(json) {
 		let np_done  = json.NestedParts  || json.nested_parts || 0;
 		let np_total = json.TotalParts   || json.total_parts  || 0;
 		nested_parts = np_total ? `${np_done} / ${np_total}` : String(np_done);
-		scrap        = json.Scrap        !== undefined ? `${parseFloat(json.Scrap).toFixed(2)}%`       : "—";
-		sheets_area  = json.SheetsArea   !== undefined ? `${json.SheetsArea} m²`                       : "—";
-		nested_mass  = json.NestedMass   !== undefined ? `${parseFloat(json.NestedMass).toFixed(2)}%`  : "—";
-		result_time  = json.ResultTime   !== undefined ? `${json.ResultTime}s`                         : "—";
+		scrap        = json.Scrap        !== undefined ? `${parseFloat(json.Scrap).toFixed(2)}%` : "—";
 		layouts      = json.Layouts || json.layouts || [];
 	}
 	// Format 3: { Solution: { ... } }
@@ -1061,7 +1379,7 @@ function parse_nesting_result_json(json) {
 		layouts      = s.Layouts || s.Sheets_list || [];
 	}
 	else {
-		frappe.msgprint("JSON format pehchana nahi gaya. Manually enter karo.");
+		// frappe.msgprint("JSON format pehchana nahi gaya. Manually enter karo.");
 		$("#manual-stats-area").show();
 		return;
 	}
@@ -1070,9 +1388,6 @@ function parse_nesting_result_json(json) {
 	$("#stat-sheets").text(sheets);
 	$("#stat-nested-parts").text(nested_parts);
 	$("#stat-scrap").text(scrap);
-	$("#stat-sheets-area").text(sheets_area);
-	$("#stat-nested-mass").text(nested_mass);
-	$("#stat-result-time").text(result_time);
 	$("#nesting-stats-area").show();
  
 	// Per-sheet breakdown
@@ -1101,6 +1416,10 @@ function parse_nesting_result_json(json) {
 	frappe.show_alert({ message: "Nesting results parse ho gaye!", indicator: "green" });
 }
 
+/**************************************************************** */
+
+
+
 $(`<style>
 
 .datatable .dt-scrollable {
@@ -1117,80 +1436,79 @@ $(`<style>
 }
 	
 .report-summary .summary-item{
-		max-width: 100%;
-		min-width: 100%;
-		height: 100%;
-		display: block;
-		place-content: unset;
-		margin: 0;
-	}
+	max-width: 100%;
+	min-width: 100%;
+	height: 100%;
+	display: block;
+	place-content: unset;
+	margin: 0;
+}
+.summary-container{
+	display: grid;
+	grid-template-columns: repeat(1, 1fr) !important;
+	gap: 20px;
+}
+@media (min-width: 768px) and (max-width: 1023px) {
 	.summary-container{
-		display: grid;
-		grid-template-columns: repeat(1, 1fr) !important;
-		// place-items: center;
-		gap: 20px;
+		grid-template-columns: repeat(2, 1fr) !important;
 	}
-	@media (min-width: 768px) and (max-width: 1023px) {
-		.summary-container{
-			grid-template-columns: repeat(2, 1fr) !important;
-		}
+}
+@media (min-width: 1024px) {
+	.summary-container{
+		grid-template-columns: repeat(5, 1fr) !important;
 	}
-	@media (min-width: 1024px) {
-		.summary-container{
-			grid-template-columns: repeat(5, 1fr) !important;
-		}
-	}
-	.report-summary .summary-value .summary-container {
-		padding: 20px;
-	}
-	.summary-section{
-		width: 100%;
-		background: #fff;
-		padding: 20px;
-		border-radius: 10px;
-		text-align: center;
-		transition: all 0.2s ease;
-		border: 2px solid #eef0f4;
-	}
-	.section-content-count p{
-		font-size: 14px;
-		font-weight: 400;
-		color: #525252;
-	}
-	.section-content-count span{
-		font-size: 16px;
-		font-weight: 600;
-		line-height: 20px;
-		padding-top: 12px;
-		padding-bottom: 5px;
-		color: #000;
-	}
-	.report-summary {
-		background-color: none;
-		border-radius: 0;
-		border-bottom: 0;
-		margin: 0;
-		padding: 0;
-		display: block;
-		flex-wrap: unset;
-		align-items: unset;
-		justify-content: unset;
-		gap: 0px;
-	}
-	.table{
-		width: 100% !important;
-	}
-	/* button view active color*/
-	.view-btn.active-detail {
-		background-color: #0c5c70 !important;
-		color: #fff !important;
-		border-color: #0c5c70  !important;
-		box-shadow: 0 0 0 2px rgba(21, 54, 102, 0.25);
-	}
+}
+.report-summary .summary-value .summary-container {
+	padding: 20px;
+}
+.summary-section{
+	width: 100%;
+	background: #fff;
+	padding: 20px;
+	border-radius: 10px;
+	text-align: center;
+	transition: all 0.2s ease;
+	border: 2px solid #eef0f4;
+}
+.section-content-count p{
+	font-size: 14px;
+	font-weight: 400;
+	color: #525252;
+}
+.section-content-count span{
+	font-size: 16px;
+	font-weight: 600;
+	line-height: 20px;
+	padding-top: 12px;
+	padding-bottom: 5px;
+	color: #000;
+}
+.report-summary {
+	background-color: none;
+	border-radius: 0;
+	border-bottom: 0;
+	margin: 0;
+	padding: 0;
+	display: block;
+	flex-wrap: unset;
+	align-items: unset;
+	justify-content: unset;
+	gap: 0px;
+}
+.table{
+	width: 100% !important;
+}
+
+/* button view active color*/
+.view-btn.active-detail {
+	background-color: #0c5c70 !important;
+	color: #fff !important;
+	border-color: #0c5c70  !important;
+	box-shadow: 0 0 0 2px rgba(21, 54, 102, 0.25);
+}
 
 
 /* ===== FIX ROW NUMBER COLUMN ===== */
-
 .datatable .dt-cell--col-0 {
     min-width: 50px !important;
     width: 50px !important;
@@ -1205,4 +1523,6 @@ $(`<style>
 	padding: 0 !important;
 }
 </style>`).appendTo("head");
+
+
 
