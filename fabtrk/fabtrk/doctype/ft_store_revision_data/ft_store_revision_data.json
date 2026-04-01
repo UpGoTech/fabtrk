@@ -7,6 +7,7 @@
  "field_order": [
   "sr_no",
   "project_number",
+  "drawing_number",
   "item",
   "total_entries",
   "total_qty",
@@ -60,11 +61,16 @@
    "fieldname": "revision_log",
    "fieldtype": "Long Text",
    "label": "Revision Log"
+  },
+  {
+   "fieldname": "drawing_number",
+   "fieldtype": "Data",
+   "label": "Drawing Number"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-14 18:07:00.473751",
+ "modified": "2026-03-31 13:32:05.714086",
  "modified_by": "Administrator",
  "module": "Fabtrk",
  "name": "FT Store Revision Data",
