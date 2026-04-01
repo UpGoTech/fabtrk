@@ -39,3 +39,4 @@ function calculate_total_weight(frm) {
 
     frm.set_value("total_weight", unit_weight * required_qty);
 }
+

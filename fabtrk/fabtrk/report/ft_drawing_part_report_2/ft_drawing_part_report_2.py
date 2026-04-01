@@ -7,12 +7,13 @@ def execute(filters=None):
     columns = [
         {"label": "Project", "fieldname": "project_name", "fieldtype": "Link", "options": "FT Project", "width": 90},
         {"label": "Item", "fieldname": "item_name", "width": 350},
+        {"label": "PO No",         "fieldname": "po_no",        "fieldtype": "Int",   "width": 80,  "align": "center"},
         {"label": "Total Entries", "fieldname": "item_count", "fieldtype": "Int", "width": 110, "align": "center"},
         {"label": "Total Qty", "fieldname": "quantity", "fieldtype": "Int", "width": 85, "align": "center"},
         {"label": "Total Length", "fieldname": "lenght", "fieldtype": "Float", "width": 110, "align": "center"},
         {"label": "Total Width", "fieldname": "width", "fieldtype": "Float", "width": 110, "align": "center"},
         {"label": "Total Weight", "fieldname": "total_weight", "fieldtype": "Float", "width": 110, "align": "center"},
-        {"label": "Details", "fieldname": "view", "fieldtype": "HTML", "width": 200, "align": "center"},
+        {"label": "Details", "fieldname": "view", "fieldtype": "HTML", "width": 140, "align": "center"},
     ]
  
            
@@ -27,7 +28,12 @@ def execute(filters=None):
     if filters.get("drawing_number"):
         conditions += " AND ad.name IN %(drawing_number)s"
         values["drawing_number"] = tuple(filters.get("drawing_number"))
-
+ 
+    # po_no filter — directly FT Drawing Parts ke dp.po_no se
+    if filters.get("po_no"):
+        conditions += " AND dp.po_no IN %(po_no)s"
+        values["po_no"] = tuple(int(p) for p in filters.get("po_no"))
+    
     if filters.get("item"):
         conditions += " AND dp.item_id IN %(item)s"
         values["item"] = tuple(filters.get("item"))
@@ -45,6 +51,7 @@ def execute(filters=None):
         p.name AS project_name,
         dp.item_id AS item_id,
         rm.computed_name AS item_name,
+        dp.po_no AS po_no,
         COALESCE(CAST(st.sort_key AS UNSIGNED), 9999) AS sort_key,        
         CAST(REGEXP_SUBSTR(rm.computed_name, '[0-9]+') AS UNSIGNED) AS item_sort,        
         COUNT(dp.name) AS item_count,
@@ -59,7 +66,7 @@ def execute(filters=None):
     LEFT JOIN `tabFT Section Type` st ON st.name = rm.stock_rm_type
     WHERE 1=1
         {conditions}
-    GROUP BY p.name, dp.item_id, rm.computed_name, st.sort_key
+    GROUP BY p.name, dp.item_id, rm.computed_name, dp.po_no, st.sort_key
     HAVING 
         dp.item_id IS NOT NULL
         OR (
@@ -71,7 +78,7 @@ def execute(filters=None):
                 WHERE ad2.project_number = p.name
             )
         )
-    ORDER BY p.name, sort_key ASC,item_sort ASC
+    ORDER BY p.name, sort_key ASC,item_sort ASC, dp.po_no ASC
     """
 
     data = frappe.db.sql(query, values, as_dict=True) or []
@@ -89,13 +96,14 @@ def execute(filters=None):
                 ON ad.project_number = p.name
             WHERE ad.name IN %(drawing_number)s
         """, {
-            "drawing_number": tuple(filters.get("drawing_number"))
+            "drawing_number": tuple(filters.get("drawing_number")) 
         }, as_dict=True)
 
         for proj in blank_projects:
             data.append({
                 "project_name": proj.name,
                 "item_name": "-",
+                "po_no": "",
                 "item_count": 0,
                 "quantity": 0,
                 "lenght": 0,
@@ -111,6 +119,7 @@ def execute(filters=None):
         row["width"] = row.get("width") or 0
         row["total_weight"] = row.get("total_weight") or 0
         row["item_name"] = row.get("item_name") or "-"
+        row["po_no"]        = row.get("po_no") or ""
         row["view"] = f"""
             <div class="d-grid gap-2 col-6 mx-auto">
                 <button class="btn btn-xs btn-info view-btn"
@@ -194,15 +203,52 @@ def execute(filters=None):
     po_summary = frappe.db.sql(f"""
         SELECT
             COUNT(pod.name) as total_line_items,
+            SUM(COALESCE(pod.required_qty, 0)) as total_required_qty,
             SUM(COALESCE(pod.total_weight,0)) as total_weight
         FROM `tabFT Po Drawing` pod
         WHERE 1=1 {po_conditions}
     """, po_values, as_dict=True)
 
     total_po_drawings = po_summary[0]["total_line_items"] or 0
+    total_required_qty_po = po_summary[0]["total_required_qty"] or 0 
     total_weight_po_items = po_summary[0]["total_weight"] or 0
 
     drawing_balance_for_customer = (project_total_weight or 0) - total_weight_po_items
+    
+    
+    
+    # ── PO Number Count & Weight (FT Drawing Parts se unique po_no) ──
+    po_count_conditions = "WHERE dp.po_no IS NOT NULL AND dp.po_no != 0"
+    po_count_values = {}
+
+    if filters.get("project_number"):
+        po_count_conditions += " AND p.name IN %(project_number)s"
+        po_count_values["project_number"] = tuple(filters.get("project_number"))
+
+    if filters.get("drawing_number"):
+        po_count_conditions += " AND ad.name IN %(drawing_number)s"
+        po_count_values["drawing_number"] = tuple(filters.get("drawing_number"))
+
+    if filters.get("po_no"):
+        po_count_conditions += " AND dp.po_no IN %(po_no)s"
+        po_count_values["po_no"] = tuple(int(p) for p in filters.get("po_no"))
+
+    if filters.get("is_active"):
+        po_count_conditions += " AND p.is_active = 1"
+
+    po_no_summary = frappe.db.sql(f"""
+        SELECT
+            COUNT(DISTINCT dp.po_no) AS total_po_count,
+            SUM(COALESCE(dp.total_weight, 0)) AS total_po_weight
+        FROM `tabFT Drawing Parts` dp
+        LEFT JOIN `tabFT Add Drawing` ad ON ad.name = dp.drawing_number
+        LEFT JOIN `tabFT Project` p ON p.name = ad.project_number
+        {po_count_conditions}
+    """, po_count_values, as_dict=True)
+
+    total_po_count  = po_no_summary[0]["total_po_count"]  or 0
+    total_po_weight = po_no_summary[0]["total_po_weight"] or 0
+    formatted_total_po_weight = "{:,.3f}".format(total_po_weight)
 
     # ---------------- FORMAT ----------------
     formatted_project_total_weight = "{:,.3f}".format(project_total_weight)
@@ -232,11 +278,26 @@ def execute(filters=None):
                         <span>{total_po_drawings}</span>
                     </div>
                     <div class="section-content-count">
+                        <p>Total Required Qty<br>As per Po Drawing</p>
+                        <span>{int(total_required_qty_po)}</span>
+                    </div>
+                    <div class="section-content-count">
                         <p>Total Weight of Line Items<br>Assign to Project(Kg)</p>
                         <span>{formatted_total_weight_po_items}</span>
                     </div>
                 </div>
 
+                 <div class="summary-section">
+                    <div class="section-content-count">
+                        <p>Total PO Numbers</p>
+                        <span>{total_po_count}</span>
+                    </div>
+                    <div class="section-content-count">
+                        <p>Total Weight as per PO (Kg)</p>
+                        <span>{formatted_total_po_weight}</span>
+                    </div>
+                </div>
+                
                 <div class="summary-section">
                     <div class="section-content-count">
                         <p>Total No of Drawings</p>
@@ -279,8 +340,10 @@ def execute(filters=None):
         grand_total_width = sum(float(d.get("width") or 0) for d in data)
     
         data.append({
+            "sr_no":   None,
             "project_name": "TOTAL",
             "item_name": "",
+            "po_no":        None,
             "item_count": grand_total_entries,
             "quantity": grand_total_qty,
             "lenght": grand_total_length,
@@ -292,8 +355,69 @@ def execute(filters=None):
 
     return columns, data, None, None, report_summary  
 
-# 10 ---------------- ITEM DETAILS ----------------
-# Details button click hone par call hota hai, Ek specific project + item ka detail data deta hai, Drawing Parts → Add Drawing → Project → Po Drawing join, Same rows ko group karta hai (duplicate avoid), Total row bhi add karta hai end mein
+
+# ──────────────────────────────────────────────
+# PO Number dropdown ke liye whitelist method
+# FT Drawing Parts ke dp.po_no field se unique values
+# ──────────────────────────────────────────────
+@frappe.whitelist()
+def get_po_numbers(txt="", drawings=None, projects=None, is_active=0):
+    import json
+
+    if isinstance(drawings, str):
+        try: drawings = json.loads(drawings)
+        except: drawings = []
+    if isinstance(projects, str):
+        try: projects = json.loads(projects)
+        except: projects = []
+
+    drawings  = drawings or []
+    projects  = projects or []
+    is_active = int(is_active or 0)
+
+    conditions = "WHERE dp.po_no IS NOT NULL AND dp.po_no != 0"
+    values = {}
+
+    if drawings:
+        # Drawing selected — sirf unke po_no
+        conditions += " AND dp.drawing_number IN %(drawings)s"
+        values["drawings"] = tuple(drawings)
+
+    elif projects:
+        # Project selected — unke drawings ke po_no
+        conditions += """
+            AND dp.drawing_number IN (
+                SELECT name FROM `tabFT Add Drawing`
+                WHERE project_number IN %(projects)s
+            )
+        """
+        values["projects"] = tuple(projects)
+
+    elif is_active:
+        # Only is_active — active projects ke drawings ke po_no
+        conditions += """
+            AND dp.drawing_number IN (
+                SELECT ad.name FROM `tabFT Add Drawing` ad
+                INNER JOIN `tabFT Project` p ON p.name = ad.project_number
+                WHERE p.is_active = 1
+            )
+        """
+
+    if txt:
+        conditions += " AND CAST(dp.po_no AS CHAR) LIKE %(txt)s"
+        values["txt"] = f"%{txt}%"
+
+    rows = frappe.db.sql(f"""
+        SELECT DISTINCT dp.po_no
+        FROM `tabFT Drawing Parts` dp
+        {conditions}
+        ORDER BY dp.po_no ASC
+    """, values, as_list=True)
+
+    return [str(r[0]) for r in rows if r[0]]
+
+
+# 10 ---------------- ITEM DETAILS Button----------------
 @frappe.whitelist()
 def get_item_details(project, item, drawing_numbers=None):
     from collections import defaultdict
@@ -600,6 +724,7 @@ def download_item_excel(filters):
     frappe.response["filename"] = "Summary_Report.xlsx"
     frappe.response["filecontent"] = file_stream.getvalue()
     frappe.response["type"] = "binary"
+
 
 #12 three sheet Excel
 @frappe.whitelist()
@@ -1297,8 +1422,7 @@ def download_item_details_excel(filters):
 def export_nesting_json(filters=None):
     import json
     import random
-
-    # ---------- RANDOM COLOR ----------
+    # ---------- RANDOM COLOR FUNCTION ----------
     def get_random_color():
         return "#{:06x}".format(random.randint(0, 0xFFFFFF))
 
@@ -1308,7 +1432,14 @@ def export_nesting_json(filters=None):
     item     = filters.get("item")
     mode     = filters.get("mode", "1d")   # default: 1d
 
-    item_name = frappe.db.get_value("FT Stock RM List", item, "computed_name") or item
+    project = filters.get("project")
+    item = filters.get("item")
+
+    item_name = frappe.db.get_value(
+        "FT Stock RM List",
+        item,
+        "computed_name"
+    )
 
     # ---------- DB SE PARTS FETCH ----------
     rows = frappe.db.sql("""
@@ -1417,26 +1548,17 @@ def export_nesting_json(filters=None):
         db_width = int(row.width) if row.width and int(row.width) != 0 else 0
         width = db_width if db_width > 0 else extract_width_from_name(item_name)
 
-        # Rectangle → 4 vertices, B=0 (straight lines)
-        parts_2d.append({
+        # ---------- DEFAULT WIDTH ----------
+        width = int(row.width) if row.width and int(row.width) != 0 else 100
+
+        parts.append({
             "Quantity": int(row.quantity or 0),
-            "Contours": [
-                {
-                    "Type": "LoopBulge",
-                    "Data": {
-                        "Vertices": [
-                            {"B": 0, "X": 0,      "Y": 0},
-                            {"B": 0, "X": length, "Y": 0},
-                            {"B": 0, "X": length, "Y": width},
-                            {"B": 0, "X": 0,      "Y": width}
-                        ]
-                    }
-                }
-            ],
-            "RefPt":  {"X": 0, "Y": 0},
-            "Name":   str(row.part_no or ""),
-            "Colour": get_random_color(),
-            "Layer":  "default"
+            "RectangularShape": {
+                "Length": str(int(row.lenght or 0)),
+                "Width": str(width)
+            },
+            "Name": f"{row.part_no}",
+            "Colour": get_random_color()   
         })
 
     raw_plate_length = 12000
@@ -1459,15 +1581,18 @@ def export_nesting_json(filters=None):
             "LayoutDuplicationAuto": False
         },
         "Problem": {
-            "Parts": parts_2d,
+
+            "Parts": parts,
+
             "RawPlates": [
                 {
                     "Quantity": 10,
                     "RectangularShape": {
-                        "Length": str(raw_plate_length),
-                        "Width":  str(raw_plate_width)
+                        "Length": "12000",
+                        "Width": "100"
                     },
-                    "Name": str(item_name or "")
+                    "Name": item_name,
+                    "Colour": get_random_color()   
                 }
             ]
         },
@@ -1492,146 +1617,7 @@ def export_nesting_json(filters=None):
 # # BILKUL BOTTOM mein paste karo (last line ke baad)
 # # ================================================================
 
-# @frappe.whitelist()
-# def save_nesting_report(item, project, sheets, nested_parts, scrap, pdf_url=""):
-#     try:
-#         existing = frappe.db.get_value(
-#             "FT Nesting Report",
-#             {"item": item, "project": project},
-#             "name"
-#         )
-
-#         if existing:
-#             doc = frappe.get_doc("FT Nesting Report", existing)
-#         else:
-#             doc = frappe.new_doc("FT Nesting Report")
-#             doc.item    = item
-#             doc.project = project
-
-#         doc.sheets       = sheets
-#         doc.nested_parts = nested_parts
-#         doc.scrap        = scrap
-#         doc.pdf_url      = pdf_url
-
-#         doc.save(ignore_permissions=True)
-#         frappe.db.commit()
-
-#         return {"success": True, "name": doc.name}
-
-#     except Exception as e:
-#         frappe.log_error(frappe.get_traceback(), "save_nesting_report Error")
-#         return {"success": False, "error": str(e)}
-
-
-# @frappe.whitelist()
-# def get_nesting_report(item, project):
-#     try:
-#         name = frappe.db.get_value(
-#             "FT Nesting Report",
-#             {"item": item, "project": project},
-#             "name"
-#         )
-
-#         if not name:
-#             return {"found": False}
-
-#         doc = frappe.get_doc("FT Nesting Report", name)
-
-#         return {
-#             "found":        True,
-#             "sheets":       doc.sheets       or "—",
-#             "nested_parts": doc.nested_parts or "—",
-#             "scrap":        doc.scrap        or "—",
-#             "pdf_url":      doc.pdf_url      or "",
-#         }
-
-#     except Exception as e:
-#         frappe.log_error(frappe.get_traceback(), "get_nesting_report Error")
-#         return {"found": False, "error": str(e)}
-
-# ======================================================
-# SAVE (STRICT UPSERT — NO DUPLICATES)
-# ======================================================
-@frappe.whitelist()
-def save_nesting_report(item, project, sheets, nested_parts, scrap, pdf_url=""):
-    try:
-        if not item or not project:
-            return {"success": False, "error": "Item / Project missing"}
-
-        # 🔍 ALWAYS fetch existing EXACT match
-        existing = frappe.db.get_all(
-            "FT Nesting Report",
-            filters={"item": item, "project": project},
-            fields=["name"],
-            limit=1
-        )
-
-        if existing:
-            doc = frappe.get_doc("FT Nesting Report", existing[0].name)
-        else:
-            doc = frappe.new_doc("FT Nesting Report")
-            doc.item = item
-            doc.project = project
-
-        # ✅ Update fields
-        doc.sheets       = sheets or ""
-        doc.nested_parts = nested_parts or ""
-        doc.scrap        = scrap or ""
-
-        # ❗ IMPORTANT: PDF overwrite mat karo agar empty hai
-        if pdf_url:
-            doc.pdf_url = pdf_url
-
-        doc.save(ignore_permissions=True)
-
-        return {"success": True, "name": doc.name}
-
-    except Exception:
-        frappe.log_error(frappe.get_traceback(), "save_nesting_report Error")
-        return {"success": False}
-
-
-# ======================================================
-# LOAD (STRICT + DEBUG SAFE)
-# ======================================================
-@frappe.whitelist()
-def get_nesting_report(item, project):
-    try:
-        if not item or not project:
-            return {"found": False}
-
-        data = frappe.db.get_all(
-            "FT Nesting Report",
-            filters={"item": item, "project": project},
-            fields=["name", "sheets", "nested_parts", "scrap", "pdf_url"],
-            limit=1
-        )
-
-        if not data:
-            return {"found": False}
-
-        d = data[0]
-
-        return {
-            "found": True,
-            "name": d.name,
-            "sheets": d.sheets or "—",
-            "nested_parts": d.nested_parts or "—",
-            "scrap": d.scrap or "—",
-            "pdf_url": d.pdf_url or "",
-        }
-
-    except Exception:
-        frappe.log_error(frappe.get_traceback(), "get_nesting_report Error")
-        return {"found": False}
-
-
-
-
-
-# --------------------- GENERATE JSON FOR NESTING CENTER ---------------------
-
-# Revision-1-Flat 070MM X 06 THK IS808 IS2062 E250BR-001,item show hore hai id me 
+#---------------------- Snapshort /Compaire =>Revision-1 /Revision2 ka difference ----------------
 @frappe.whitelist()
 def save_row_data(sr_no, project, item_name, item_count, quantity, lenght, width, total_weight):
     import json
@@ -2050,16 +2036,6 @@ def export_compare_snapshot_excel(snapshot_data):
     )
 
     return file_doc.file_url
-
-# Revision-1-Flat 070MM X 06 THK IS808 IS2062 E250BR-001,item show hore hai id me 
- 
-
-
-
-
-
-
-
 
 
 

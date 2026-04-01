@@ -7,10 +7,10 @@
  "engine": "InnoDB",
  "field_order": [
   "project_number",
+  "po_no",
   "drawing_number",
   "position_no",
   "part_no",
-  "item_id",
   "item",
   "lenght",
   "width",
@@ -24,6 +24,7 @@
    "fieldname": "drawing_number",
    "fieldtype": "Link",
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Drawing Number",
    "options": "FT Add Drawing"
   },
@@ -54,6 +55,7 @@
    "fieldname": "project_number",
    "fieldtype": "Link",
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Project Number",
    "options": "FT Project"
   },
@@ -76,28 +78,27 @@
    "label": "Width"
   },
   {
-   "fieldname": "item_id",
-   "fieldtype": "Link",
-   "label": "Item ID",
-   "options": "FT Stock RM List"
-  },
-  {
-   "fetch_from": "item_id.computed_name",
-   "fieldname": "item",
-   "fieldtype": "Data",
-   "in_list_view": 1,
-   "in_standard_filter": 1,
-   "label": "Item"
-  },
-  {
    "fieldname": "part_no",
    "fieldtype": "Data",
    "label": "Part No"
+  },
+  {
+   "fieldname": "po_no",
+   "fieldtype": "Data",
+   "in_standard_filter": 1,
+   "label": "PO No"
+  },
+  {
+   "fieldname": "item",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Item",
+   "options": "FT Stock RM List"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-10 16:13:05.731555",
+ "modified": "2026-03-30 18:39:32.771828",
  "modified_by": "Administrator",
  "module": "Fabtrk",
  "name": "FT Drawing Parts",

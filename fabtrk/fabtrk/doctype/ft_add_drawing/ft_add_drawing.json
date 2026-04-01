@@ -47,12 +47,13 @@
   {
    "fieldname": "drawing_description",
    "fieldtype": "Small Text",
+   "in_standard_filter": 1,
    "label": "Drawing Description"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-28 13:48:35.715066",
+ "modified": "2026-03-18 14:51:33.820704",
  "modified_by": "Administrator",
  "module": "Fabtrk",
  "name": "FT Add Drawing",

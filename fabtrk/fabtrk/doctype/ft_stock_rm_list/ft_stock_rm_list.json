@@ -45,6 +45,8 @@
   {
    "fieldname": "grade",
    "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Grade",
    "options": "FT Material Grade Catalogues"
   },
@@ -101,7 +103,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-10 15:03:43.778782",
+ "modified": "2026-03-28 18:21:51.620426",
  "modified_by": "Administrator",
  "module": "Fabtrk",
  "name": "FT Stock RM List",
@@ -121,6 +123,7 @@
    "write": 1
   }
  ],
+ "show_title_field_in_link": 1,
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": [],

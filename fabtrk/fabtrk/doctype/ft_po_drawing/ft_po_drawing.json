@@ -27,26 +27,30 @@
    "fieldname": "unit_weight",
    "fieldtype": "Float",
    "in_list_view": 1,
-   "label": "Unit Weight"
+   "label": "Unit Weight",
+   "precision": "3"
   },
   {
    "default": "1",
    "fieldname": "required_qty",
    "fieldtype": "Float",
    "in_list_view": 1,
-   "label": "Required Qty"
+   "label": "Required Qty",
+   "precision": "3"
   },
   {
    "fieldname": "total_weight",
    "fieldtype": "Float",
    "in_list_view": 1,
    "label": "Total Weight",
+   "precision": "3",
    "read_only": 1
   },
   {
    "fieldname": "project_number",
    "fieldtype": "Link",
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Project Number",
    "options": "FT Project"
   },
@@ -54,6 +58,7 @@
    "fieldname": "drawing_number",
    "fieldtype": "Link",
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Drawing Number",
    "options": "FT Add Drawing"
   },
@@ -61,12 +66,13 @@
    "fieldname": "po_description",
    "fieldtype": "Small Text",
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "PO Description "
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-23 13:33:24.866471",
+ "modified": "2026-03-26 13:30:32.048135",
  "modified_by": "Administrator",
  "module": "Fabtrk",
  "name": "FT Po Drawing",

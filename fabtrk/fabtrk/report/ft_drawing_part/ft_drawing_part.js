@@ -1,6 +1,6 @@
-
-frappe.query_reports["FT Drawing Part Report 2"] = {
-
+// // Copyright (c) 2026, UpGo Technologies and contributors
+// // For license information, please see license.txt
+frappe.query_reports["FT Drawing Part"] = {
 	onload(report) {
 		frappe.query_report.set_filter_value("project_number", []);
 		frappe.query_report.set_filter_value("drawing_number", []);
@@ -8,21 +8,15 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 		frappe.query_report.set_filter_value("item", []);
 		frappe.query_report.set_filter_value("is_active", 1);
 
-		// Add download item details button to summary table - Header button
 		report.page.add_inner_button("Download Summary", function () {
 			let filters = report.get_values();
-
-			let params = new URLSearchParams({
-				filters: JSON.stringify(filters)
-			});
-
-			// ✅ window.location.href — sabse reliable Frappe binary download ke liye
-			window.location.href = "/api/method/fabtrk.fabtrk.report.ft_drawing_part_report_2.ft_drawing_part_report_2.download_item_excel?" + params.toString();
+			let params = new URLSearchParams({ filters: JSON.stringify(filters) });
+			window.location.href = "/api/method/fabtrk.fabtrk.report.ft_drawing_part.ft_drawing_part.download_item_excel?" + params.toString();
 		});
-		// DOWNLOAD FULL REPORT BUTTON - Header button
+
 		report.page.add_inner_button("Download Full Report", function () {
 			frappe.call({
-				method: "fabtrk.fabtrk.report.ft_drawing_part_report_2.ft_drawing_part_report_2.get_all_details_for_export",
+				method: "fabtrk.fabtrk.report.ft_drawing_part.ft_drawing_part.get_all_details_for_export",
 				args: { filters: report.get_values() },
 				callback: function (r) {
 					if (r.message) {
@@ -37,124 +31,66 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 			});
 		});
 
-
-		// SAVE SNAPSHOT BUTTON - Header button
 		report.page.add_inner_button("💾 Save Snapshot", function () {
 			let report_data = frappe.query_report.data || [];
-
-			// Filter out TOTAL row
 			let rows_to_save = report_data.filter(d =>
 				d.project_name && d.project_name !== "TOTAL" && d.item_id
 			);
+			if (!rows_to_save.length) { frappe.msgprint("Koi data nahi hai save karne ke liye"); return; }
 
-			if (!rows_to_save.length) {
-				frappe.msgprint("Koi data nahi hai save karne ke liye");
-				return;
-			}
-
-			frappe.confirm(
-				`Kya aap ${rows_to_save.length} rows ka snapshot save karna chahte ho?`,
-				function () {
-
-					let promises = rows_to_save.map((row, i) => {
-						return frappe.call({
-							method: "fabtrk.fabtrk.report.ft_drawing_part_report_2.ft_drawing_part_report_2.save_row_data",
-							args: {
-								sr_no: i + 1,
-								project: row.project_name,
-								item_name: row.item_name,
-								item_count: row.item_count,
-								quantity: row.quantity,
-								lenght: row.lenght,
-								width: row.width,
-								total_weight: row.total_weight
-							}
-						});
-					});
-
-					Promise.all(promises).then(results => {
-
-						// Kitne actually save hue aur kitne same the
-						let saved_count = 0;
-						let no_change_count = 0;
-
-						results.forEach(r => {
-							if (r.message && r.message.status === "success") {
-								if (r.message.msg && r.message.msg.includes("same")) {
-									no_change_count++;
-								} else {
-									saved_count++;
-								}
-							}
-						});
-
-						// Sab same hain — koi change nahi
-						if (no_change_count === rows_to_save.length) {
-							frappe.msgprint({
-								title: "No Changes Found",
-								message: `⚠️ No changes were found in the data, so the snapshot was not saved. The previous snapshot remains unchanged.`,
-								indicator: "orange"
-							});
-						}
-						// Kuch save hue, kuch same the
-						else if (saved_count > 0 && no_change_count > 0) {
-							frappe.show_alert({
-								message: `✅ ${saved_count} rows saved | ⏭️ ${no_change_count} No Chnages in the row`,
-								indicator: "blue"
-							});
-						}
-						// Sab save ho gaye
-						else if (saved_count > 0) {
-							frappe.show_alert({
-								message: `✅ ${saved_count} rows saved successfully!`,
-								indicator: "green"
-							});
-						}
-					});
-				}
-			);
-		});
-		// COMPARE SNAPSHOT BUTTON - Header button
-		report.page.add_inner_button("📊 Compare Snapshot", function () {
-			let report_data = frappe.query_report.data || [];
-
-			let rows_to_compare = report_data.filter(d =>
-				d.project_name && d.project_name !== "TOTAL" && d.item_id
-			);
-
-			if (!rows_to_compare.length) {
-				frappe.msgprint("Koi data nahi hai compare karne ke liye");
-				return;
-			}
-
-			// Fetch all compare data
-			let promises = rows_to_compare.map(row => {
-				return frappe.call({
-					method: "fabtrk.fabtrk.report.ft_drawing_part_report_2.ft_drawing_part_report_2.compare_row_data",
+			frappe.confirm(`Kya aap ${rows_to_save.length} rows ka snapshot save karna chahte ho?`, function () {
+				let promises = rows_to_save.map((row, i) => frappe.call({
+					method: "fabtrk.fabtrk.report.ft_drawing_part.ft_drawing_part.save_row_data",
 					args: {
-						sr_no: "",
-						project: row.project_name,
-						item_name: row.item_name,
-						item_count: row.item_count,
-						quantity: row.quantity,
-						lenght: row.lenght,
-						width: row.width,
-						total_weight: row.total_weight
+						sr_no: i + 1, project: row.project_name, item_name: row.item_name,
+						item_count: row.item_count, quantity: row.quantity,
+						lenght: row.lenght, width: row.width, total_weight: row.total_weight
+					}
+				}));
+
+				Promise.all(promises).then(results => {
+					let saved_count = 0, no_change_count = 0;
+					results.forEach(r => {
+						if (r.message && r.message.status === "success") {
+							if (r.message.msg && r.message.msg.includes("same")) no_change_count++;
+							else saved_count++;
+						}
+					});
+					if (no_change_count === rows_to_save.length) {
+						frappe.msgprint({ title: "No Changes Found", message: `⚠️ No changes were found in the data.`, indicator: "orange" });
+					} else if (saved_count > 0 && no_change_count > 0) {
+						frappe.show_alert({ message: `✅ ${saved_count} rows saved | ⏭️ ${no_change_count} No Changes in the row`, indicator: "blue" });
+					} else if (saved_count > 0) {
+						frappe.show_alert({ message: `✅ ${saved_count} rows saved successfully!`, indicator: "green" });
 					}
 				});
 			});
+		});
+
+		report.page.add_inner_button("📊 Compare Snapshot", function () {
+			let report_data = frappe.query_report.data || [];
+			let rows_to_compare = report_data.filter(d =>
+				d.project_name && d.project_name !== "TOTAL" && d.item_id
+			);
+			if (!rows_to_compare.length) { frappe.msgprint("Koi data nahi hai compare karne ke liye"); return; }
+
+			let promises = rows_to_compare.map(row => frappe.call({
+				method: "fabtrk.fabtrk.report.ft_drawing_part.ft_drawing_part.compare_row_data",
+				args: {
+					sr_no: "", project: row.project_name, item_name: row.item_name,
+					item_count: row.item_count, quantity: row.quantity,
+					lenght: row.lenght, width: row.width, total_weight: row.total_weight
+				}
+			}));
 
 			Promise.all(promises).then(results => {
 				let field_labels = {
-					"total_entries": "Total Entries",
-					"total_qty": "Total Qty",
-					"total_length": "Total Length",
-					"total_width": "Total Width",
+					"total_entries": "Total Entries", "total_qty": "Total Qty",
+					"total_length": "Total Length", "total_width": "Total Width",
 					"total_weight": "Total Weight"
 				};
 				let fields = ["total_entries", "total_qty", "total_length", "total_width", "total_weight"];
 
-				// ── Unique items only (duplicate item_name skip karo) ──
 				let seen_items = new Set();
 				let unique_results = [];
 				results.forEach(r => {
@@ -166,34 +102,23 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 					}
 				});
 
-				// ── Max revisions ──
 				let max_revisions = 0;
 				unique_results.forEach(r => {
 					max_revisions = Math.max(max_revisions, (r.message.revision_log || []).length);
 				});
 
-				// ── Table header ──
-				let html = `
-					<div style="overflow-x:auto;">
-					<table class="table table-bordered" style="font-size:12px; min-width:1000px;">
-						<thead>
-							<tr style="background:#1F4E79; color:#fff; text-align:center;">
-								<th style="min-width:180px;">Projects</th>
-								<th style="min-width:200px;">Item</th>
-								<th style="min-width:80px;">Project Count</th>
-								<th style="min-width:110px;">Field</th>
-				`;
+				let html = `<div style="overflow-x:auto;"><table class="table table-bordered" style="font-size:12px; min-width:1000px;">
+					<thead><tr style="background:#1F4E79; color:#fff; text-align:center;">
+						<th style="min-width:180px;">Projects</th>
+						<th style="min-width:200px;">Item</th>
+						<th style="min-width:80px;">Project Count</th>
+						<th style="min-width:110px;">Field</th>`;
 
-				for (let i = 0; i < max_revisions; i++) {
-					html += `<th style="min-width:130px;">Revision ${i + 1}</th>`;
-				}
-				html += `<th style="min-width:140px; background:#0c5c70;">Current Value</th>`;
-				html += `</tr></thead><tbody>`;
+				for (let i = 0; i < max_revisions; i++) html += `<th style="min-width:130px;">Revision ${i + 1}</th>`;
+				html += `<th style="min-width:140px; background:#0c5c70;">Current Value</th></tr></thead><tbody>`;
 
-				// ── Data rows ──
 				unique_results.forEach(r => {
 					if (!r.message || r.message.status !== "success") return;
-
 					let { revision_log, current, current_timestamp, project, project_count, item_name } = r.message;
 					let last = revision_log.length ? revision_log[revision_log.length - 1] : null;
 
@@ -202,30 +127,13 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 						let curr_val = parseFloat(current[f] || 0);
 						let field_changed = last_val !== null && last_val !== curr_val;
 						let row_bg = field_changed ? "#fff8e1" : "#fff";
-
 						let row = `<tr style="background:${row_bg};">`;
-
-						// ── Project, Item, Count — sirf first field row mein ──
 						if (fi === 0) {
-							row += `
-								<td rowspan="${fields.length}" style="vertical-align:middle; font-weight:600; 
-									text-align:center; font-size:11px; color:#1F4E79;">
-									${project}
-								</td>
-								<td rowspan="${fields.length}" style="vertical-align:middle; font-size:11px;">
-									${item_name}
-								</td>
-								<td rowspan="${fields.length}" style="vertical-align:middle; text-align:center; 
-									font-weight:700; font-size:14px; color:#2F75B5;">
-									${project_count}
-								</td>
-							`;
+							row += `<td rowspan="${fields.length}" style="vertical-align:middle; font-weight:600; text-align:center; font-size:11px; color:#1F4E79;">${project}</td>
+								<td rowspan="${fields.length}" style="vertical-align:middle; font-size:11px;">${item_name}</td>
+								<td rowspan="${fields.length}" style="vertical-align:middle; text-align:center; font-weight:700; font-size:14px; color:#2F75B5;">${project_count}</td>`;
 						}
-
-						// Field label
 						row += `<td style="font-weight:600; text-align:center;">${field_labels[f]}</td>`;
-
-						// Revision columns
 						for (let i = 0; i < max_revisions; i++) {
 							let rev = revision_log[i];
 							if (rev) {
@@ -233,106 +141,52 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 								let prev_val = i > 0 ? parseFloat(revision_log[i - 1][f] || 0) : null;
 								let changed = prev_val !== null && prev_val !== val;
 								let style = changed ? "color:#e65c00; font-weight:bold;" : "color:#333;";
-								row += `
-									<td style="text-align:center; ${style}">
-										${val}
-										<br><small style="color:#888; font-size:10px;">${rev.timestamp || ""}</small>
-									</td>
-								`;
+								row += `<td style="text-align:center; ${style}">${val}<br><small style="color:#888; font-size:10px;">${rev.timestamp || ""}</small></td>`;
 							} else {
 								row += `<td style="text-align:center; color:#ccc;">-</td>`;
 							}
 						}
-
-						// Current value
 						let curr_changed = last_val !== null && last_val !== curr_val;
-						let curr_style = curr_changed
-							? "color:#1a7abf; font-weight:bold; background:#e8f4fd;"
-							: "color:#555;";
-
-						row += `
-                				<td style="text-align:center; ${curr_style}">
-							${curr_val}
-							<br><small style="color:#888; font-size:10px;">${current_timestamp}</small>
-							${curr_changed
-								? '<br><small style="color:green; font-weight:bold;">▲ Changed</small>'
-								: '<br><small style="color:#aaa;">No Change</small>'}
-								</td>
-						`;
-
-						row += `</tr>`;
+						let curr_style = curr_changed ? "color:#1a7abf; font-weight:bold; background:#e8f4fd;" : "color:#555;";
+						row += `<td style="text-align:center; ${curr_style}">${curr_val}<br><small style="color:#888; font-size:10px;">${current_timestamp}</small>${curr_changed ? '<br><small style="color:green; font-weight:bold;">▲ Changed</small>' : '<br><small style="color:#aaa;">No Change</small>'}</td></tr>`;
 						html += row;
 					});
-
-					// Separator
-					html += `<tr style="background:#e8edf2; height:6px;">
-						<td colspan="${max_revisions + 4}" style="padding:0;"></td>
-					</tr>`;
+					html += `<tr style="background:#e8edf2; height:6px;"><td colspan="${max_revisions + 4}" style="padding:0;"></td></tr>`;
 				});
 
 				html += `</tbody></table></div>`;
 
 				let export_data = unique_results.map(r => r.message);
-
 				frappe.call({
-					method: "fabtrk.fabtrk.report.ft_drawing_part_report_2.ft_drawing_part_report_2.export_compare_snapshot_excel",
-					args: {
-						snapshot_data: JSON.stringify(export_data)
-					},
+					method: "fabtrk.fabtrk.report.ft_drawing_part.ft_drawing_part.export_compare_snapshot_excel",
+					args: { snapshot_data: JSON.stringify(export_data) },
 					callback: function (res) {
 						if (res.message) {
 							const link = document.createElement("a");
-							link.href = res.message;
-							link.download = "Compare_Snapshot.xlsx";
-							document.body.appendChild(link);
-							link.click();
-							document.body.removeChild(link);
+							link.href = res.message; link.download = "Compare_Snapshot.xlsx";
+							document.body.appendChild(link); link.click(); document.body.removeChild(link);
 						}
 					}
 				});
 			});
 		});
 
-		setTimeout(() => {
-			frappe.query_report.refresh();
-		}, 100);
+		setTimeout(() => { frappe.query_report.refresh(); }, 100);
 	},
 
 	filters: [
-
 		// ---------------- PROJECT ----------------
 		{
-			fieldname: "project_number",
-			label: "Project Number",
-			fieldtype: "MultiSelectList",
-
+			fieldname: "project_number", label: "Project Number", fieldtype: "MultiSelectList",
 			get_data: function (txt) {
 				let is_active = frappe.query_report.get_filter_value("is_active");
 				let filters = [];
-
-				if (txt) {
-					filters.push(["name", "like", "%" + txt + "%"]);
-				}
-
-				if (is_active) {
-					filters.push(["is_active", "=", 1]);
-				}
-
+				if (txt) filters.push(["name", "like", "%" + txt + "%"]);
+				if (is_active) filters.push(["is_active", "=", 1]);
 				return frappe.call({
 					method: "frappe.client.get_list",
-					args: {
-						doctype: "FT Project",
-						fields: ["name", "description"],
-						filters: filters,
-						
-					}
-				}).then(r => {
-					return (r.message || []).map(d => ({
-						value: d.name,
-						label: d.name,
-						description: d.description || ""
-					}));
-				});
+					args: { doctype: "FT Project", fields: ["name", "description"], filters: filters }
+				}).then(r => (r.message || []).map(d => ({ value: d.name, label: d.name, description: d.description || "" })));
 			},
 			on_change() {
 				frappe.query_report.set_filter_value("drawing_number", []);
@@ -345,106 +199,50 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 
 		// ---------------- DRAWING ----------------
 		{
-			fieldname: "drawing_number",
-			label: "Drawing Number",
-			fieldtype: "MultiSelectList",
+			fieldname: "drawing_number", label: "Drawing Number", fieldtype: "MultiSelectList",
 			get_data: function (txt) {
 				let projects = frappe.query_report.get_filter_value("project_number") || [];
 				let is_active = frappe.query_report.get_filter_value("is_active");
 
 				let get_project_names = () => {
-					if (projects.length) {
-						return Promise.resolve(projects);
-					} else if (is_active) {
-						return frappe.call({
-							method: "frappe.client.get_list",
-							args: {
-								doctype: "FT Project",
-								fields: ["name"],
-								filters: [["is_active", "=", 1]],
-								
-							}
-						}).then(r => (r.message || []).map(d => d.name));
-					} else {
-						return Promise.resolve([]);
-					}
+					if (projects.length) return Promise.resolve(projects);
+					else if (is_active) return frappe.call({ method: "frappe.client.get_list", args: { doctype: "FT Project", fields: ["name"], filters: [["is_active", "=", 1]] } }).then(r => (r.message || []).map(d => d.name));
+					else return Promise.resolve([]);
 				};
 
 				return get_project_names().then(project_names => {
 					let filters = [];
 					if (txt) filters.push(["name", "like", "%" + txt + "%"]);
 					if (project_names.length) filters.push(["project_number", "in", project_names]);
-					return frappe.call({
-						method: "frappe.client.get_list",
-						args: {
-							doctype: "FT Add Drawing",
-							fields: ["name"],
-							filters: filters,
-							
-						}
-					}).then(r => {
-						let result = (r.message || []).map(d => ({
-							value: d.name,
-							label: d.name,
-							description: ""
-						}));
-						if (result.length) {
-							result.unshift({ value: "__all", label: "Select All", description: "" });
-						}
+					return frappe.call({ method: "frappe.client.get_list", args: { doctype: "FT Add Drawing", fields: ["name"], filters: filters } }).then(r => {
+						let result = (r.message || []).map(d => ({ value: d.name, label: d.name, description: "" }));
+						if (result.length) result.unshift({ value: "__all", label: "Select All", description: "" });
 						return result;
 					});
 				});
 			},
 			on_change() {
 				let selected = frappe.query_report.get_filter_value("drawing_number") || [];
-
 				if (selected.includes("__all")) {
 					let projects = frappe.query_report.get_filter_value("project_number") || [];
 					let is_active = frappe.query_report.get_filter_value("is_active");
-
 					let get_project_names = () => {
-						if (projects.length) {
-							return Promise.resolve(projects);
-						} else if (is_active) {
-							return frappe.call({
-								method: "frappe.client.get_list",
-								args: {
-									doctype: "FT Project",
-									fields: ["name"],
-									filters: [["is_active", "=", 1]],
-									
-								}
-							}).then(r => (r.message || []).map(d => d.name));
-						} else {
-							return Promise.resolve([]);
-						}
+						if (projects.length) return Promise.resolve(projects);
+						else if (is_active) return frappe.call({ method: "frappe.client.get_list", args: { doctype: "FT Project", fields: ["name"], filters: [["is_active", "=", 1]] } }).then(r => (r.message || []).map(d => d.name));
+						else return Promise.resolve([]);
 					};
-
 					get_project_names().then(project_names => {
 						let filters = [];
 						if (project_names.length) filters.push(["project_number", "in", project_names]);
-						frappe.call({
-							method: "frappe.client.get_list",
-							args: {
-								doctype: "FT Add Drawing",
-								fields: ["name"],
-								filters: filters,
-								
-							}
-						}).then(r => {
+						frappe.call({ method: "frappe.client.get_list", args: { doctype: "FT Add Drawing", fields: ["name"], filters: filters } }).then(r => {
 							let all_ids = (r.message || []).map(d => d.name);
-							if (selected.length - 1 === all_ids.length) {
-								frappe.query_report.set_filter_value("drawing_number", []);
-							} else {
-								frappe.query_report.set_filter_value("drawing_number", all_ids);
-							}
+							frappe.query_report.set_filter_value("drawing_number", selected.length - 1 === all_ids.length ? [] : all_ids);
 							frappe.query_report.set_filter_value("po_no", []);
 							frappe.query_report.refresh();
 						});
 					});
 					return;
 				}
-
 				frappe.query_report.set_filter_value("po_no", []);
 				frappe.query_report.refresh();
 			}
@@ -452,96 +250,45 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 
 		// ---------------- PO NUMBER ----------------
 		{
-			fieldname: "po_no",
-			label: "PO Number",
-			fieldtype: "MultiSelectList",
+			fieldname: "po_no", label: "PO Number", fieldtype: "MultiSelectList",
 			get_data: function (txt) {
 				let drawings = frappe.query_report.get_filter_value("drawing_number") || [];
 				let projects = frappe.query_report.get_filter_value("project_number") || [];
 				let is_active = frappe.query_report.get_filter_value("is_active");
 
 				let get_active_projects = () => {
-					if (projects.length) {
-						return Promise.resolve(projects);
-					} else if (is_active) {
-						return frappe.call({
-							method: "frappe.client.get_list",
-							args: {
-								doctype: "FT Project",
-								fields: ["name"],
-								filters: [["is_active", "=", 1]],
-								
-							}
-						}).then(r => (r.message || []).map(d => d.name));
-					} else {
-						return Promise.resolve([]);
-					}
+					if (projects.length) return Promise.resolve(projects);
+					else if (is_active) return frappe.call({ method: "frappe.client.get_list", args: { doctype: "FT Project", fields: ["name"], filters: [["is_active", "=", 1]] } }).then(r => (r.message || []).map(d => d.name));
+					else return Promise.resolve([]);
 				};
 
-				// CASE 1: Drawing selected — sirf unke PO Numbers
 				if (drawings.length) {
 					let filters = [["drawing_number", "in", drawings]];
 					if (txt) filters.push(["po_no", "like", "%" + txt + "%"]);
-
-					return frappe.call({
-						method: "frappe.client.get_list",
-						args: {
-							doctype: "FT Drawing Parts",
-							fields: ["po_no"],
-							filters: filters,
-							
-						}
-					}).then(r => {
+					return frappe.call({ method: "frappe.client.get_list", args: { doctype: "FT Drawing Parts", fields: ["po_no"], filters: filters } }).then(r => {
 						let unique = {};
-						(r.message || []).forEach(d => {
-							if (d.po_no && !unique[d.po_no]) unique[d.po_no] = true;
-						});
-						return Object.keys(unique).map(po => ({
-							value: po,
-							label: po,
-							description: ""
-						}));
+						(r.message || []).forEach(d => { if (d.po_no && !unique[d.po_no]) unique[d.po_no] = true; });
+						return Object.keys(unique).map(po => ({ value: po, label: po, description: "" }));
 					});
 				}
 
-				// CASE 2: Project / is_active se filter
 				return get_active_projects().then(project_names => {
 					let filters = [];
 					if (txt) filters.push(["po_no", "like", "%" + txt + "%"]);
 					if (project_names.length) filters.push(["project_number", "in", project_names]);
-
-					return frappe.call({
-						method: "frappe.client.get_list",
-						args: {
-							doctype: "FT Drawing Parts",
-							fields: ["po_no"],
-							filters: filters,
-							
-						}
-					}).then(r => {
+					return frappe.call({ method: "frappe.client.get_list", args: { doctype: "FT Drawing Parts", fields: ["po_no"], filters: filters } }).then(r => {
 						let unique = {};
-						(r.message || []).forEach(d => {
-							if (d.po_no && !unique[d.po_no]) unique[d.po_no] = true;
-						});
-						return Object.keys(unique).map(po => ({
-							value: po,
-							label: po,
-							description: ""
-						}));
+						(r.message || []).forEach(d => { if (d.po_no && !unique[d.po_no]) unique[d.po_no] = true; });
+						return Object.keys(unique).map(po => ({ value: po, label: po, description: "" }));
 					});
 				});
 			},
-			on_change() {
-				frappe.query_report.refresh();
-				clear_item_details();
-			}
+			on_change() { frappe.query_report.refresh(); clear_item_details(); }
 		},
 
 		// ---------------- ITEM ----------------
 		{
-			fieldname: "item",
-			label: "Drawing Parts",
-			fieldtype: "MultiSelectList",
+			fieldname: "item", label: "Drawing Parts", fieldtype: "MultiSelectList",
 			get_data: function (txt) {
 				let projects = frappe.query_report.get_filter_value("project_number") || [];
 				let drawings = frappe.query_report.get_filter_value("drawing_number") || [];
@@ -549,126 +296,49 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 				let is_active = frappe.query_report.get_filter_value("is_active");
 
 				let get_active_projects = () => {
-					if (projects.length) {
-						return Promise.resolve(projects);
-					} else if (is_active) {
-						return frappe.call({
-							method: "frappe.client.get_list",
-							args: {
-								doctype: "FT Project",
-								fields: ["name"],
-								filters: [["is_active", "=", 1]],
-								
-							}
-						}).then(r => (r.message || []).map(d => d.name));
-					} else {
-						return Promise.resolve([]);
-					}
+					if (projects.length) return Promise.resolve(projects);
+					else if (is_active) return frappe.call({ method: "frappe.client.get_list", args: { doctype: "FT Project", fields: ["name"], filters: [["is_active", "=", 1]] } }).then(r => (r.message || []).map(d => d.name));
+					else return Promise.resolve([]);
 				};
 
 				let get_items_from_drawings = (drawing_names) => {
-					return frappe.call({
-						method: "frappe.client.get_list",
-						args: {
-							doctype: "FT Drawing Parts",
-							fields: ["item_id"],
-							filters: [["drawing_number", "in", drawing_names]],
-							
-						}
-					}).then(r => {
-						let unique_items = [...new Set(
-							(r.message || []).map(d => d.item_id).filter(Boolean)
-						)];
+					return frappe.call({ method: "frappe.client.get_list", args: { doctype: "FT Drawing Parts", fields: ["item_id"], filters: [["drawing_number", "in", drawing_names]] } }).then(r => {
+						let unique_items = [...new Set((r.message || []).map(d => d.item_id).filter(Boolean))];
 						if (!unique_items.length) return [];
-
-						let filters = [
-							["name", "in", unique_items],
-							["computed_name", "like", "%" + txt + "%"]
-						];
-						if (stock_types.length) {
-							filters.push(["stock_rm_type", "in", stock_types]);
-						}
-
-						return frappe.call({
-							method: "frappe.client.get_list",
-							args: {
-								doctype: "FT Stock RM List",
-								fields: ["name", "computed_name"],
-								filters: filters,
-								
-							}
-						}).then(res => (res.message || []).map(d => ({
-							value: d.name,
-							label: d.computed_name,
-							description: ""
-						})));
+						let filters = [["name", "in", unique_items], ["computed_name", "like", "%" + txt + "%"]];
+						if (stock_types.length) filters.push(["stock_rm_type", "in", stock_types]);
+						return frappe.call({ method: "frappe.client.get_list", args: { doctype: "FT Stock RM List", fields: ["name", "computed_name"], filters: filters } }).then(res => (res.message || []).map(d => ({ value: d.name, label: d.computed_name, description: "" })));
 					});
 				};
 
-				if (drawings.length) {
-					return get_items_from_drawings(drawings);
-				}
+				if (drawings.length) return get_items_from_drawings(drawings);
 
 				return get_active_projects().then(project_names => {
 					if (!project_names.length) {
 						let filters = [["computed_name", "like", "%" + txt + "%"]];
 						if (stock_types.length) filters.push(["stock_rm_type", "in", stock_types]);
-						return frappe.call({
-							method: "frappe.client.get_list",
-							args: {
-								doctype: "FT Stock RM List",
-								fields: ["name", "computed_name"],
-								filters: filters,
-								
-							}
-						}).then(r => (r.message || []).map(d => ({
-							value: d.name,
-							label: d.computed_name,
-							description: ""
-						})));
+						return frappe.call({ method: "frappe.client.get_list", args: { doctype: "FT Stock RM List", fields: ["name", "computed_name"], filters: filters } }).then(r => (r.message || []).map(d => ({ value: d.name, label: d.computed_name, description: "" })));
 					}
-
-					return frappe.call({
-						method: "frappe.client.get_list",
-						args: {
-							doctype: "FT Add Drawing",
-							fields: ["name"],
-							filters: [["project_number", "in", project_names]],
-							
-						}
-					}).then(r => {
+					return frappe.call({ method: "frappe.client.get_list", args: { doctype: "FT Add Drawing", fields: ["name"], filters: [["project_number", "in", project_names]] } }).then(r => {
 						let drawing_names = (r.message || []).map(d => d.name);
 						if (!drawing_names.length) return [];
 						return get_items_from_drawings(drawing_names);
 					});
 				});
 			},
-			on_change() {
-				clear_item_details();
-				frappe.query_report.refresh();
-			}
+			on_change() { clear_item_details(); frappe.query_report.refresh(); }
 		},
 
-		// ----------------- Section Type ----------------
+		// ---------------- SECTION TYPE ----------------
 		{
-			fieldname: "stock_rm_type",
-			label: "Section Type",
-			fieldtype: "MultiSelectList",
-			get_data: function (txt) {
-				return frappe.db.get_link_options("FT Section Type", txt);
-			},
-			on_change() {
-				frappe.query_report.refresh();
-				clear_item_details();
-			}
+			fieldname: "stock_rm_type", label: "Section Type", fieldtype: "MultiSelectList",
+			get_data: function (txt) { return frappe.db.get_link_options("FT Section Type", txt); },
+			on_change() { frappe.query_report.refresh(); clear_item_details(); }
 		},
 
 		// ---------------- IS ACTIVE ----------------
 		{
-			fieldname: "is_active",
-			label: "Is Active",
-			fieldtype: "Check",
-			default: 1,
+			fieldname: "is_active", label: "Is Active", fieldtype: "Check", default: 1,
 			on_change() {
 				frappe.query_report.set_filter_value("drawing_number", []);
 				frappe.query_report.set_filter_value("po_no", []);
@@ -677,98 +347,81 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 				clear_item_details();
 			}
 		}
-
 	],
 
 	after_datatable_render(report) {
-		// ── VIEW BUTTON CLICK ──
 		$(report.wrapper)
 			.off("click", ".view-btn")
 			.on("click", ".view-btn", function () {
-
-				// Remove active from all buttons
 				$(".view-btn").removeClass("active-detail");
-
-				// Add active to clicked button
 				$(this).addClass("active-detail");
-
 
 				let project = $(this).data("project");
 				let item = $(this).data("item");
-
-				// ✅ GET SELECTED DRAWING
 				let drawings = frappe.query_report.get_filter_value("drawing_number") || [];
 
-				if (!project || !item) {
-					frappe.msgprint("No Data");
-					return;
-				}
+				if (!project || !item) { frappe.msgprint("No Data"); return; }
 
 				frappe.call({
-					method: "fabtrk.fabtrk.report.ft_drawing_part_report_2.ft_drawing_part_report_2.get_item_details",
-					args: {
-						project: project,
-						item: item,
-						// drawing_number: drawing_number  
-						drawing_numbers: drawings.length ? JSON.stringify(drawings) : null
-					},
+					method: "fabtrk.fabtrk.report.ft_drawing_part.ft_drawing_part.get_item_details",
+					args: { project, item, drawing_numbers: drawings.length ? JSON.stringify(drawings) : null },
 					callback: function (r) {
-
 						if (!r.message || !r.message.data || !r.message.data.length) {
-
-							frappe.msgprint("No Details Found");
-							return;
+							frappe.msgprint("No Details Found"); return;
 						}
 
 						$("#item-detail-container").remove();
-
 						let rows = "";
-						let totalWeight = 0;
 
 						r.message.data.forEach(d => {
-							// Skip backend Total row from calculation
 							let is_total_row = String(d.project_number).toLowerCase().includes("total");
 
-							// Qty / Length / Width → 2 digit format
 							let qty = d.quantity !== undefined && d.quantity !== "" ? String(d.quantity).padStart(2, '0') : "";
 							let length = d.lenght !== undefined && d.lenght !== "" ? String(d.lenght).padStart(2, '0') : "";
 							let width = d.width !== undefined && d.width !== "" ? String(d.width).padStart(2, '0') : "";
-
-							// Weight → 3 decimal format
 							let single_weight = d.single_weight !== undefined && d.single_weight !== "" ? parseFloat(d.single_weight).toFixed(3) : "";
 							let total_weight = d.total_weight !== undefined && d.total_weight !== "" ? parseFloat(String(d.total_weight).replace(/<[^>]+>/g, '')).toFixed(3) : "";
 
+							// ── PO Qty aur PO Weight ──
+							let po_required_qty = (d.po_required_qty !== undefined && d.po_required_qty !== "") ? d.po_required_qty : "";
+							let po_item_total_weight = (d.po_item_total_weight !== undefined && d.po_item_total_weight !== "") ? parseFloat(d.po_item_total_weight).toFixed(3) : "";
+
 							let row_style = "";
-							let total_weight_style = "text-align:center;";
+							let val_style = "text-align:center;";
 
 							if (is_total_row) {
-								row_style = "background-color:#f8f9fa; font-weight:600;";
-								total_weight_style = "text-align:center; color:#000; font-weight:700; font-size:15px;";
+								row_style = "background-color:#f0f4ff; font-weight:600;";
+								val_style = "text-align:center; color:#000; font-weight:700; font-size:15px;";
+							}
+
+							// PO Qty highlight — orange agar > 0
+							let po_qty_style = val_style;
+							if (!is_total_row && po_required_qty && parseInt(po_required_qty) > 0) {
+								po_qty_style = "text-align:center; color:#e65c00; font-weight:700;";
+							}
+							let po_wt_style = val_style;
+							if (!is_total_row && po_item_total_weight && parseFloat(po_item_total_weight) > 0) {
+								po_wt_style = "text-align:center; color:#1a7abf; font-weight:700;";
 							}
 
 							rows += `
 								<tr style="${row_style}">
 									<td style="text-align:center;">${d.serial_no || ""}</td>
-								 	<td>${d.project_number || ""}</td>
-        							<td>${d.po_serial_no || ""}</td>
-									<td>${d.drawing_number}</td>
+									<td>${d.project_number || ""}</td>
+									<td>${d.po_serial_no || ""}</td>
+									<td>${d.drawing_number || ""}</td>
 									<td style="text-align:center;">${d.position_no || ""}</td>
 									<td style="text-align:center;">${d.part_no || ""}</td>
 									<td style="text-align:center;">${d.entry_count || ""}</td>
-									<td style="${total_weight_style}">${qty}</td>
-									<td style="${total_weight_style}">${length}</td>
-									<td style="${total_weight_style}">${width}</td>
+									<td style="${val_style}">${qty}</td>
+									<td style="${val_style}">${length}</td>
+									<td style="${val_style}">${width}</td>
 									<td style="text-align:center;">${single_weight}</td>
-									<td style="${total_weight_style}">${total_weight}</td>									
+									<td style="${val_style}">${total_weight}</td>
+									<td style="${po_qty_style}">${po_required_qty}</td>
+									<td style="${po_wt_style}">${po_item_total_weight}</td>
 								</tr>
 							`;
-
-							// Total calculation (skip backend total row)
-							if (!is_total_row) {
-								totalWeight += parseFloat(
-									String(d.total_weight).replace(/<[^>]+>/g, '')
-								) || 0;
-							}
 						});
 
 						let html = `
@@ -776,50 +429,39 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 								style="margin-top:20px; padding:20px; border:1px solid #ddd;">
 								<div style="display:flex;justify-content:space-between;align-items:center;">
 									<h4>Item Details - ${r.message.item_name}</h4>
-									<div style="display:flex; gap:20px;">	
-																			
-										<button class="btn btn-xs btn-primary nesting-export nesting-export-1d" >
-											1D Nesting data export
-										</button>
-										<button class="btn btn-xs btn-primary nesting-export nesting-export-2d"
-											data-item="${item}"
-											data-project="${project}"
-											data-mode="2d">
-											2D Nesting data export
-										</button>
-										<!-- ✅ UPDATED: Nesting Report button with class + data attrs -->
+									<div style="display:flex; gap:20px;">
+										<button class="btn btn-xs btn-primary nesting-export">Nesting data export</button>
 										<button class="btn btn-xs btn-primary nesting-report-btn"
-											data-item="${item}"
-											data-project="${project}"
-											data-item-name="${r.message.item_name}">
-											Nesting Report
-										</button>
-										<button class="btn btn-xs btn-primary summary-download" data-item="${item}"
-											data-project="${project}">
-											Download List
-										</button>
-										<button class="btn btn-xs btn-danger close-view">
-											Close
-										</button>
+											data-item="${item}" data-project="${project}"
+											data-item-name="${r.message.item_name}">Nesting Report</button>
+										<button class="btn btn-xs btn-primary summary-download"
+											data-item="${item}" data-project="${project}">Download List</button>
+										<button class="btn btn-xs btn-danger close-view">Close</button>
 									</div>
 								</div>
 
 								<table class="table table-bordered" style="margin-top:15px;">
-									<tr>
-										<th style="text-align:center;">Sr No</th>
-										<th >Project No</th>
-										<th >Po Serial No</th>
-										<th >Drawing</th>
-										<th style="text-align: center;">Position No</th>
-										<th style="text-align: center;">Part No</th>
-										<th style="text-align:center;">Entry Count</th>
-										<th style="text-align: center;">Qty</th>
-										<th style="text-align: center;">Length</th>
-										<th style="text-align: center;">Width</th>
-										<th style="text-align: center;">Single Weight</th>
-										<th style="text-align: center;">Total Weight</th>
-									</tr>
-									${rows}
+									<thead style="background:#f0f4ff;">
+										<tr>
+											<th style="text-align:center;">Sr No</th>
+											<th>Project No</th>
+											<th>Po Serial No</th>
+											<th>Drawing</th>
+											<th style="text-align:center;">Position No</th>
+											<th style="text-align:center;">Part No</th>
+											<th style="text-align:center;">Entry Count</th>
+											<th style="text-align:center;">Qty</th>
+											<th style="text-align:center;">Length</th>
+											<th style="text-align:center;">Width</th>
+											<th style="text-align:center;">Single Weight</th>
+											<th style="text-align:center;">Total Weight</th>
+											<th style="text-align:center; color:#e65c00;">PO Required Qty</th>
+											<th style="text-align:center; color:#1a7abf;">PO Total Weight</th>
+										</tr>
+									</thead>
+									<tbody>
+										${rows}
+									</tbody>
 								</table>
 							</div>
 						`;
@@ -834,193 +476,93 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 				});
 			});
 
-		//Excel Dynamic button click
-		$(document).off("click", ".summary-download")
-			.on("click", ".summary-download", function () {
+		$(document).off("click", ".summary-download").on("click", ".summary-download", function () {
+			let item_name = $(this).data("item");
+			let project_name = $(this).data("project");
+			let url = "/api/method/fabtrk.fabtrk.report.ft_drawing_part.ft_drawing_part.download_item_details_excel"
+				+ "?filters=" + encodeURIComponent(JSON.stringify({ item: item_name, project: project_name }));
+			window.location.href = url;
+		});
 
-				let item_name = $(this).data("item");
-				let project_name = $(this).data("project");
+		$(document).off("click", ".nesting-export").on("click", ".nesting-export", function () {
+			let item_name = $(".summary-download").data("item");
+			let project_name = $(".summary-download").data("project");
+			let url = "/api/method/fabtrk.fabtrk.report.ft_drawing_part.ft_drawing_part.export_nesting_json"
+				+ "?filters=" + encodeURIComponent(JSON.stringify({ item: item_name, project: project_name }));
+			window.location.href = url;
+		});
 
-				let filters = {
-					item: item_name,
-					project: project_name
-				};
-				let url = "/api/method/fabtrk.fabtrk.report.ft_drawing_part_report_2.ft_drawing_part_report_2.download_item_details_excel"
-					+ "?filters=" + encodeURIComponent(JSON.stringify(filters));
-
-				// window.open(url);
-				window.location.href = url;
-			});
-
-		// ── Nesting 
-		$(document).off("click", ".nesting-export")
-			.on("click", ".nesting-export", function () {
-
-				let item_name = $(".summary-download").data("item");
-				let project_name = $(".summary-download").data("project");
-
-				let filters = {
-					item: item_name,
-					project: project_name
-				};
-
-				let url = "/api/method/fabtrk.fabtrk.report.ft_drawing_part_report_2.ft_drawing_part_report_2.export_nesting_json"
-					+ "?filters=" + encodeURIComponent(JSON.stringify(filters));
-
-				window.location.href = url;
-
-			});
-
-		// Nesting Report button click handler
-		$(document).off("click", ".nesting-report-btn")
-			.on("click", ".nesting-report-btn", function () {
-				let item_name = $(this).data("item");
-				let project_name = $(this).data("project");
-				let display_name = $(this).data("item-name") || item_name;
-				show_nesting_report_modal(item_name, project_name, display_name);
-			});
+		$(document).off("click", ".nesting-report-btn").on("click", ".nesting-report-btn", function () {
+			let item_name = $(this).data("item");
+			let project_name = $(this).data("project");
+			let display_name = $(this).data("item-name") || item_name;
+			show_nesting_report_modal(item_name, project_name, display_name);
+		});
 
 		setTimeout(() => {
-
-			// Loop all rows
 			$(report.wrapper).find(".datatable .dt-row").each(function () {
-
 				let project_cell = $(this).find(".dt-cell").eq(1);
-
 				if (project_cell.text().trim() === "TOTAL") {
-
-					// Hide row number cell
 					$(this).find(".dt-cell").eq(0).html("");
-
-					// Optional: make TOTAL bold
 					$(this).css("font-weight", "600");
 				}
 			});
-
 		}, 100);
 	},
 
 	formatter: function (value, row, column, data, default_formatter) {
-
-    if (data && data.project_name === "TOTAL") {
-
-        // ✅ Serial number — bilkul hide
-        if (column.id === "_index") {
-            return `<span style="visibility:hidden;">0</span>`;
-        }
-
-        value = default_formatter(value, row, column, data);
-        return `<span style="font-weight:bold; background:#f2f2f2;">${value}</span>`;
-    }
-
-    return default_formatter(value, row, column, data);
-}
+		if (data && data.project_name === "TOTAL") {
+			if (column.id === "_index") return `<span style="visibility:hidden;">0</span>`;
+			value = default_formatter(value, row, column, data);
+			return `<span style="font-weight:bold; background:#f2f2f2;">${value}</span>`;
+		}
+		return default_formatter(value, row, column, data);
+	}
 };
 
-// table refresh
 function clear_item_details() {
 	$("#item-detail-container").remove();
 	$(".view-btn").removeClass("active-detail");
 }
-// EXCEL download current item details in Excel
+
 function download_item_details(item_name, project_name) {
-
-	let filters = {
-		item: item_name,
-		project: project_name
-	};
-
-	let url = "/api/method/fabtrk.fabtrk.report.ft_drawing_part_report_2.ft_drawing_part_report_2.download_item_details_excel"
-		+ "?filters=" + encodeURIComponent(JSON.stringify(filters));
-
+	let url = "/api/method/fabtrk.fabtrk.report.ft_drawing_part.ft_drawing_part.download_item_details_excel"
+		+ "?filters=" + encodeURIComponent(JSON.stringify({ item: item_name, project: project_name }));
 	let link = document.createElement("a");
-	link.href = url;
-	link.download = "Item_Details.xlsx";
-	document.body.appendChild(link);
-	link.click();
-	document.body.removeChild(link);
+	link.href = url; link.download = "Item_Details.xlsx";
+	document.body.appendChild(link); link.click(); document.body.removeChild(link);
 }
-// EXCEL download full report both summary and detail tables in Excel with two defferent sheet for detail and summary
+
 function download_full_report(report) {
-	if (!report.data || !report.data.length) {
-		frappe.msgprint("No data to export");
-		return;
-	}
+	if (!report.data || !report.data.length) { frappe.msgprint("No data to export"); return; }
+	if (!window.XLSX) { frappe.msgprint("Excel library loading... try again"); return; }
 
-	if (!window.XLSX) {
-		frappe.msgprint("Excel library loading... try again");
-		return;
-	}
-
-	// SHEET 1 → SUMMARY TABLE
 	let summary_data = [];
-
-	let valid_columns = report.columns.filter(col =>
-		col.fieldname && col.fieldname !== "view"
-	);
-
-	// Header row
+	let valid_columns = report.columns.filter(col => col.fieldname && col.fieldname !== "view");
 	summary_data.push(valid_columns.map(col => col.label));
-
-	// Data rows
-	report.data.forEach(row => {
-		summary_data.push(
-			valid_columns.map(col => row[col.fieldname] ?? "")
-		);
-	});
-
+	report.data.forEach(row => { summary_data.push(valid_columns.map(col => row[col.fieldname] ?? "")); });
 	let summary_ws = XLSX.utils.aoa_to_sheet(summary_data);
 
-
-	// SHEET 2 → ALL DETAILS
-
 	let detail_data = [];
-	detail_data.push([
-		"Project",
-		"Item",
-		"Drawing",
-		"Qty",
-		"Length",
-		"Width",
-		"Single Weight",
-		"Total Weight"
-	]);
-
+	detail_data.push(["Project", "Item", "Drawing", "Qty", "Length", "Width", "Single Weight", "Total Weight"]);
 	let filters = frappe.query_report.get_filter_values();
-
 	frappe.call({
-		method: "fabtrk.fabtrk.report.ft_drawing_part_report_2.ft_drawing_part_report_2.get_all_details_for_export",
-		args: {
-			filters: filters
-		},
-		async: false,
+		method: "fabtrk.fabtrk.report.ft_drawing_part.ft_drawing_part.get_all_details_for_export",
+		args: { filters }, async: false,
 		callback: function (r) {
-
 			(r.message || []).forEach(d => {
-				detail_data.push([
-					d.project,
-					d.item_id,
-					d.drawing_number,
-					d.quantity,
-					d.lenght,
-					d.width,
-					d.single_weight,
-					d.total_weight
-				]);
+				detail_data.push([d.project, d.item_id, d.drawing_number, d.quantity, d.lenght, d.width, d.single_weight, d.total_weight]);
 			});
 		}
 	});
 
 	let detail_ws = XLSX.utils.aoa_to_sheet(detail_data);
-
-	// CREATE WORKBOOK
-
 	let wb = XLSX.utils.book_new();
 	XLSX.utils.book_append_sheet(wb, summary_ws, "Summary");
 	XLSX.utils.book_append_sheet(wb, detail_ws, "Details");
-
 	XLSX.writeFile(wb, "FT_Drawing_Part_Report.xlsx");
 }
+
 if (!window.XLSX) {
 	let script = document.createElement("script");
 	script.src = "https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js";
@@ -1028,10 +570,8 @@ if (!window.XLSX) {
 }
 
 /**************************************************************** */
-// ── Nesting Report Modal ──
-// ✅ NEW FUNCTION: Nesting Report Modal
-// "Nesting Report" button click karne par ye open hota hai
 
+// NEW FUNCTION: Nesting Report Modal for nesting button in item details view
 function show_nesting_report_modal(item, project, item_display_name) {
  
 	$("#nesting-report-modal-overlay").remove();
@@ -1183,6 +723,45 @@ function show_nesting_report_modal(item, project, item_display_name) {
 					</iframe>
 				</div>
 			</div>
+ 
+			<!-- Toggle Manual -->
+			<div style="text-align:center; margin-bottom:14px;">
+				<button id="toggle-manual-entry" style="
+					background:none; border:1px dashed #aaa; color:#888;
+					border-radius:4px; padding:4px 14px; cursor:pointer; font-size:12px;">
+					✏️ JSON nahi hai? Manually enter karo
+				</button>
+			</div>
+ 
+			<!-- Previously Saved Data Banner -->
+			<div id="saved-data-banner" style="display:none;
+				background:#e8f5e9; border:1px solid #66bb6a;
+				border-radius:8px; padding:12px 16px; margin-bottom:14px;">
+				<p style="font-weight:700; color:#2e7d32; margin-bottom:6px; font-size:13px;">
+					💾 Pehle se Saved Nesting Report:
+				</p>
+				<div style="display:flex; gap:24px; flex-wrap:wrap; margin-bottom:8px;">
+					<span style="font-size:13px;">📋 <b>Sheets:</b> <span id="saved-stat-sheets">—</span></span>
+					<span style="font-size:13px;">🔧 <b>Nested Parts:</b> <span id="saved-stat-nested-parts">—</span></span>
+					<span style="font-size:13px;">🗑️ <b>Scrap:</b> <span id="saved-stat-scrap">—</span></span>
+				</div>
+				<div id="saved-pdf-link-area" style="display:none;">
+					<a id="saved-pdf-link" href="#" target="_blank" style="
+						color:#1565c0; font-size:13px; font-weight:600; text-decoration:underline;">
+						📄 Saved PDF Report dekho / download karo
+					</a>
+				</div>
+			</div>
+ 
+			<!-- Save Button -->
+			<div style="display:flex; justify-content:flex-end; gap:10px;">
+				<button id="save-nesting-report" style="
+					background:#2e7d32; color:#fff; border:none; border-radius:6px;
+					padding:9px 24px; cursor:pointer; font-size:14px; font-weight:700;
+					box-shadow: 0 2px 6px rgba(46,125,50,0.4);">
+					💾 Save Report
+				</button>
+			</div>
 		</div>
 	</div>
 	`;
@@ -1248,7 +827,7 @@ function show_nesting_report_modal(item, project, item_display_name) {
 	// ✅ LOAD: Modal open hone par pehle se saved data load karo
 	// ================================================================
 	frappe.call({
-		method: "fabtrk.fabtrk.report.ft_drawing_part_report_2.ft_drawing_part_report_2.get_nesting_report",
+		method: "fabtrk.fabtrk.report.ft_drawing_part.ft_drawing_part.get_nesting_report",
 		args: { item: item, project: project },
 		callback: function (r) {
 			if (r.message && r.message.found) {
@@ -1290,7 +869,7 @@ function show_nesting_report_modal(item, project, item_display_name) {
 		let scrap        = $("#stat-scrap").text().trim();
  
 		if (sheets === "—" && nested_parts === "—" && scrap === "—") {
-			frappe.msgprint("Pehle stats enter ya parse karo, phir save karo!");
+			frappe.msgprint("First stats enter then parsed , later save!");
 			return;
 		}
  
@@ -1331,10 +910,48 @@ function show_nesting_report_modal(item, project, item_display_name) {
 		}
 	});
 }
-
-// ✅ NEW FUNCTION: Nesting Center result JSON parser
-//    Multiple output formats handle karta hai
-
+// HELPER: Stats ko Frappe backend mein save karo
+function save_nesting_stats_to_backend(item, project, sheets, nested_parts, scrap, pdf_url, save_btn) {
+	frappe.call({
+		method: "fabtrk.fabtrk.report.ft_drawing_part.ft_drawing_part.save_nesting_report",
+		args: {
+			item:         item,
+			project:      project,
+			sheets:       sheets,
+			nested_parts: nested_parts,
+			scrap:        scrap,
+			pdf_url:      pdf_url || ""
+		},
+		callback: function (r) {
+			save_btn.disabled    = false;
+			save_btn.textContent = "💾 Save Report";
+ 
+			if (r.message && r.message.success) {
+				frappe.show_alert({ message: "✅ Nesting Report save!", indicator: "green" });
+ 
+				// Banner update karo
+				$("#saved-stat-sheets").text(sheets);
+				$("#saved-stat-nested-parts").text(nested_parts);
+				$("#saved-stat-scrap").text(scrap);
+ 
+				if (pdf_url) {
+					$("#saved-pdf-link").attr("href", pdf_url);
+					$("#saved-pdf-link-area").show();
+				}
+ 
+				$("#saved-data-banner").show();
+			} else {
+				return;
+			}
+		},
+		error: function () {
+			save_btn.disabled    = false;
+			save_btn.textContent = "💾 Save Report";
+			frappe.msgprint("Server error. Python method check karo.");
+		}
+	});
+}  
+// NEW FUNCTION: Nesting Center result JSON parser multiple output formats handle karta hai
 function parse_nesting_result_json(json) {
  
 	let sheets = "—", nested_parts = "—", scrap = "—";
@@ -1347,8 +964,8 @@ function parse_nesting_result_json(json) {
 		let np_done  = r.NestedParts   || r.nested_parts  || r.PartsNested  || 0;
 		let np_total = r.TotalParts    || r.total_parts   || r.Parts        || 0;
 		nested_parts = np_total ? `${np_done} / ${np_total}` : String(np_done);
-		scrap = r.Scrap !== undefined ? `${parseFloat(r.Scrap).toFixed(2)}%` : "—";
-		layouts = r.Layouts || r.layouts || [];
+		scrap        = r.Scrap         !== undefined ? `${parseFloat(r.Scrap).toFixed(2)}%` : "—";
+		layouts      = r.Layouts || r.layouts || [];
 	}
 	// Format 2: Flat { Sheets, NestedParts, ... }
 	else if (json.Sheets !== undefined || json.sheets !== undefined) {
@@ -1356,8 +973,8 @@ function parse_nesting_result_json(json) {
 		let np_done  = json.NestedParts  || json.nested_parts || 0;
 		let np_total = json.TotalParts   || json.total_parts  || 0;
 		nested_parts = np_total ? `${np_done} / ${np_total}` : String(np_done);
-		scrap = json.Scrap !== undefined ? `${parseFloat(json.Scrap).toFixed(2)}%` : "—";
-		layouts = json.Layouts || json.layouts || [];
+		scrap        = json.Scrap        !== undefined ? `${parseFloat(json.Scrap).toFixed(2)}%` : "—";
+		layouts      = json.Layouts || json.layouts || [];
 	}
 	// Format 3: { Solution: { ... } }
 	else if (json.Solution) {
@@ -1404,136 +1021,120 @@ function parse_nesting_result_json(json) {
 	frappe.show_alert({ message: "Nesting results parse ho gaye!", indicator: "green" });
 }
 
-// ── Nesting Report Modal ──
+
 /**************************************************************** */
 
 $(`<style>
-
-.datatable .dt-scrollable {
-    overflow-x: auto !important;
+.datatable .dt-scrollable{ 
+	overflow-x: auto !important; 
 }
-
-.datatable-wrapper {
-    width: 100% !important;
-	overflow-x: auto;
+.datatable-wrapper{ 
+	width: 100% !important; 
+	overflow-x: auto; 
 }
-
-.report-wrapper {
-    max-width: 100% !important;
+.report-wrapper{
+ 	max-width: 100% !important;
 }
-	
-.report-summary .summary-item{
-	max-width: 100%;
-	min-width: 100%;
-	height: 100%;
-	display: block;
-	place-content: unset;
-	margin: 0;
+.report-summary .summary-item{ 
+	max-width:100%; 
+	min-width:100%; 
+	height:100%; 
+	display:block; 
+	place-content:unset; 
+	margin:0; 
 }
 .summary-container{
-	display: grid;
-	grid-template-columns: repeat(1, 1fr) !important;
-	gap: 20px;
+	display:grid; 
+	grid-template-columns:repeat(1,1fr) !important; 
+	gap:20px; 
 }
-@media (min-width: 768px) and (max-width: 1023px) {
-	.summary-container{
-		grid-template-columns: repeat(2, 1fr) !important;
-	}
+@media (min-width:768px) and (max-width:1023px) { 
+	.summary-container { 
+		grid-template-columns:repeat(2,1fr) !important; 
+	} 
 }
-@media (min-width: 1024px) {
-	.summary-container{
-		grid-template-columns: repeat(6, 1fr) !important;
-	}
+@media (min-width:1024px) { 
+	.summary-container { 
+		grid-template-columns:repeat(5,1fr) !important;
+	} 
 }
 .report-summary .summary-value .summary-container {
-	padding: 20px;
+	padding:20px; 
 }
-.summary-section{
-	width: 100%;
-	background: #fff;
-	padding: 20px;
-	border-radius: 10px;
-	text-align: center;
-	transition: all 0.2s ease;
-	border: 2px solid #eef0f4;
-
-	overflow: visible;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    box-sizing: border-box;
+.summary-section {
+	width:100%; 
+	background:#fff;
+	padding:20px;
+	border-radius:10px; 
+	text-align:center;
+	transition:all 0.2s ease;
+	border:2px solid #eef0f4; 
+	overflow:visible; 
+	display:flex; 
+	flex-direction:column; 
+	align-items:center; 
+	justify-content:center; 
+	gap:10px; 
+	box-sizing:border-box; 
 }
 .section-content-count {
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
+	width:100%; display:flex;
+	flex-direction:column;
+	align-items:center;
+	text-align:center; 
 }
-.section-content-count p{
-	font-size: 13px;
-    font-weight: 400;
-    color: #525252;
-    margin: 0 0 4px 0;
-    white-space: normal;
-    word-break: break-word;
-    overflow-wrap: break-word;
-    overflow: visible;
-    text-align: center;
-    width: 100%;
-    line-height: 1.5;
-}
-.section-content-count span{
-	font-size: 16px;
-	font-weight: 600;
-	line-height: 20px;
-	padding-top: 4px;
-    padding-bottom: 5px;
-    color: #000;
-    display: block;
-    width: 100%;
-    text-align: center;
-}
-.report-summary {
-	background-color: none;
-	border-radius: 0;
-	border-bottom: 0;
-	margin: 0;
-	padding: 0;
-	display: block;
-	flex-wrap: unset;
-	align-items: unset;
-	justify-content: unset;
-	gap: 0px;
-}
-.table{
-	width: 100% !important;
-}
+.section-content-count p {
+	font-size:13px; 
+	font-weight:400; 
+	color:#525252; 
+	margin:0 0 4px 0; 
+	white-space:normal; 
+	word-break:break-word; 
+	overflow-wrap:break-word; 
+	overflow:visible; 
+	text-align:center; 
+	width:100%; 
+	line-height:1.5; 
+ }
+.section-content-count span {
+	font-size:16px; 
+	font-weight:600;
+	line-height:20px; 
+	padding-top:4px; 
+	padding-bottom:5px; 
+	color:#000; 
+	display:block; 
+	width:100%; 
+	text-align:center; 
+ }
 
-/* button view active color*/
-.view-btn.active-detail {
-	background-color: #0c5c70 !important;
-	color: #fff !important;
-	border-color: #0c5c70  !important;
-	box-shadow: 0 0 0 2px rgba(21, 54, 102, 0.25);
+ .report-summary { 
+	background-color:none; 
+	border-radius:0; 
+	border-bottom:0; 
+	margin:0; 
+	padding:0; 
+	display:block;
+  }
+.table{ 
+	width:100% !important;
 }
-
-
-/* ===== FIX ROW NUMBER COLUMN ===== */
-.datatable .dt-cell--col-0 {
-    min-width: 50px !important;
-    width: 50px !important;
-    max-width: 50px !important;
-    text-align: center !important;
+.view-btn.active-detail { 
+	background-color:#0c5c70 !important; 
+	color:#fff !important;
+	border-color:#0c5c70 !important; 
+	box-shadow:0 0 0 2px rgba(21,54,102,0.25);
 }
-
-.datatable .dt-row .dt-cell {
-    white-space: nowrap !important;
+.datatable .dt-cell--col-0 { 
+	min-width:50px !important; 
+	width:50px !important; 
+	max-width:50px !important; 
+	text-align:center !important; 
 }
-.datatable .dt-cell__content--header-0, .datatable .dt-cell__content--col-0{
-	padding: 0 !important;
+.datatable .dt-row .dt-cell { 
+	white-space:nowrap !important; 
+}
+.datatable .dt-cell__content--header-0, .datatable .dt-cell__content--col-0 {
+	padding:0 !important;
 }
 </style>`).appendTo("head");
-

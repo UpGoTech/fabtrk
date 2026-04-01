@@ -1,5 +1,6 @@
 {
  "actions": [],
+ "allow_import": 1,
  "allow_rename": 1,
  "autoname": "field:section_type_name",
  "creation": "2026-02-11 17:25:47.769965",
@@ -26,7 +27,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-10 14:27:15.566662",
+ "modified": "2026-03-23 14:04:00.489376",
  "modified_by": "Administrator",
  "module": "Fabtrk",
  "name": "FT Section Type",

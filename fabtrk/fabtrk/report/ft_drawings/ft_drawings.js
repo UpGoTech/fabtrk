@@ -1,18 +1,20 @@
 // Copyright (c) 2026, UpGo Technologies and contributors
 // For license information, please see license.txt
 
+
 frappe.query_reports["FT Drawings"] = {
 	onload(report) {
 
 		frappe.query_report.set_filter_value("project_number", []);
 		frappe.query_report.set_filter_value("drawing_number", []);
+		frappe.query_report.set_filter_value("po_serial_no", []);
 		frappe.query_report.set_filter_value("is_active", 1);
 
 		report.page.add_inner_button("Drawing Excel", function () {
 
 			let filters = report.get_values();
 
-			let url = "/api/method/fabtrk.fabtrk.report.ft_drawing_report_2.ft_drawing_report_2.download_drawing_excel"
+			let url = "/api/method/fabtrk.fabtrk.report.ft_drawings.ft_drawings.download_drawing_excel"
 				+ "?filters=" + encodeURIComponent(JSON.stringify(filters));
 
 			window.location.href = url;
@@ -21,15 +23,34 @@ frappe.query_reports["FT Drawings"] = {
 		setTimeout(() => {
 			frappe.query_report.refresh();
 		}, 100);
-	}, after_datatable_render(datatable) {
+	},
+
+	// after_datatable_render(datatable) {
+	// 	render_custom_summary_2();
+
+	// 	// TOTAL row serial number hide karo
+	// 	setTimeout(() => {
+	// 		let all_rows = $(".datatable .dt-body .dt-row");
+	// 		let last_row = all_rows.last();
+	// 		last_row.find(".dt-cell:first .dt-cell__content").html("");
+	// 	}, 300);
+	// },
+	after_datatable_render(datatable) {
 		render_custom_summary_2();
 
-		// TOTAL row serial number hide karo
-		setTimeout(() => {
-			let all_rows = $(".datatable .dt-body .dt-row");
-			let last_row = all_rows.last();
-			last_row.find(".dt-cell:first .dt-cell__content").html("");
-		}, 300);
+		function hide_total_serial() {
+			$(".datatable .dt-body .dt-row").each(function () {
+				if ($(this).text().includes("TOTAL")) {
+					$(this).find(".dt-cell").first()
+						.find(".dt-cell__content")
+						.css("visibility", "hidden");
+				}
+			});
+		}
+
+		setTimeout(hide_total_serial, 200);
+		setTimeout(hide_total_serial, 500);
+		setTimeout(hide_total_serial, 1000);
 	},
 
 	filters: [
@@ -54,25 +75,159 @@ frappe.query_reports["FT Drawings"] = {
 					args: {
 						doctype: "FT Project",
 						filters: filters,
-						fields: ["name", "project_name", "description"]
+						fields: ["name", "project_name", "description"],
+						limit: 0    // ✅ sare projects lao
 					}
 				}).then(r => {
-					return (r.message || []).map(d => ({
+					let result = (r.message || []).map(d => ({
 						value: d.name,
 						label: d.name,
 						description: d.description || ""
 					}));
+
+					if (txt) {
+						result = result.filter(item =>
+							item.label.toLowerCase().includes(txt.toLowerCase())
+						);
+					}
+
+					return result;
 				});
 			},
 
 			on_change() {
 				frappe.query_report.set_filter_value("drawing_number", []);
+				frappe.query_report.set_filter_value("po_serial_no", []);
 				frappe.query_report.refresh();
 				setTimeout(() => {
 					frappe.query_report.refresh();
 				}, 100);
 			}
 		},
+
+		// // ---------------- DRAWING ----------------
+		// {
+		// 	fieldname: "drawing_number",
+		// 	label: "Drawing Number",
+		// 	fieldtype: "MultiSelectList",
+
+		// 	get_data: function (txt) {
+
+		// 		let projects = frappe.query_report.get_filter_value("project_number");
+		// 		let filters = {};
+
+		// 		if (projects && projects.length > 0) {
+		// 			filters.project_number = ["in", projects];
+		// 		}
+
+		// 		return frappe.call({
+		// 			method: "frappe.client.get_list",
+		// 			args: {
+		// 				doctype: "FT Add Drawing",
+		// 				filters: filters,
+		// 				fields: ["drawing_number"],
+		// 				limit: 0    // ✅ KEY FIX - sare drawing numbers lao (default 20 tha)
+		// 			}
+		// 		}).then(r => {
+		// 			let unique_map = {};
+		// 			let result = [];
+
+		// 			(r.message || []).forEach(d => {
+		// 				let val = d.drawing_number;
+		// 				if (val && !unique_map[val]) {
+		// 					unique_map[val] = true;
+		// 					result.push({
+		// 						value: val,
+		// 						label: val,
+		// 						description: ""
+		// 					});
+		// 				}
+		// 			});
+
+		// 			// txt se search filter
+		// 			if (txt) {
+		// 				result = result.filter(item =>
+		// 					item.label.toLowerCase().includes(txt.toLowerCase())
+		// 				);
+		// 			}
+
+		// 			return result;
+		// 		});
+		// 	},
+
+		// 	on_change() {
+		// 		frappe.query_report.set_filter_value("po_serial_no", []);
+		// 		frappe.query_report.refresh();
+		// 	}
+		// },
+
+		// // ---------------- PO SERIAL NO ----------------
+		// {
+		// 	fieldname: "po_serial_no",
+		// 	label: "PO Serial No",
+		// 	fieldtype: "MultiSelectList",
+
+		// 	get_data: function (txt) {
+
+		// 		let projects = frappe.query_report.get_filter_value("project_number");
+		// 		let drawings = frappe.query_report.get_filter_value("drawing_number");
+
+		// 		let filters = {};
+
+		// 		if (projects && projects.length > 0) {
+		// 			filters.project_number = ["in", projects];
+		// 		}
+
+		// 		if (drawings && drawings.length > 0) {
+		// 			filters.drawing_number = ["in", drawings];
+		// 		}
+
+		// 		return frappe.call({
+		// 			method: "frappe.client.get_list",
+		// 			args: {
+		// 				doctype: "FT Po Drawing",
+		// 				filters: filters,
+		// 				fields: ["po_serial_no"],
+		// 				limit: 0    // ✅ sare po serial numbers lao
+		// 			}
+		// 		}).then(r => {
+		// 			let unique_map = {};
+		// 			let result = [];
+
+		// 			(r.message || []).forEach(d => {
+		// 				let val = d.po_serial_no;
+		// 				if (val && !unique_map[val]) {
+		// 					unique_map[val] = true;
+		// 					result.push({
+		// 						value: val,
+		// 						label: val,
+		// 						description: ""
+		// 					});
+		// 				}
+		// 			});
+
+		// 			// txt se search filter
+		// 			if (txt) {
+		// 				result = result.filter(item =>
+		// 					item.label.toLowerCase().includes(txt.toLowerCase())
+		// 				);
+		// 			}
+
+		// 			// Numeric sort
+		// 			result.sort((a, b) => {
+		// 				let na = parseInt(a.value), nb = parseInt(b.value);
+		// 				if (!isNaN(na) && !isNaN(nb)) return na - nb;
+		// 				return a.value.localeCompare(b.value);
+		// 			});
+
+		// 			return result;
+		// 		});
+		// 	},
+
+		// 	on_change() {
+		// 		frappe.query_report.refresh();
+		// 	}
+		// },
 
 		// ---------------- DRAWING ----------------
 		{
@@ -81,38 +236,41 @@ frappe.query_reports["FT Drawings"] = {
 			fieldtype: "MultiSelectList",
 
 			get_data: function (txt) {
-
 				let projects = frappe.query_report.get_filter_value("project_number");
-				let filters = {};
-
-				if (projects && projects.length > 0) {
-					filters.project_number = ["in", projects];
-				}
 
 				return frappe.call({
-					method: "frappe.client.get_list",
+					method: "fabtrk.fabtrk.report.ft_drawings.ft_drawings.get_drawing_numbers",
 					args: {
-						doctype: "FT Add Drawing",
-						filters: filters,
-						fields: ["name", "drawing_number"]
+						project_number: JSON.stringify(projects || []),
+						txt: txt || ""
 					}
-				}).then(r => {
-					let unique_map = {};
-					let result = [];
+				}).then(r => r.message || []);
+			},
 
-					(r.message || []).forEach(d => {
-						if (!unique_map[d.drawing_number]) {
-							unique_map[d.drawing_number] = true;
-							result.push({
-								value: d.drawing_number,
-								label: d.drawing_number,
-								description: ""
-							});
-						}
-					});
+			on_change() {
+				frappe.query_report.set_filter_value("po_serial_no", []);
+				frappe.query_report.refresh();
+			}
+		},
 
-					return result;
-				});
+		// ---------------- PO SERIAL NO ----------------
+		{
+			fieldname: "po_serial_no",
+			label: "PO Serial No",
+			fieldtype: "MultiSelectList",
+
+			get_data: function (txt) {
+				let projects = frappe.query_report.get_filter_value("project_number");
+				let drawings = frappe.query_report.get_filter_value("drawing_number");
+
+				return frappe.call({
+					method: "fabtrk.fabtrk.report.ft_drawings.ft_drawings.get_po_serial_numbers",
+					args: {
+						project_number: JSON.stringify(projects || []),
+						drawing_number: JSON.stringify(drawings || []),
+						txt: txt || ""
+					}
+				}).then(r => r.message || []);
 			},
 
 			on_change() {
@@ -130,16 +288,30 @@ frappe.query_reports["FT Drawings"] = {
 			on_change() {
 				frappe.query_report.set_filter_value("project_number", []);
 				frappe.query_report.set_filter_value("drawing_number", []);
+				frappe.query_report.set_filter_value("po_serial_no", []);
 				frappe.query_report.refresh();
 			}
 		}
 	],
 
+	// formatter: function (value, row, column, data, default_formatter) {
+
+	// 	if (data && data.project_name === "TOTAL") {
+	// 		if (column.id === "_index") {
+	// 			return "";
+	// 		}
+	// 		value = default_formatter(value, row, column, data);
+	// 		return `<span style="font-weight:bold;background:#f2f2f2">${value}</span>`;
+	// 	}
+
+	// 	return default_formatter(value, row, column, data);
+	// }
 	formatter: function (value, row, column, data, default_formatter) {
 
 		if (data && data.project_name === "TOTAL") {
 			if (column.id === "_index") {
-				return "";
+				// ✅ Empty span with visibility hidden
+				return `<span style="visibility:hidden;">0</span>`;
 			}
 			value = default_formatter(value, row, column, data);
 			return `<span style="font-weight:bold;background:#f2f2f2">${value}</span>`;
@@ -215,6 +387,7 @@ function render_custom_summary_2() {
 // ---------------- STYLE ----------------
 $(`<style>
 
+/*   -------------------CARD*/
 .ft-custom-summary-2 {
 	display: grid;
 	grid-template-columns: repeat(4, 1fr);
@@ -261,6 +434,7 @@ $(`<style>
 	text-align: center;
 	width: 100%;
 }
+/*   -------------------CARD*/
 
 .report-wrapper,
 .datatable,
@@ -268,9 +442,6 @@ $(`<style>
 	width: 100% !important;
 }
 
-.datatable .dt-scrollable {
-	overflow-x: auto !important;
-}
 
 .datatable table {
 	width: 100% !important;
@@ -288,15 +459,16 @@ $(`<style>
 	text-overflow: unset !important;
 }
 
-.datatable .dt-cell--col-0 .dt-cell__content {
-	display: flex;
-	justify-content: center;
-	align-items: center;
-	width: 100%;
-}
 
 .datatable .dt-row {
 	width: 100% !important;
 }
 
+
+/* ✅ TOTAL row — serial number hide karo permanently */
+.datatable .dt-body .dt-row:last-child .dt-cell:first-child .dt-cell__content {
+    visibility: hidden !important;
+    pointer-events: none !important;
+}
 </style>`).appendTo("head");
+

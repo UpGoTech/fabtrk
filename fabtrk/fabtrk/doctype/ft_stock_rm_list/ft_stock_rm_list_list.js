@@ -1,13 +1,20 @@
-frappe.listview_settings['FT Drawing Parts'] = {
+// frappe.listview_settings['FT Stock RM List'] = {
+//     refresh: function(listview) {
+//         listview.page.add_inner_button('Export', function() {
+//             window.location.href =
+//                 '/api/method/fabtrk.fabtrk.doctype.ft_stock_rm_list.ft_stock_rm_list.export_with_value';
+//         });
+//     }
+// };
+
+frappe.listview_settings['FT Stock RM List'] = {
     refresh: function(listview) {
 
-        // ✅ Export
         listview.page.add_inner_button('Export', function() {
             window.location.href =
-                '/api/method/fabtrk.fabtrk.doctype.ft_drawing_parts.ft_drawing_parts.export_with_value';
+                '/api/method/fabtrk.fabtrk.doctype.ft_stock_rm_list.ft_stock_rm_list.export_with_value';
         });
 
-        // ✅ Import
         listview.page.add_inner_button('Import', function() {
 
             let selected_file_url = null;
@@ -23,8 +30,8 @@ frappe.listview_settings['FT Drawing Parts'] = {
                             </svg>
                         </div>
                         <div>
-                            <div style="font-weight:500; font-size:15px; color:var(--color-text-primary); line-height:1.3;">Import Drawing Parts</div>
-                            <div style="font-size:12px; color:var(--color-text-secondary); font-weight:400; line-height:1.3;">Importing data from excel/csv file</div>
+                            <div style="font-weight:500; font-size:15px; color:var(--color-text-primary); line-height:1.3;">Import Stock RM List</div>
+                            <div style="font-size:12px; color:var(--color-text-secondary); font-weight:400; line-height:1.3;">Excel file se data import karo</div>
                         </div>
                     </div>
                 `,
@@ -33,13 +40,13 @@ frappe.listview_settings['FT Drawing Parts'] = {
                         fieldname: 'dialog_html',
                         fieldtype: 'HTML',
                         options: `
-                        <div id="dp-import-root">
+                        <div id="import-dialog-root">
 
                             <!-- Drop Zone -->
-                            <div id="dp-drop-zone" style="
-                                border: 1.5px dashed #C0C0B8;
+                            <div id="drop-zone" style="
+                                border: 1.5px dashed #b8b8c0;
                                 border-radius: 12px;
-                                background: #F9FAFB;
+                                background: rgba(232, 231, 225, 0.5);
                                 padding: 2rem 1rem;
                                 text-align: center;
                                 margin-bottom: 14px;
@@ -51,10 +58,10 @@ frappe.listview_settings['FT Drawing Parts'] = {
                                     <line x1="12" y1="18" x2="12" y2="12"/>
                                     <line x1="9" y1="15" x2="15" y2="15"/>
                                 </svg>
-                                <div id="dp-drop-text" style="font-size:14px; font-weight:500; color:var(--color-text-primary); margin-bottom:4px;">Excel/CSV file yahan drop karo</div>
+                                <div id="drop-text" style="font-size:14px; font-weight:500; color:var(--color-text-primary); margin-bottom:4px;">Excel file yahan drop karo</div>
                                 <div style="font-size:12px; color:var(--color-text-secondary); margin-bottom:14px;">ya button se select karo</div>
-                                <button id="dp-choose-btn" style="
-                                    background: var(--color-background-primary);
+                                <button id="choose-file-btn" style="
+                                    background: #ffffff;
                                     border: 0.5px solid #C0C0B8;
                                     border-radius: 8px;
                                     padding: 7px 20px;
@@ -62,14 +69,14 @@ frappe.listview_settings['FT Drawing Parts'] = {
                                     cursor: pointer;
                                     color: var(--color-text-primary);
                                 ">File Choose karo</button>
-                                <input type="file" id="dp-file-input" accept=".xlsx, .csv" style="display:none;" />
+                                <input type="file" id="file-input" accept=".xlsx" style="display:none;" />
                             </div>
 
                             <!-- Note -->
                             <div style="background:#EBF5FF; border-radius:8px; padding:10px 14px; margin-bottom:14px;">
                                 <div style="font-size:12px; color:#1D4ED8; line-height:1.7;">
-                                    <strong>Note:</strong> .xlsx aur .csv dono support hai
-                                    &nbsp;·&nbsp; Item value automatically match hogi
+                                    <strong>Note:</strong> Sirf .xlsx format support hai
+                                    &nbsp;·&nbsp; Grade value automatically match hogi
                                     &nbsp;·&nbsp; Duplicate records skip honge
                                 </div>
                             </div>
@@ -77,26 +84,26 @@ frappe.listview_settings['FT Drawing Parts'] = {
                             <!-- Supported Fields -->
                             <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; font-size:12px; color:var(--color-text-secondary); margin-bottom:20px;">
                                 <div style="display:flex; align-items:center; gap:6px;">
-                                    <div style="width:7px; height:7px; border-radius:50%; background:#C0C0B8; flex-shrink:0;"></div>
-                                    Project / Drawing
+                                    <div style="width:7px; height:7px; border-radius:50%; background:#888; flex-shrink:0;"></div>
+                                    Section / Plate
                                 </div>
                                 <div style="display:flex; align-items:center; gap:6px;">
-                                    <div style="width:7px; height:7px; border-radius:50%; background:#C0C0B8; flex-shrink:0;"></div>
-                                    Item auto-link
+                                    <div style="width:7px; height:7px; border-radius:50%; background:#888; flex-shrink:0;"></div>
+                                    Grade auto-link
                                 </div>
                                 <div style="display:flex; align-items:center; gap:6px;">
-                                    <div style="width:7px; height:7px; border-radius:50%; background:#C0C0B8; flex-shrink:0;"></div>
-                                    Length / Width / Qty
+                                    <div style="width:7px; height:7px; border-radius:50%; background:#888; flex-shrink:0;"></div>
+                                    KG / Meter
                                 </div>
                                 <div style="display:flex; align-items:center; gap:6px;">
-                                    <div style="width:7px; height:7px; border-radius:50%; background:#C0C0B8; flex-shrink:0;"></div>
-                                    Weight auto
+                                    <div style="width:7px; height:7px; border-radius:50%; background:#888; flex-shrink:0;"></div>
+                                    Computed name auto
                                 </div>
                             </div>
 
                             <!-- Buttons -->
                             <div style="display:flex; gap:10px;">
-                                <button id="dp-cancel-btn" style="
+                                <button id="cancel-btn" style="
                                     flex:1;
                                     background: transparent;
                                     border: 0.5px solid #C0C0B8;
@@ -106,16 +113,16 @@ frappe.listview_settings['FT Drawing Parts'] = {
                                     cursor: pointer;
                                     color: var(--color-text-secondary);
                                 ">Cancel</button>
-                                <button id="dp-import-btn" style="
+                                <button id="import-btn" style="
                                     flex:2;
-                                    background: #000000;
+                                    background: rgb(20, 20, 19);
                                     border: none;
                                     border-radius: 8px;
                                     padding: 10px;
                                     font-size: 14px;
                                     font-weight: 500;
                                     cursor: pointer;
-                                    color: #FFFFFF;
+                                    color: #fff;
                                 ">Import</button>
                             </div>
 
@@ -125,28 +132,34 @@ frappe.listview_settings['FT Drawing Parts'] = {
                 ]
             });
 
+            // ✅ Frappe default footer hide
             d.$wrapper.find('.modal-footer').hide();
+
             d.show();
 
             setTimeout(function() {
 
-                let dropZone  = document.getElementById('dp-drop-zone');
-                let fileInput = document.getElementById('dp-file-input');
-                let dropText  = document.getElementById('dp-drop-text');
+                let dropZone  = document.getElementById('drop-zone');
+                let fileInput = document.getElementById('file-input');
+                let dropText  = document.getElementById('drop-text');
 
-                document.getElementById('dp-cancel-btn').addEventListener('click', function() {
+                // Cancel
+                document.getElementById('cancel-btn').addEventListener('click', function() {
                     d.hide();
                 });
 
-                document.getElementById('dp-choose-btn').addEventListener('click', function(e) {
+                // Choose file button
+                document.getElementById('choose-file-btn').addEventListener('click', function(e) {
                     e.stopPropagation();
                     fileInput.click();
                 });
 
+                // Drop zone click
                 dropZone.addEventListener('click', function() {
                     fileInput.click();
                 });
 
+                // Drag over
                 dropZone.addEventListener('dragover', function(e) {
                     e.preventDefault();
                     dropZone.style.borderColor = '#3B82F6';
@@ -158,24 +171,26 @@ frappe.listview_settings['FT Drawing Parts'] = {
                     dropZone.style.background  = '';
                 });
 
+                // Drop
                 dropZone.addEventListener('drop', function(e) {
                     e.preventDefault();
                     dropZone.style.borderColor = '#C0C0B8';
                     dropZone.style.background  = '';
-                    if (e.dataTransfer.files[0]) handle_file(e.dataTransfer.files[0]);
+                    let file = e.dataTransfer.files[0];
+                    if (file) handle_file(file);
                 });
 
+                // File input change
                 fileInput.addEventListener('change', function() {
                     if (fileInput.files[0]) handle_file(fileInput.files[0]);
                 });
 
                 function handle_file(file) {
 
-                    // ✅ Validation for XLSX and CSV
-                    if (!file.name.endsWith('.xlsx') && !file.name.endsWith('.csv')) {
+                    if (!file.name.endsWith('.xlsx')) {
                         frappe.msgprint({
                             title: 'Wrong Format',
-                            message: 'Sirf .xlsx ya .csv file allowed hai.',
+                            message: 'Sirf .xlsx file allowed hai.',
                             indicator: 'orange'
                         });
                         return;
@@ -202,40 +217,49 @@ frappe.listview_settings['FT Drawing Parts'] = {
                             dropText.textContent       = '✓ Ready: ' + file.name;
                             dropZone.style.borderColor = '#1D9E75';
                         } else {
-                            dropText.textContent       = 'Excel/CSV file yahan drop karo';
+                            dropText.textContent       = 'Excel file yahan drop karo';
                             dropZone.style.borderColor = '#C0C0B8';
                             dropZone.style.borderStyle = 'dashed';
-                            frappe.msgprint({ title: 'Upload Error', message: 'File upload nahi hui.', indicator: 'red' });
+                            frappe.msgprint({
+                                title: 'Upload Error',
+                                message: 'File upload nahi hui. Dobara try karo.',
+                                indicator: 'red'
+                            });
                         }
                     })
                     .catch(function() {
-                        dropText.textContent       = 'Excel/CSV file yahan drop karo';
+                        dropText.textContent       = 'Excel file yahan drop karo';
                         dropZone.style.borderColor = '#C0C0B8';
                         dropZone.style.borderStyle = 'dashed';
-                        frappe.msgprint({ title: 'Upload Error', message: 'Network error.', indicator: 'red' });
+                        frappe.msgprint({
+                            title: 'Upload Error',
+                            message: 'Network error. Dobara try karo.',
+                            indicator: 'red'
+                        });
                     });
                 }
 
-                document.getElementById('dp-import-btn').addEventListener('click', function() {
+                // Import button
+                document.getElementById('import-btn').addEventListener('click', function() {
 
                     if (!selected_file_url) {
                         frappe.msgprint({
                             title: 'File Missing',
-                            message: 'Pehle Excel/CSV file select karo.',
+                            message: 'Pehle Excel file select karo.',
                             indicator: 'orange'
                         });
                         return;
                     }
 
-                    let btn         = document.getElementById('dp-import-btn');
+                    let btn         = document.getElementById('import-btn');
                     btn.textContent = 'Importing...';
                     btn.disabled    = true;
 
                     frappe.call({
-                        method: 'fabtrk.fabtrk.doctype.ft_drawing_parts.ft_drawing_parts.import_with_value',
+                        method: 'fabtrk.fabtrk.doctype.ft_stock_rm_list.ft_stock_rm_list.import_with_value',
                         args: { file_url: selected_file_url },
                         freeze: true,
-                        freeze_message: 'Importing...',
+                        freeze_message: 'Import ho raha hai...',
                         callback: function(r) {
                             btn.textContent = 'Import Karo';
                             btn.disabled    = false;
@@ -258,3 +282,5 @@ frappe.listview_settings['FT Drawing Parts'] = {
         });
     }
 };
+
+
