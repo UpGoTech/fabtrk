@@ -9,18 +9,6 @@
 # 	return columns, data
 
 
-# # Copyright (c) 2026, UpGo Technologies and contributors
-# # For license information, please see license.txt
-
-# # import frappe
-
-
-# def execute(filters=None):
-# 	columns, data = [], []
-# 	return columns, data
-
-# Copyright (c) 2026, UpGo Technologies
-# For license information, please see license.txt
 
 import frappe
 from frappe.utils import fmt_money

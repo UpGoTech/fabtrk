@@ -1,10 +1,3 @@
-// frappe.listview_settings["FT Drawing Parts"] = {   
-//     onload(listview) {
-//         listview.page.add_inner_button("Export", function() {
-//             window.open("/app/data-export/new-data-export?reference_doctype=FT Drawing Parts");
-//         });
-//     }
-// };
 
 frappe.listview_settings["FT Drawing Parts"] = {
     onload(listview) {
