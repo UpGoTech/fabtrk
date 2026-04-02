@@ -32,7 +32,230 @@ frappe.query_reports["FT Drawing Part"] = {
 			});
 		});
 
-		// ---------- Save Snapshot Button --------------
+		// // ---------- Save Snapshot Button --------------
+		// report.page.add_inner_button("💾 Save Snapshot", function () {
+		// 	let report_data = frappe.query_report.data || [];
+		// 	let rows_to_save = report_data.filter(d =>
+		// 		d.project_name && d.project_name !== "TOTAL" && d.item_id
+		// 	);
+		// 	if (!rows_to_save.length) {
+		// 		frappe.msgprint("Koi data nahi hai save karne ke liye");
+		// 		return;
+		// 	}
+
+		// 	frappe.confirm(`Kya aap ${rows_to_save.length} rows ka snapshot save karna chahte ho?`, function () {
+		// 		let promises = rows_to_save.map((row, i) => frappe.call({
+		// 			method: "fabtrk.fabtrk.report.ft_drawing_part.ft_drawing_part.save_row_data",
+		// 			args: {
+		// 				sr_no: i + 1,
+		// 				project: row.project_name,
+		// 				item_name: row.item_name,
+		// 				item_count: row.item_count,
+		// 				quantity: row.quantity,
+		// 				lenght: row.lenght,
+		// 				width: row.width,
+		// 				total_weight: row.total_weight,
+		// 				drawing_number: row.drawing_number 
+		// 			}
+		// 		}));
+
+		// 		Promise.all(promises).then(results => {
+		// 			let saved_count = 0;
+		// 			let no_change_count = 0;
+		// 			results.forEach(r => {
+		// 				if (r.message && r.message.status === "success") {
+		// 					if (r.message.msg && r.message.msg.includes("same")) {
+		// 						no_change_count++;
+		// 					} else {
+		// 						saved_count++;
+		// 					}
+		// 				}
+		// 			});
+
+		// 			if (no_change_count === rows_to_save.length) {
+		// 				frappe.msgprint({
+		// 					title: "No Changes",
+		// 					message: "There is no changes in any data.",
+		// 					indicator: "orange"
+		// 				});
+		// 			} else if (saved_count > 0) {
+		// 				frappe.msgprint({
+		// 					title: "Snapshot Saved",
+		// 					message: `✅ ${saved_count} data mein changes hai, successfully saved.`,
+		// 					indicator: "green"
+		// 				});
+		// 			}
+		// 		});
+		// 	});
+		// });
+
+		// // ---------- Compare Snapshot Button --------------
+		// report.page.add_inner_button("📊 Compare Snapshot", function () {
+		// 	let report_data = frappe.query_report.data || [];
+		// 	let rows_to_compare = report_data.filter(d =>
+		// 		d.project_name && d.project_name !== "TOTAL" && d.item_id
+		// 	);
+		// 	if (!rows_to_compare.length) {
+		// 		frappe.msgprint("Koi data nahi hai compare karne ke liye");
+		// 		return;
+		// 	}
+
+		// 	let promises = rows_to_compare.map(row => frappe.call({
+		// 		method: "fabtrk.fabtrk.report.ft_drawing_part.ft_drawing_part.compare_row_data",
+		// 		args: {
+		// 			sr_no: "",
+		// 			project: row.project_name,
+		// 			item_name: row.item_name,
+		// 			item_count: row.item_count,
+		// 			quantity: row.quantity,
+		// 			lenght: row.lenght,
+		// 			width: row.width,
+		// 			total_weight: row.total_weight
+		// 		}
+		// 	}));
+
+		// 	Promise.all(promises).then(results => {
+		// 		let field_labels = {
+		// 			"total_entries": "Total Entries",
+		// 			"total_qty": "Total Qty",
+		// 			"total_length": "Total Length",
+		// 			"total_width": "Total Width",
+		// 			"total_weight": "Total Weight"
+		// 		};
+		// 		let fields = ["total_entries", "total_qty", "total_length", "total_width", "total_weight"];
+
+		// 		// Duplicate items filter
+		// 		let seen_items = new Set();
+		// 		let unique_results = [];
+		// 		results.forEach(r => {
+		// 			if (r.message && r.message.status === "success") {
+		// 				if (!seen_items.has(r.message.item_name)) {
+		// 					seen_items.add(r.message.item_name);
+		// 					unique_results.push(r);
+		// 				}
+		// 			}
+		// 		});
+
+		// 		let max_revisions = 0;
+		// 		unique_results.forEach(r => {
+		// 			max_revisions = Math.max(max_revisions, (r.message.revision_log || []).length);
+		// 		});
+
+		// 		// ✅ HTML Table — Drawing Numbers column added
+		// 		let html = `
+		// 			<div style="overflow-x:auto;">
+		// 			<table class="table table-bordered" style="font-size:12px; min-width:1100px;">
+		// 				<thead>
+		// 					<tr style="background:#1F4E79; color:#fff; text-align:center;">
+		// 						<th style="min-width:160px;">Projects</th>
+		// 						<th style="min-width:190px;">Item</th>
+		// 						<th style="min-width:180px; background:#155a6c;">Drawing Numbers</th>
+		// 						<th style="min-width:80px;">Project Count</th>
+		// 						<th style="min-width:110px;">Field</th>`;
+
+		// 		for (let i = 0; i < max_revisions; i++) {
+		// 			html += `<th style="min-width:130px;">Revision ${i + 1}</th>`;
+		// 		}
+		// 		html += `<th style="min-width:140px; background:#0c5c70;">Current Value</th>
+		// 				</tr>
+		// 				</thead>
+		// 				<tbody>`;
+
+		// 		unique_results.forEach(r => {
+		// 			if (!r.message || r.message.status !== "success") return;
+
+		// 			let {
+		// 				revision_log,
+		// 				current,
+		// 				current_timestamp,
+		// 				project,
+		// 				project_count,
+		// 				item_name,
+		// 				drawing_numbers   
+		// 			} = r.message;
+
+		// 			let last = revision_log.length ? revision_log[revision_log.length - 1] : null;
+
+		// 			fields.forEach((f, fi) => {
+		// 				let last_val = last ? parseFloat(last[f] || 0) : null;
+		// 				let curr_val = parseFloat(current[f] || 0);
+		// 				let field_changed = last_val !== null && last_val !== curr_val;
+		// 				let row_bg = field_changed ? "#fff8e1" : "#fff";
+
+		// 				let row = `<tr style="background:${row_bg};">`;
+
+		// 				// ✅ rowspan cells — Drawing Numbers added
+		// 				if (fi === 0) {
+		// 					row += `
+		// 						<td rowspan="${fields.length}" style="vertical-align:middle; font-weight:600; text-align:center; font-size:11px; color:#1F4E79;">${project}</td>
+		// 						<td rowspan="${fields.length}" style="vertical-align:middle; font-size:11px;">${item_name}</td>
+		// 						<td rowspan="${fields.length}" style="vertical-align:middle; font-size:10px; color:#155a6c; font-weight:600; text-align:center;">${drawing_numbers || "-"}</td>
+		// 						<td rowspan="${fields.length}" style="vertical-align:middle; text-align:center; font-weight:700; font-size:14px; color:#2F75B5;">${project_count}</td>`;
+		// 				}
+
+		// 				row += `<td style="font-weight:600; text-align:center;">${field_labels[f]}</td>`;
+
+		// 				for (let i = 0; i < max_revisions; i++) {
+		// 					let rev = revision_log[i];
+		// 					if (rev) {
+		// 						let val = parseFloat(rev[f] || 0);
+		// 						let prev_val = i > 0 ? parseFloat(revision_log[i - 1][f] || 0) : null;
+		// 						let changed = prev_val !== null && prev_val !== val;
+		// 						let style = changed ? "color:#e65c00; font-weight:bold;" : "color:#333;";
+		// 						row += `<td style="text-align:center; ${style}">
+		// 									${val}
+		// 									<br><small style="color:#888; font-size:10px;">${rev.timestamp || ""}</small>
+		// 								</td>`;
+		// 					} else {
+		// 						row += `<td style="text-align:center; color:#ccc;">-</td>`;
+		// 					}
+		// 				}
+
+		// 				// Current Value column
+		// 				let curr_changed = last_val !== null && last_val !== curr_val;
+		// 				let curr_style = curr_changed
+		// 					? "color:#1a7abf; font-weight:bold; background:#e8f4fd;"
+		// 					: "color:#555;";
+		// 				row += `<td style="text-align:center; ${curr_style}">
+		// 							${curr_val}
+		// 							<br><small style="color:#888; font-size:10px;">${current_timestamp}</small>
+		// 							${curr_changed
+		// 						? '<br><small style="color:green; font-weight:bold;">▲ Changed</small>'
+		// 						: '<br><small style="color:#aaa;">No Change</small>'}
+		// 						</td>`;
+
+		// 				row += `</tr>`;
+		// 				html += row;
+		// 			});
+
+		// 			// ✅ Separator colspan updated: +4 → +5 (Drawing Numbers column added)
+		// 			html += `<tr style="background:#e8edf2; height:6px;">
+		// 						<td colspan="${max_revisions + 5}" style="padding:0;"></td>
+		// 					 </tr>`;
+		// 		});
+
+		// 		html += `</tbody></table></div>`;
+
+		// 		// ✅ Excel Export
+		// 		let export_data = unique_results.map(r => r.message);
+		// 		frappe.call({
+		// 			method: "fabtrk.fabtrk.report.ft_drawing_part.ft_drawing_part.export_compare_snapshot_excel",
+		// 			args: { snapshot_data: JSON.stringify(export_data) },
+		// 			callback: function (res) {
+		// 				if (res.message) {
+		// 					const link = document.createElement("a");
+		// 					link.href = res.message;
+		// 					link.download = "Compare_Snapshot.xlsx";
+		// 					document.body.appendChild(link);
+		// 					link.click();
+		// 					document.body.removeChild(link);
+		// 				}
+		// 			}
+		// 		});
+		// 	});
+		// });
+
+		// Save Snapshot button — po_required_qty aur po_total_weight bhi bhejo
 		report.page.add_inner_button("💾 Save Snapshot", function () {
 			let report_data = frappe.query_report.data || [];
 			let rows_to_save = report_data.filter(d =>
@@ -55,7 +278,9 @@ frappe.query_reports["FT Drawing Part"] = {
 						lenght: row.lenght,
 						width: row.width,
 						total_weight: row.total_weight,
-						drawing_number: row.drawing_number 
+						po_required_qty: row.po_required_qty || 0,   // ✅ NEW
+						po_total_weight: row.po_total_weight || 0,   // ✅ NEW
+						drawing_number: row.drawing_number
 					}
 				}));
 
@@ -89,7 +314,7 @@ frappe.query_reports["FT Drawing Part"] = {
 			});
 		});
 
-		// ---------- Compare Snapshot Button --------------
+		// Compare Snapshot button — HTML table mein PO fields bhi dikhao
 		report.page.add_inner_button("📊 Compare Snapshot", function () {
 			let report_data = frappe.query_report.data || [];
 			let rows_to_compare = report_data.filter(d =>
@@ -115,16 +340,21 @@ frappe.query_reports["FT Drawing Part"] = {
 			}));
 
 			Promise.all(promises).then(results => {
+				// ✅ NEW: po_required_qty aur po_total_weight bhi add kiye
 				let field_labels = {
 					"total_entries": "Total Entries",
 					"total_qty": "Total Qty",
 					"total_length": "Total Length",
 					"total_width": "Total Width",
-					"total_weight": "Total Weight"
+					"total_weight": "Total Weight",
+					"po_required_qty": "PO Required Qty",   // ✅ NEW
+					"po_total_weight": "PO Total Weight",    // ✅ NEW
 				};
-				let fields = ["total_entries", "total_qty", "total_length", "total_width", "total_weight"];
+				let fields = [
+					"total_entries", "total_qty", "total_length", "total_width", "total_weight",
+					"po_required_qty", "po_total_weight"   // ✅ NEW
+				];
 
-				// Duplicate items filter
 				let seen_items = new Set();
 				let unique_results = [];
 				results.forEach(r => {
@@ -141,37 +371,31 @@ frappe.query_reports["FT Drawing Part"] = {
 					max_revisions = Math.max(max_revisions, (r.message.revision_log || []).length);
 				});
 
-				// ✅ HTML Table — Drawing Numbers column added
 				let html = `
-					<div style="overflow-x:auto;">
-					<table class="table table-bordered" style="font-size:12px; min-width:1100px;">
-						<thead>
-							<tr style="background:#1F4E79; color:#fff; text-align:center;">
-								<th style="min-width:160px;">Projects</th>
-								<th style="min-width:190px;">Item</th>
-								<th style="min-width:180px; background:#155a6c;">Drawing Numbers</th>
-								<th style="min-width:80px;">Project Count</th>
-								<th style="min-width:110px;">Field</th>`;
+            <div style="overflow-x:auto;">
+            <table class="table table-bordered" style="font-size:12px; min-width:1100px;">
+                <thead>
+                    <tr style="background:#1F4E79; color:#fff; text-align:center;">
+                        <th style="min-width:160px;">Projects</th>
+                        <th style="min-width:190px;">Item</th>
+                        <th style="min-width:180px; background:#155a6c;">Drawing Numbers</th>
+                        <th style="min-width:80px;">Project Count</th>
+                        <th style="min-width:110px;">Field</th>`;
 
 				for (let i = 0; i < max_revisions; i++) {
 					html += `<th style="min-width:130px;">Revision ${i + 1}</th>`;
 				}
 				html += `<th style="min-width:140px; background:#0c5c70;">Current Value</th>
-						</tr>
-						</thead>
-						<tbody>`;
+                </tr>
+                </thead>
+                <tbody>`;
 
 				unique_results.forEach(r => {
 					if (!r.message || r.message.status !== "success") return;
 
 					let {
-						revision_log,
-						current,
-						current_timestamp,
-						project,
-						project_count,
-						item_name,
-						drawing_numbers   
+						revision_log, current, current_timestamp,
+						project, project_count, item_name, drawing_numbers
 					} = r.message;
 
 					let last = revision_log.length ? revision_log[revision_log.length - 1] : null;
@@ -182,18 +406,22 @@ frappe.query_reports["FT Drawing Part"] = {
 						let field_changed = last_val !== null && last_val !== curr_val;
 						let row_bg = field_changed ? "#fff8e1" : "#fff";
 
+						// ✅ PO fields ke liye special color
+						let field_label_style = "";
+						if (f === "po_required_qty") field_label_style = "color:#e65c00; font-weight:700;";
+						if (f === "po_total_weight") field_label_style = "color:#1a7abf; font-weight:700;";
+
 						let row = `<tr style="background:${row_bg};">`;
 
-						// ✅ rowspan cells — Drawing Numbers added
 						if (fi === 0) {
 							row += `
-								<td rowspan="${fields.length}" style="vertical-align:middle; font-weight:600; text-align:center; font-size:11px; color:#1F4E79;">${project}</td>
-								<td rowspan="${fields.length}" style="vertical-align:middle; font-size:11px;">${item_name}</td>
-								<td rowspan="${fields.length}" style="vertical-align:middle; font-size:10px; color:#155a6c; font-weight:600; text-align:center;">${drawing_numbers || "-"}</td>
-								<td rowspan="${fields.length}" style="vertical-align:middle; text-align:center; font-weight:700; font-size:14px; color:#2F75B5;">${project_count}</td>`;
+                        <td rowspan="${fields.length}" style="vertical-align:middle; font-weight:600; text-align:center; font-size:11px; color:#1F4E79;">${project}</td>
+                        <td rowspan="${fields.length}" style="vertical-align:middle; font-size:11px;">${item_name}</td>
+                        <td rowspan="${fields.length}" style="vertical-align:middle; font-size:10px; color:#155a6c; font-weight:600; text-align:center;">${drawing_numbers || "-"}</td>
+                        <td rowspan="${fields.length}" style="vertical-align:middle; text-align:center; font-weight:700; font-size:14px; color:#2F75B5;">${project_count}</td>`;
 						}
 
-						row += `<td style="font-weight:600; text-align:center;">${field_labels[f]}</td>`;
+						row += `<td style="font-weight:600; text-align:center; ${field_label_style}">${field_labels[f]}</td>`;
 
 						for (let i = 0; i < max_revisions; i++) {
 							let rev = revision_log[i];
@@ -203,40 +431,39 @@ frappe.query_reports["FT Drawing Part"] = {
 								let changed = prev_val !== null && prev_val !== val;
 								let style = changed ? "color:#e65c00; font-weight:bold;" : "color:#333;";
 								row += `<td style="text-align:center; ${style}">
-											${val}
-											<br><small style="color:#888; font-size:10px;">${rev.timestamp || ""}</small>
-										</td>`;
+                                    ${val}
+                                    <br><small style="color:#888; font-size:10px;">${rev.timestamp || ""}</small>
+                                </td>`;
 							} else {
 								row += `<td style="text-align:center; color:#ccc;">-</td>`;
 							}
 						}
 
-						// Current Value column
 						let curr_changed = last_val !== null && last_val !== curr_val;
 						let curr_style = curr_changed
 							? "color:#1a7abf; font-weight:bold; background:#e8f4fd;"
 							: "color:#555;";
 						row += `<td style="text-align:center; ${curr_style}">
-									${curr_val}
-									<br><small style="color:#888; font-size:10px;">${current_timestamp}</small>
-									${curr_changed
+                            ${curr_val}
+                            <br><small style="color:#888; font-size:10px;">${current_timestamp}</small>
+                            ${curr_changed
 								? '<br><small style="color:green; font-weight:bold;">▲ Changed</small>'
 								: '<br><small style="color:#aaa;">No Change</small>'}
-								</td>`;
+                        </td>`;
 
 						row += `</tr>`;
 						html += row;
 					});
 
-					// ✅ Separator colspan updated: +4 → +5 (Drawing Numbers column added)
+					// ✅ colspan bhi 7 fields ke hisaab se (5 fixed + revisions + 1 current)
 					html += `<tr style="background:#e8edf2; height:6px;">
-								<td colspan="${max_revisions + 5}" style="padding:0;"></td>
-							 </tr>`;
+                        <td colspan="${max_revisions + 5}" style="padding:0;"></td>
+                     </tr>`;
 				});
 
 				html += `</tbody></table></div>`;
 
-				// ✅ Excel Export
+				// Excel Export
 				let export_data = unique_results.map(r => r.message);
 				frappe.call({
 					method: "fabtrk.fabtrk.report.ft_drawing_part.ft_drawing_part.export_compare_snapshot_excel",

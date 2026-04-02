@@ -1,4 +1,4 @@
-
+// //export button added form list view
 frappe.listview_settings["FT Drawing Parts"] = {
     onload(listview) {
 
