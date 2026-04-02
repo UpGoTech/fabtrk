@@ -58,8 +58,8 @@ frappe.listview_settings['FT Stock RM List'] = {
                                     <line x1="12" y1="18" x2="12" y2="12"/>
                                     <line x1="9" y1="15" x2="15" y2="15"/>
                                 </svg>
-                                <div id="drop-text" style="font-size:14px; font-weight:500; color:var(--color-text-primary); margin-bottom:4px;">Excel file yahan drop karo</div>
-                                <div style="font-size:12px; color:var(--color-text-secondary); margin-bottom:14px;">ya button se select karo</div>
+                                <div id="drop-text" style="font-size:14px; font-weight:500; color:var(--color-text-primary); margin-bottom:4px;">Upload Excel or CSV File</div>
+                                <div style="font-size:12px; color:var(--color-text-secondary); margin-bottom:14px;">Drag & drop your Excel or CSV file here, or click the button below to browse</div>
                                 <button id="choose-file-btn" style="
                                     background: #ffffff;
                                     border: 0.5px solid #C0C0B8;
@@ -68,16 +68,15 @@ frappe.listview_settings['FT Stock RM List'] = {
                                     font-size: 13px;
                                     cursor: pointer;
                                     color: var(--color-text-primary);
-                                ">File Choose karo</button>
+                                ">Choose File</button>
                                 <input type="file" id="file-input" accept=".xlsx" style="display:none;" />
                             </div>
 
                             <!-- Note -->
                             <div style="background:#EBF5FF; border-radius:8px; padding:10px 14px; margin-bottom:14px;">
                                 <div style="font-size:12px; color:#1D4ED8; line-height:1.7;">
-                                    <strong>Note:</strong> Sirf .xlsx format support hai
-                                    &nbsp;·&nbsp; Grade value automatically match hogi
-                                    &nbsp;·&nbsp; Duplicate records skip honge
+                                    <strong>Note:</strong> currently support .xlsx format &nbsp;·&nbsp; Grade value automatically match
+                                    &nbsp;·&nbsp; Duplicate records skiped
                                 </div>
                             </div>
 

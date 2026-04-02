@@ -51,8 +51,8 @@ frappe.listview_settings['FT Drawing Parts'] = {
                                     <line x1="12" y1="18" x2="12" y2="12"/>
                                     <line x1="9" y1="15" x2="15" y2="15"/>
                                 </svg>
-                                <div id="dp-drop-text" style="font-size:14px; font-weight:500; color:var(--color-text-primary); margin-bottom:4px;">Excel/CSV file yahan drop karo</div>
-                                <div style="font-size:12px; color:var(--color-text-secondary); margin-bottom:14px;">ya button se select karo</div>
+                                <div id="dp-drop-text" style="font-size:14px; font-weight:500; color:var(--color-text-primary); margin-bottom:4px;">Upload Excel or CSV File</div>
+                                <div style="font-size:12px; color:var(--color-text-secondary); margin-bottom:14px;">Drag & drop your Excel or CSV file here, or click the button below to browse</div>
                                 <button id="dp-choose-btn" style="
                                     background: var(--color-background-primary);
                                     border: 0.5px solid #C0C0B8;
@@ -61,16 +61,15 @@ frappe.listview_settings['FT Drawing Parts'] = {
                                     font-size: 13px;
                                     cursor: pointer;
                                     color: var(--color-text-primary);
-                                ">File Choose karo</button>
+                                ">Choose File</button>
                                 <input type="file" id="dp-file-input" accept=".xlsx, .csv" style="display:none;" />
                             </div>
 
                             <!-- Note -->
                             <div style="background:#EBF5FF; border-radius:8px; padding:10px 14px; margin-bottom:14px;">
                                 <div style="font-size:12px; color:#1D4ED8; line-height:1.7;">
-                                    <strong>Note:</strong> .xlsx aur .csv dono support hai
-                                    &nbsp;·&nbsp; Item value automatically match hogi
-                                    &nbsp;·&nbsp; Duplicate records skip honge
+                                    <strong>Note:</strong> .xlsx & .csv both file support &nbsp;·&nbsp; Item value automatically matched
+                                    &nbsp;·&nbsp; Duplicate records skiped
                                 </div>
                             </div>
 

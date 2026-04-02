@@ -1,6 +1,5 @@
 {
  "actions": [],
- "allow_import": 1,
  "autoname": "naming_series:",
  "creation": "2026-02-02 13:45:33.871896",
  "doctype": "DocType",
@@ -103,7 +102,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-28 18:21:51.620426",
+ "modified": "2026-04-01 12:42:05.037574",
  "modified_by": "Administrator",
  "module": "Fabtrk",
  "name": "FT Stock RM List",
