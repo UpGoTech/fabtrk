@@ -6,6 +6,7 @@ frappe.query_reports["FT Drawing Part"] = {
 		frappe.query_report.set_filter_value("drawing_number", []);
 		frappe.query_report.set_filter_value("po_no", []);
 		frappe.query_report.set_filter_value("item", []);
+		frappe.query_report.set_filter_value("stock_rm_type", []);
 		frappe.query_report.set_filter_value("is_active", 1);
 
 		// ---------- Header Excel Button -----------
@@ -637,7 +638,7 @@ frappe.query_reports["FT Drawing Part"] = {
 					if (projects.length) return Promise.resolve(projects);
 					else if (is_active) return frappe.call({
 						method: "frappe.client.get_list",
-						args: { doctype: "FT Project", fields: ["name"], filters: [["is_active", "=", 1]] }
+						args: { doctype: "FT Project", fields: ["name"], filters: [["is_active", "=", 1]], limit_page_length: 0 }
 					}).then(r => (r.message || []).map(d => d.name));
 					else return Promise.resolve([]);
 				};
@@ -645,16 +646,33 @@ frappe.query_reports["FT Drawing Part"] = {
 				let get_items_from_drawings = (drawing_names) => {
 					return frappe.call({
 						method: "frappe.client.get_list",
-						args: { doctype: "FT Drawing Parts", fields: ["item_id"], filters: [["drawing_number", "in", drawing_names]] }
+						args: {
+							doctype: "FT Drawing Parts",
+							fields: ["item_id"],
+							filters: [["drawing_number", "in", drawing_names]],
+							limit_page_length: 0   // ✅ CORRECT parameter
+						}
 					}).then(r => {
 						let unique_items = [...new Set((r.message || []).map(d => d.item_id).filter(Boolean))];
 						if (!unique_items.length) return [];
-						let filters = [["name", "in", unique_items], ["computed_name", "like", "%" + txt + "%"]];
+
+						let filters = [["name", "in", unique_items]];
+						if (txt) filters.push(["computed_name", "like", "%" + txt + "%"]);
 						if (stock_types.length) filters.push(["stock_rm_type", "in", stock_types]);
+
 						return frappe.call({
 							method: "frappe.client.get_list",
-							args: { doctype: "FT Stock RM List", fields: ["name", "computed_name"], filters: filters }
-						}).then(res => (res.message || []).map(d => ({ value: d.name, label: d.computed_name, description: "" })));
+							args: {
+								doctype: "FT Stock RM List",
+								fields: ["name", "computed_name"],
+								filters: filters,
+								limit_page_length: 0   // ✅ CORRECT parameter
+							}
+						}).then(res => (res.message || []).map(d => ({
+							value: d.name,
+							label: d.computed_name,
+							description: ""
+						})));
 					});
 				};
 
@@ -662,16 +680,32 @@ frappe.query_reports["FT Drawing Part"] = {
 
 				return get_active_projects().then(project_names => {
 					if (!project_names.length) {
-						let filters = [["computed_name", "like", "%" + txt + "%"]];
+						let filters = [];
+						if (txt) filters.push(["computed_name", "like", "%" + txt + "%"]);
 						if (stock_types.length) filters.push(["stock_rm_type", "in", stock_types]);
 						return frappe.call({
 							method: "frappe.client.get_list",
-							args: { doctype: "FT Stock RM List", fields: ["name", "computed_name"], filters: filters }
-						}).then(r => (r.message || []).map(d => ({ value: d.name, label: d.computed_name, description: "" })));
+							args: {
+								doctype: "FT Stock RM List",
+								fields: ["name", "computed_name"],
+								filters: filters,
+								limit_page_length: 0   // ✅ CORRECT parameter
+							}
+						}).then(r => (r.message || []).map(d => ({
+							value: d.name,
+							label: d.computed_name,
+							description: ""
+						})));
 					}
+
 					return frappe.call({
 						method: "frappe.client.get_list",
-						args: { doctype: "FT Add Drawing", fields: ["name"], filters: [["project_number", "in", project_names]] }
+						args: {
+							doctype: "FT Add Drawing",
+							fields: ["name"],
+							filters: [["project_number", "in", project_names]],
+							limit_page_length: 0   // ✅ CORRECT parameter
+						}
 					}).then(r => {
 						let drawing_names = (r.message || []).map(d => d.name);
 						if (!drawing_names.length) return [];
@@ -682,11 +716,20 @@ frappe.query_reports["FT Drawing Part"] = {
 			on_change() { clear_item_details(); frappe.query_report.refresh(); }
 		},
 
+
 		// ---------------- SECTION TYPE ----------------
 		{
-			fieldname: "stock_rm_type", label: "Section Type", fieldtype: "MultiSelectList",
-			get_data: function (txt) { return frappe.db.get_link_options("FT Section Type", txt); },
-			on_change() { frappe.query_report.refresh(); clear_item_details(); }
+			fieldname: "stock_rm_type",
+			label: "Section Type",
+			fieldtype: "MultiSelectList",
+			get_data: function (txt) {
+				return frappe.db.get_link_options("FT Section Type", txt);
+			},
+			on_change() {
+				frappe.query_report.set_filter_value("item", []);
+				frappe.query_report.refresh();
+				clear_item_details();
+			}
 		},
 
 		// ---------------- IS ACTIVE ----------------
