@@ -1,0 +1,127 @@
+{
+ "actions": [],
+ "autoname": "format:DP-{######}",
+ "creation": "2026-02-04 18:21:01.983129",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "project_number",
+  "po_no",
+  "drawing_number",
+  "position_no",
+  "part_no",
+  "item",
+  "lenght",
+  "width",
+  "quantity",
+  "single_weight",
+  "total_weight",
+  "painted_surface_percentage"
+ ],
+ "fields": [
+  {
+   "fieldname": "drawing_number",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Drawing Number",
+   "options": "FT Add Drawing"
+  },
+  {
+   "fieldname": "quantity",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Quantity  "
+  },
+  {
+   "fieldname": "lenght",
+   "fieldtype": "Float",
+   "label": "Length"
+  },
+  {
+   "fieldname": "single_weight",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Single Weight"
+  },
+  {
+   "fieldname": "total_weight",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Total Weight"
+  },
+  {
+   "fieldname": "project_number",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Project Number",
+   "options": "FT Project"
+  },
+  {
+   "default": "100",
+   "description": "%",
+   "fieldname": "painted_surface_percentage",
+   "fieldtype": "Percent",
+   "label": "Painted surface Percentage "
+  },
+  {
+   "fieldname": "position_no",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Position No"
+  },
+  {
+   "fieldname": "width",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Width"
+  },
+  {
+   "fieldname": "part_no",
+   "fieldtype": "Data",
+   "label": "Part No"
+  },
+  {
+   "fieldname": "po_no",
+   "fieldtype": "Data",
+   "in_standard_filter": 1,
+   "label": "PO No"
+  },
+  {
+   "fieldname": "item",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Item",
+   "options": "FT Stock RM List"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-04-02 16:39:57.577558",
+ "modified_by": "Administrator",
+ "module": "Fabtrk",
+ "name": "FT Drawing Parts",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1,
+ "track_views": 1
+}

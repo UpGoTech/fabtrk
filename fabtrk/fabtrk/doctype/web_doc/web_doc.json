@@ -1,29 +1,25 @@
 {
  "actions": [],
- "allow_import": 1,
  "allow_rename": 1,
- "autoname": "format:{project_type_name}",
- "creation": "2026-01-10 17:21:08.465250",
+ "creation": "2026-01-29 13:49:15.592455",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
-  "project_type_name"
+  "name1"
  ],
  "fields": [
   {
-   "fieldname": "project_type_name",
+   "fieldname": "name1",
    "fieldtype": "Data",
-   "in_list_view": 1,
-   "label": "Project Type Name"
+   "label": "Name"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-23 14:04:54.150701",
+ "modified": "2026-01-29 13:49:32.773751",
  "modified_by": "Administrator",
  "module": "Fabtrk",
- "name": "FT Project Type",
- "naming_rule": "Expression",
+ "name": "Web Doc",
  "owner": "Administrator",
  "permissions": [
   {
@@ -41,7 +37,5 @@
  ],
  "sort_field": "modified",
  "sort_order": "DESC",
- "states": [],
- "track_changes": 1,
- "track_views": 1
+ "states": []
 }

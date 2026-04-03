@@ -1,0 +1,111 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "format:{project_number}-{po_number}",
+ "creation": "2026-02-04 12:13:51.219374",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "customer_name",
+  "project_number",
+  "project_name",
+  "po_number",
+  "po_date",
+  "drawing_list",
+  "total_basic_value",
+  "gst",
+  "total_include_gst",
+  "sum_of_unit_weight",
+  "sum_of_quantity_weight"
+ ],
+ "fields": [
+  {
+   "fieldname": "customer_name",
+   "fieldtype": "Link",
+   "label": "Customer Name",
+   "options": "FT Customer"
+  },
+  {
+   "fieldname": "project_number",
+   "fieldtype": "Link",
+   "label": "Project Number",
+   "options": "FT Project"
+  },
+  {
+   "fetch_from": "project_number.project_name",
+   "fieldname": "project_name",
+   "fieldtype": "Data",
+   "label": "Project Name"
+  },
+  {
+   "fieldname": "po_number",
+   "fieldtype": "Data",
+   "label": "PO Number"
+  },
+  {
+   "fieldname": "po_date",
+   "fieldtype": "Date",
+   "label": "PO Date"
+  },
+  {
+   "bold": 1,
+   "fieldname": "total_basic_value",
+   "fieldtype": "Float",
+   "label": "Total Basic Value"
+  },
+  {
+   "fieldname": "gst",
+   "fieldtype": "Float",
+   "label": "GST"
+  },
+  {
+   "bold": 1,
+   "fieldname": "total_include_gst",
+   "fieldtype": "Float",
+   "label": "Total Include GST"
+  },
+  {
+   "fieldname": "sum_of_unit_weight",
+   "fieldtype": "Float",
+   "label": "Sum of Unit Weight"
+  },
+  {
+   "fieldname": "sum_of_quantity_weight",
+   "fieldtype": "Float",
+   "label": "Sum of Quantity Weight"
+  },
+  {
+   "fieldname": "drawing_list",
+   "fieldtype": "Table",
+   "label": "Drawing List",
+   "options": "FT Po List  Child Old"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-02-04 18:02:48.515776",
+ "modified_by": "Administrator",
+ "module": "Fabtrk",
+ "name": "FT Add Po To Project Old",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "show_title_field_in_link": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "po_number"
+}

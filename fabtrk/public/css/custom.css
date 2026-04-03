@@ -1,0 +1,90 @@
+/* Container for the whole form */
+.form-page {
+    max-width: 900px;
+    margin: 20px auto;
+    padding: 20px;
+    background: #ffffff;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    font-family: "Open Sans", sans-serif;
+}
+
+/* Row wrapper */
+.form-page .row {
+    display: flex;
+    flex-wrap: wrap;
+    margin-bottom: 15px;
+    gap: 15px;
+}
+
+/* Column sizes for 50% width */
+.form-page .col-md-6 {
+    flex: 0 0 48%;
+}
+
+/* Full width column */
+.form-page .col-md-12 {
+    flex: 0 0 100%;
+}
+
+/* Labels */
+.form-page label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 5px;
+    color: #333;
+}
+
+/* Inputs, textarea, select */
+.form-page input[type="text"],
+.form-page input[type="datetime-local"],
+.form-page select,
+.form-page textarea {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 14px;
+    box-sizing: border-box;
+}
+
+/* Textarea height */
+.form-page textarea {
+    min-height: 100px;
+    resize: vertical;
+}
+
+/* Buttons */
+.form-page button {
+    background-color: #0f5fff;
+    color: #fff;
+    font-weight: 600;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+}
+
+.form-page button:hover {
+    background-color: #094ac1;
+}
+
+/* Optional spacing */
+.mt-2 {
+    margin-top: 10px;
+}
+
+/* Checkbox alignment */
+.form-page input[type="checkbox"] {
+    width: auto;
+    margin-right: 5px;
+}
+
+/* Responsive for mobile */
+@media (max-width: 768px) {
+    .form-page .col-md-6 {
+        flex: 0 0 100%;
+    }
+}

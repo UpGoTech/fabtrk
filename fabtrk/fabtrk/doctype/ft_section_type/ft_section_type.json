@@ -2,28 +2,36 @@
  "actions": [],
  "allow_import": 1,
  "allow_rename": 1,
- "autoname": "format:{project_type_name}",
- "creation": "2026-01-10 17:21:08.465250",
+ "autoname": "field:section_type_name",
+ "creation": "2026-02-11 17:25:47.769965",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
-  "project_type_name"
+  "section_type_name",
+  "sort_key"
  ],
  "fields": [
   {
-   "fieldname": "project_type_name",
+   "fieldname": "section_type_name",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "Project Type Name"
+   "label": "Section Type Name",
+   "unique": 1
+  },
+  {
+   "fieldname": "sort_key",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Sort Key"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-23 14:04:54.150701",
+ "modified": "2026-03-23 14:04:00.489376",
  "modified_by": "Administrator",
  "module": "Fabtrk",
- "name": "FT Project Type",
- "naming_rule": "Expression",
+ "name": "FT Section Type",
+ "naming_rule": "By fieldname",
  "owner": "Administrator",
  "permissions": [
   {

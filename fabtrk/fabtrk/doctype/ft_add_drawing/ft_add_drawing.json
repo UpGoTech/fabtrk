@@ -1,0 +1,82 @@
+{
+ "actions": [],
+ "allow_import": 1,
+ "autoname": "format:{project_number}-{drawing_number}",
+ "creation": "2026-02-04 18:08:16.232838",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "project_number",
+  "drawing_number",
+  "drawing_description",
+  "unit_weight",
+  "column_break_mqgl",
+  "customer_name"
+ ],
+ "fields": [
+  {
+   "fieldname": "project_number",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Project Number",
+   "options": "FT Project"
+  },
+  {
+   "fieldname": "drawing_number",
+   "fieldtype": "Data",
+   "in_standard_filter": 1,
+   "label": "Drawing Number"
+  },
+  {
+   "fieldname": "unit_weight",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Unit Weight"
+  },
+  {
+   "fieldname": "column_break_mqgl",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fetch_from": "project_number.customer_name",
+   "fieldname": "customer_name",
+   "fieldtype": "Data",
+   "label": "Customer Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "drawing_description",
+   "fieldtype": "Small Text",
+   "in_standard_filter": 1,
+   "label": "Drawing Description"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-03-18 14:51:33.820704",
+ "modified_by": "Administrator",
+ "module": "Fabtrk",
+ "name": "FT Add Drawing",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "select": 1,
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1,
+ "track_views": 1
+}

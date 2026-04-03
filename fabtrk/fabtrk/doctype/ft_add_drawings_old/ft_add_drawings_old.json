@@ -1,0 +1,111 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "format:{customer_name}-{###}",
+ "creation": "2026-02-03 17:56:07.361651",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "customer_name",
+  "project_number",
+  "project_name",
+  "po_number",
+  "select_drawing_no",
+  "drawing_material_list",
+  "total_weight_calculate",
+  "sum_of_total_in_kgs",
+  "sum_of_quatity",
+  "sum_of_drawing_quatitysetkgs",
+  "drawing_qty_setkgs"
+ ],
+ "fields": [
+  {
+   "fieldname": "customer_name",
+   "fieldtype": "Link",
+   "label": "Customer Name",
+   "options": "FT Customer"
+  },
+  {
+   "fieldname": "drawing_material_list",
+   "fieldtype": "Table",
+   "label": "Drawing Material List ",
+   "options": "FT Drawing Childtable Old"
+  },
+  {
+   "fetch_from": "project_number.project_name",
+   "fieldname": "project_name",
+   "fieldtype": "Data",
+   "label": " Project Name"
+  },
+  {
+   "fieldname": "total_weight_calculate",
+   "fieldtype": "Float",
+   "label": "Total Weight Calculate "
+  },
+  {
+   "fieldname": "sum_of_total_in_kgs",
+   "fieldtype": "Float",
+   "label": "Sum of Total in KGS"
+  },
+  {
+   "fieldname": "sum_of_quatity",
+   "fieldtype": "Float",
+   "label": "Sum of Quatity "
+  },
+  {
+   "fieldname": "sum_of_drawing_quatitysetkgs",
+   "fieldtype": "Float",
+   "label": "Sum of Drawing Quatity/setkgs"
+  },
+  {
+   "fieldname": "project_number",
+   "fieldtype": "Link",
+   "label": "Project Number",
+   "options": "FT Project"
+  },
+  {
+   "fieldname": "select_drawing_no",
+   "fieldtype": "Link",
+   "label": "Select Drawing No",
+   "options": "FT Po List  Child Old"
+  },
+  {
+   "fieldname": "po_number",
+   "fieldtype": "Link",
+   "label": "Po Number",
+   "options": "FT Add Po To Project Old"
+  },
+  {
+   "fieldname": "drawing_qty_setkgs",
+   "fieldtype": "Float",
+   "label": "Drawing Qty Set/Kgs"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-02-04 18:02:48.950007",
+ "modified_by": "Administrator",
+ "module": "Fabtrk",
+ "name": "FT Add Drawings Old",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "show_title_field_in_link": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "project_number"
+}

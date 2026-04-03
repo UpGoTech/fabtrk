@@ -1,0 +1,94 @@
+{
+ "actions": [],
+ "allow_import": 1,
+ "autoname": "format:MGC-{###}",
+ "creation": "2026-02-03 13:46:45.074984",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "stock_rm_type",
+  "bis",
+  "grade",
+  "list_in_section",
+  "bis_section",
+  "list_in_plates",
+  "bis_plate"
+ ],
+ "fields": [
+  {
+   "fieldname": "stock_rm_type",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Stock RM Type",
+   "options": "FT Stock RM Type"
+  },
+  {
+   "fieldname": "bis",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "BIS"
+  },
+  {
+   "fieldname": "grade",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Grade",
+   "unique": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "list_in_section",
+   "fieldtype": "Check",
+   "label": "List In Section"
+  },
+  {
+   "depends_on": "eval:doc.list_in_section == \"1\"",
+   "fieldname": "bis_section",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "BIS Section"
+  },
+  {
+   "default": "0",
+   "fieldname": "list_in_plates",
+   "fieldtype": "Check",
+   "label": "List In Plates"
+  },
+  {
+   "depends_on": "eval:doc.list_in_plates == \"1\"",
+   "fieldname": "bis_plate",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "BIS Plate "
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-03-24 13:54:20.257915",
+ "modified_by": "Administrator",
+ "module": "Fabtrk",
+ "name": "FT Material Grade Catalogues",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "show_title_field_in_link": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "grade",
+ "track_changes": 1,
+ "track_views": 1
+}

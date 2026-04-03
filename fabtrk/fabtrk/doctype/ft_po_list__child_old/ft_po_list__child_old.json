@@ -1,0 +1,82 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "format:{drawing_no}",
+ "creation": "2026-02-04 12:35:41.699283",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "drawing_no",
+  "qty_set",
+  "unit_weight",
+  "total_weight",
+  "rate",
+  "amount",
+  "drawing_file",
+  "remarks"
+ ],
+ "fields": [
+  {
+   "fieldname": "drawing_no",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Drawing No"
+  },
+  {
+   "fieldname": "qty_set",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "QTY Set"
+  },
+  {
+   "fieldname": "amount",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Amount"
+  },
+  {
+   "fieldname": "unit_weight",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Unit Weight"
+  },
+  {
+   "fieldname": "total_weight",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Total Weight"
+  },
+  {
+   "fieldname": "rate",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Rate"
+  },
+  {
+   "fieldname": "drawing_file",
+   "fieldtype": "Attach",
+   "in_list_view": 1,
+   "label": "Drawing File"
+  },
+  {
+   "fieldname": "remarks",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Remarks"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-02-04 15:56:19.713908",
+ "modified_by": "Administrator",
+ "module": "Fabtrk",
+ "name": "FT Po List  Child Old",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

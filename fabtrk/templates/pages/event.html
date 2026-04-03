@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <style>
+    /* Container for the whole form */
+    .form-page {
+      max-width: 900px;
+      margin: 20px auto;
+      padding: 20px;
+      background: #ffffff;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+      font-family: "Open Sans", sans-serif;
+    }
+
+    /* Row wrapper */
+    .form-page .row {
+      display: flex;
+      flex-wrap: wrap;
+      margin-bottom: 15px;
+      gap: 15px;
+    }
+
+    /* Column sizes for 50% width */
+    .form-page .col-md-6 {
+      flex: 0 0 48%;
+    }
+
+    /* Full width column */
+    .form-page .col-md-12 {
+      flex: 0 0 100%;
+    }
+
+    /* Labels */
+    .form-page label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 5px;
+      color: #333;
+    }
+
+    /* Inputs, textarea, select */
+    .form-page input[type="text"],
+    .form-page input[type="datetime-local"],
+    .form-page select,
+    .form-page textarea {
+      width: 100%;
+      padding: 8px 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 14px;
+      box-sizing: border-box;
+    }
+
+    /* Textarea height */
+    .form-page textarea {
+      min-height: 100px;
+      resize: vertical;
+    }
+
+    /* Buttons */
+    .form-page button {
+      background-color: #0f5fff;
+      color: #fff;
+      font-weight: 600;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.2s ease-in-out;
+    }
+
+    .form-page button:hover {
+      background-color: #094ac1;
+    }
+
+    /* Optional spacing */
+    .mt-2 {
+      margin-top: 10px;
+    }
+
+    /* Checkbox alignment */
+    .form-page input[type="checkbox"] {
+      width: auto;
+      margin-right: 5px;
+    }
+
+    /* Responsive for mobile */
+    @media (max-width: 768px) {
+      .form-page .col-md-6 {
+        flex: 0 0 100%;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="form-page">
+    <h1>Create Event</h1>
+
+    <div class="row">
+      <div class="col-md-6">
+        <label>Subject *</label>
+        <input type="text" class="form-control" id="subject">
+      </div>
+
+      <div class="col-md-6">
+        <label>Starts on *</label>
+        <input type="datetime-local" class="form-control" id="starts_on">
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-md-6">
+        <label>Ends on</label>
+        <input type="datetime-local" class="form-control" id="ends_on">
+      </div>
+
+      <div class="col-md-6">
+        <label>Status</label>
+        <select class="form-control" id="status">
+          <option>Open</option>
+          <option>Closed</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-md-12">
+        <label>Description</label>
+        <textarea class="form-control" id="description"></textarea>
+      </div>
+    </div>
+
+    <button id="submit" class="btn btn-primary mt-2">Save</button>
+  </div>
+  <script>
+    document.getElementById("submit").addEventListener("click", function () {
+      frappe.call({
+        method: "fabtrk.api.create_event",
+        args: {
+          subject: document.getElementById("subject").value,
+          starts_on: document.getElementById("starts_on").value,
+          ends_on: document.getElementById("ends_on").value,
+          status: document.getElementById("status").value,
+          description: document.getElementById("description").value
+        },
+        callback: function (r) {
+          if (r.message) {
+            alert("Event Created: " + r.message.name);
+            window.location.href = "/"; // redirect after save
+          }
+        }
+      });
+    });
+
+  </script>
+</body>
+
+</html>
