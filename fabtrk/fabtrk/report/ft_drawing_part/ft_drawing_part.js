@@ -1,11 +1,12 @@
-// // // Copyright (c) 2026, UpGo Technologies and contributors
-// // // For license information, please see license.txt
+// Copyright (c) 2026, UpGo Technologies and contributors
+// For license information, please see license.txt
 frappe.query_reports["FT Drawing Part"] = {
 	onload(report) {
 		frappe.query_report.set_filter_value("project_number", []);
 		frappe.query_report.set_filter_value("drawing_number", []);
 		frappe.query_report.set_filter_value("po_no", []);
 		frappe.query_report.set_filter_value("item", []);
+		frappe.query_report.set_filter_value("stock_rm_type", []);
 		frappe.query_report.set_filter_value("is_active", 1);
 
 		// ---------- Header Excel Button -----------
@@ -623,8 +624,67 @@ frappe.query_reports["FT Drawing Part"] = {
 		},
 
 		// ---------------- ITEM ----------------
+		// {
+		// 	fieldname: "item", label: "Drawing Parts", fieldtype: "MultiSelectList",
+		// 	get_data: function (txt) {
+		// 		let projects = frappe.query_report.get_filter_value("project_number") || [];
+		// 		let drawings = frappe.query_report.get_filter_value("drawing_number") || [];
+		// 		let stock_types = frappe.query_report.get_filter_value("stock_rm_type") || [];
+		// 		let is_active = frappe.query_report.get_filter_value("is_active");
+
+		// 		let get_active_projects = () => {
+		// 			if (projects.length) return Promise.resolve(projects);
+		// 			else if (is_active) return frappe.call({
+		// 				method: "frappe.client.get_list",
+		// 				args: { doctype: "FT Project", fields: ["name"], filters: [["is_active", "=", 1]] }
+		// 			}).then(r => (r.message || []).map(d => d.name));
+		// 			else return Promise.resolve([]);
+		// 		};
+
+		// 		let get_items_from_drawings = (drawing_names) => {
+		// 			return frappe.call({
+		// 				method: "frappe.client.get_list",
+		// 				args: { doctype: "FT Drawing Parts", fields: ["item"], filters: [["drawing_number", "in", drawing_names]] }
+		// 			}).then(r => {
+		// 				let unique_items = [...new Set((r.message || []).map(d => d.item).filter(Boolean))];
+		// 				if (!unique_items.length) return [];
+		// 				let filters = [["name", "in", unique_items], ["computed_name", "like", "%" + txt + "%"]];
+		// 				if (stock_types.length) filters.push(["stock_rm_type", "in", stock_types]);
+		// 				return frappe.call({
+		// 					method: "frappe.client.get_list",
+		// 					args: { doctype: "FT Stock RM List", fields: ["name", "computed_name"], filters: filters }
+		// 				}).then(res => (res.message || []).map(d => ({ value: d.name, label: d.computed_name, description: "" })));
+		// 			});
+		// 		};
+
+		// 		if (drawings.length) return get_items_from_drawings(drawings);
+
+		// 		return get_active_projects().then(project_names => {
+		// 			if (!project_names.length) {
+		// 				let filters = [["computed_name", "like", "%" + txt + "%"]];
+		// 				if (stock_types.length) filters.push(["stock_rm_type", "in", stock_types]);
+		// 				return frappe.call({
+		// 					method: "frappe.client.get_list",
+		// 					args: { doctype: "FT Stock RM List", fields: ["name", "computed_name"], filters: filters }
+		// 				}).then(r => (r.message || []).map(d => ({ value: d.name, label: d.computed_name, description: "" })));
+		// 			}
+		// 			return frappe.call({
+		// 				method: "frappe.client.get_list",
+		// 				args: { doctype: "FT Add Drawing", fields: ["name"], filters: [["project_number", "in", project_names]] }
+		// 			}).then(r => {
+		// 				let drawing_names = (r.message || []).map(d => d.name);
+		// 				if (!drawing_names.length) return [];
+		// 				return get_items_from_drawings(drawing_names);
+		// 			});
+		// 		});
+		// 	},
+		// 	on_change() { clear_item_details(); frappe.query_report.refresh(); }
+		// },
+		// ---------------- ITEM ----------------
 		{
-			fieldname: "item", label: "Drawing Parts", fieldtype: "MultiSelectList",
+			fieldname: "item", 
+			label: "Drawing Parts", 
+			fieldtype: "MultiSelectList",
 			get_data: function (txt) {
 				let projects = frappe.query_report.get_filter_value("project_number") || [];
 				let drawings = frappe.query_report.get_filter_value("drawing_number") || [];
@@ -635,7 +695,12 @@ frappe.query_reports["FT Drawing Part"] = {
 					if (projects.length) return Promise.resolve(projects);
 					else if (is_active) return frappe.call({
 						method: "frappe.client.get_list",
-						args: { doctype: "FT Project", fields: ["name"], filters: [["is_active", "=", 1]] }
+						args: { 
+							doctype: "FT Project", 
+							fields: ["name"], 
+							filters: [["is_active", "=", 1]], 
+							limit_page_length: 0 
+						}
 					}).then(r => (r.message || []).map(d => d.name));
 					else return Promise.resolve([]);
 				};
@@ -643,16 +708,33 @@ frappe.query_reports["FT Drawing Part"] = {
 				let get_items_from_drawings = (drawing_names) => {
 					return frappe.call({
 						method: "frappe.client.get_list",
-						args: { doctype: "FT Drawing Parts", fields: ["item"], filters: [["drawing_number", "in", drawing_names]] }
+						args: {
+							doctype: "FT Drawing Parts",
+							fields: ["item"],
+							filters: [["drawing_number", "in", drawing_names]],
+							limit_page_length: 0  
+						}
 					}).then(r => {
 						let unique_items = [...new Set((r.message || []).map(d => d.item).filter(Boolean))];
 						if (!unique_items.length) return [];
-						let filters = [["name", "in", unique_items], ["computed_name", "like", "%" + txt + "%"]];
+
+						let filters = [["name", "in", unique_items]];
+						if (txt) filters.push(["computed_name", "like", "%" + txt + "%"]);
 						if (stock_types.length) filters.push(["stock_rm_type", "in", stock_types]);
+
 						return frappe.call({
 							method: "frappe.client.get_list",
-							args: { doctype: "FT Stock RM List", fields: ["name", "computed_name"], filters: filters }
-						}).then(res => (res.message || []).map(d => ({ value: d.name, label: d.computed_name, description: "" })));
+							args: {
+								doctype: "FT Stock RM List",
+								fields: ["name", "computed_name"],
+								filters: filters,
+								limit_page_length: 0  
+							}
+						}).then(res => (res.message || []).map(d => ({
+							value: d.name,
+							label: d.computed_name,
+							description: ""
+						})));
 					});
 				};
 
@@ -660,16 +742,32 @@ frappe.query_reports["FT Drawing Part"] = {
 
 				return get_active_projects().then(project_names => {
 					if (!project_names.length) {
-						let filters = [["computed_name", "like", "%" + txt + "%"]];
+						let filters = [];
+						if (txt) filters.push(["computed_name", "like", "%" + txt + "%"]);
 						if (stock_types.length) filters.push(["stock_rm_type", "in", stock_types]);
 						return frappe.call({
 							method: "frappe.client.get_list",
-							args: { doctype: "FT Stock RM List", fields: ["name", "computed_name"], filters: filters }
-						}).then(r => (r.message || []).map(d => ({ value: d.name, label: d.computed_name, description: "" })));
+							args: {
+								doctype: "FT Stock RM List",
+								fields: ["name", "computed_name"],
+								filters: filters,
+								limit_page_length: 0   
+							}
+						}).then(r => (r.message || []).map(d => ({
+							value: d.name,
+							label: d.computed_name,
+							description: ""
+						})));
 					}
+
 					return frappe.call({
 						method: "frappe.client.get_list",
-						args: { doctype: "FT Add Drawing", fields: ["name"], filters: [["project_number", "in", project_names]] }
+						args: {
+							doctype: "FT Add Drawing",
+							fields: ["name"],
+							filters: [["project_number", "in", project_names]],
+							limit_page_length: 0   // ✅ CORRECT parameter
+						}
 					}).then(r => {
 						let drawing_names = (r.message || []).map(d => d.name);
 						if (!drawing_names.length) return [];
