@@ -25,16 +25,6 @@ frappe.query_reports["FT Drawings"] = {
 		}, 100);
 	},
 
-	// after_datatable_render(datatable) {
-	// 	render_custom_summary_2();
-
-	// 	// TOTAL row serial number hide karo
-	// 	setTimeout(() => {
-	// 		let all_rows = $(".datatable .dt-body .dt-row");
-	// 		let last_row = all_rows.last();
-	// 		last_row.find(".dt-cell:first .dt-cell__content").html("");
-	// 	}, 300);
-	// },
 	after_datatable_render(datatable) {
 		render_custom_summary_2();
 
@@ -294,18 +284,6 @@ frappe.query_reports["FT Drawings"] = {
 		}
 	],
 
-	// formatter: function (value, row, column, data, default_formatter) {
-
-	// 	if (data && data.project_name === "TOTAL") {
-	// 		if (column.id === "_index") {
-	// 			return "";
-	// 		}
-	// 		value = default_formatter(value, row, column, data);
-	// 		return `<span style="font-weight:bold;background:#f2f2f2">${value}</span>`;
-	// 	}
-
-	// 	return default_formatter(value, row, column, data);
-	// }
 	formatter: function (value, row, column, data, default_formatter) {
 
 		if (data && data.project_name === "TOTAL") {

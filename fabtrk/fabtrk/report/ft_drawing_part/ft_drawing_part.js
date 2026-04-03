@@ -1,5 +1,5 @@
-// Copyright (c) 2026, UpGo Technologies and contributors
-// For license information, please see license.txt
+// // // Copyright (c) 2026, UpGo Technologies and contributors
+// // // For license information, please see license.txt
 frappe.query_reports["FT Drawing Part"] = {
 	onload(report) {
 		frappe.query_report.set_filter_value("project_number", []);
@@ -36,7 +36,7 @@ frappe.query_reports["FT Drawing Part"] = {
 		// report.page.add_inner_button("💾 Save Snapshot", function () {
 		// 	let report_data = frappe.query_report.data || [];
 		// 	let rows_to_save = report_data.filter(d =>
-		// 		d.project_name && d.project_name !== "TOTAL" && d.item
+		// 		d.project_name && d.project_name !== "TOTAL" && d.item_id
 		// 	);
 		// 	if (!rows_to_save.length) {
 		// 		frappe.msgprint("Koi data nahi hai save karne ke liye");
@@ -54,7 +54,8 @@ frappe.query_reports["FT Drawing Part"] = {
 		// 				quantity: row.quantity,
 		// 				lenght: row.lenght,
 		// 				width: row.width,
-		// 				total_weight: row.total_weight
+		// 				total_weight: row.total_weight,
+		// 				drawing_number: row.drawing_number 
 		// 			}
 		// 		}));
 
@@ -71,23 +72,16 @@ frappe.query_reports["FT Drawing Part"] = {
 		// 				}
 		// 			});
 
-		// 			// ✅ Agar sabhi rows mein koi change nahi
 		// 			if (no_change_count === rows_to_save.length) {
 		// 				frappe.msgprint({
-		// 					title: "No Changes Found",
-		// 					message: `⚠️ No changes were found in the data. Koi naya data save nahi hua.`,
+		// 					title: "No Changes",
+		// 					message: "There is no changes in any data.",
 		// 					indicator: "orange"
 		// 				});
-		// 				// ✅ Kuch saved, kuch no-change
-		// 			} else if (saved_count > 0 && no_change_count > 0) {
-		// 				frappe.show_alert({
-		// 					message: `✅ ${saved_count} rows saved | ⏭️ ${no_change_count} rows mein koi change nahi tha`,
-		// 					indicator: "blue"
-		// 				});
-		// 				// ✅ Sab saved
 		// 			} else if (saved_count > 0) {
-		// 				frappe.show_alert({
-		// 					message: `✅ ${saved_count} rows saved successfully!`,
+		// 				frappe.msgprint({
+		// 					title: "Snapshot Saved",
+		// 					message: `✅ ${saved_count} data mein changes hai, successfully saved.`,
 		// 					indicator: "green"
 		// 				});
 		// 			}
@@ -177,7 +171,7 @@ frappe.query_reports["FT Drawing Part"] = {
 		// 				project,
 		// 				project_count,
 		// 				item_name,
-		// 				drawing_numbers   // ✅ NEW
+		// 				drawing_numbers   
 		// 			} = r.message;
 
 		// 			let last = revision_log.length ? revision_log[revision_log.length - 1] : null;
@@ -897,7 +891,7 @@ function clear_item_details() {
 	$(".view-btn").removeClass("active-detail");
 }
 
-// -------------- excel -------------
+// -------------- Excel -------------
 function download_item_details(item_name, project_name) {
 	let url = "/api/method/fabtrk.fabtrk.report.ft_drawing_part.ft_drawing_part.download_item_details_excel"
 		+ "?filters=" + encodeURIComponent(JSON.stringify({ item: item_name, project: project_name }));
