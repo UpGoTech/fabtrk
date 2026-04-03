@@ -2090,13 +2090,14 @@ def export_compare_snapshot_excel(snapshot_data):
         for r in range(start_row, start_row + len(fields)):
             ws.row_dimensions[r].height = 38
         data_row += len(fields)
- 
-        sep_fill = PatternFill("solid", fgColor="E8EDF2")
-        for col in range(1, total_cols + 1):
-            c = ws.cell(row=data_row, column=col, value="")
-            c.fill = sep_fill
-        ws.row_dimensions[data_row].height = 8
-        data_row += 1
+
+        # row beack code Inside the excel 
+        # sep_fill = PatternFill("solid", fgColor="E8EDF2")
+        # for col in range(1, total_cols + 1):
+        #     c = ws.cell(row=data_row, column=col, value="")
+        #     c.fill = sep_fill
+        # ws.row_dimensions[data_row].height = 8
+        # data_row += 1
  
     col_widths = [30, 38, 35, 14, 16] + [22] * max_revisions + [22]
     for i, w in enumerate(col_widths, 1):
