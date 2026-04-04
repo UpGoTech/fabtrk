@@ -1,0 +1,47 @@
+{
+ "actions": [],
+ "allow_import": 1,
+ "allow_rename": 1,
+ "autoname": "field:stages_master",
+ "creation": "2026-04-04 17:24:09.141194",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "stages_master"
+ ],
+ "fields": [
+  {
+   "fieldname": "stages_master",
+   "fieldtype": "Data",
+   "label": "Stages Master ",
+   "unique": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-04-04 17:45:03.817904",
+ "modified_by": "Administrator",
+ "module": "Fabtrk",
+ "name": "FT Stages Master",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1,
+ "track_views": 1
+}
