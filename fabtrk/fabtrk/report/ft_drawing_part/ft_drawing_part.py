@@ -1143,7 +1143,7 @@ def download_item_details_excel(filters):
         LEFT JOIN `tabFT Po Drawing` pod
             ON pod.project_number = p.name
             AND pod.drawing_number = ad.name
-        WHERE dp.item_id_id = %(item)s
+        WHERE dp.item_id = %(item)s
         AND ad.project_number = %(project)s
         ORDER BY
             CAST(pod.po_serial_no AS UNSIGNED) ASC,
@@ -1731,7 +1731,7 @@ def export_nesting_json(filters=None):
 #     return file_doc.file_url
 
 
-
+# ------------------------drawing numberr add ----
 @frappe.whitelist()
 def save_row_data(sr_no, project, item_name, item_count, quantity, lenght, width,
                   total_weight, po_required_qty=0, po_total_weight=0, drawing_number=None):
@@ -2168,5 +2168,6 @@ def export_compare_snapshot_excel(snapshot_data):
     file_doc = save_file("Compare_Snapshot.xlsx", stream.getvalue(), None, None, is_private=0)
     return file_doc.file_url
 
+# ---------------------- Snapshot Save with drawing number -------------
 
 
