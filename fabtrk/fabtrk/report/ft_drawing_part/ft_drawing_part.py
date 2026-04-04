@@ -2148,8 +2148,8 @@ def export_compare_snapshot_excel(snapshot_data):
         for r in range(start_row, start_row + len(fields)):
             ws.row_dimensions[r].height = 38
         data_row += len(fields)
- 
-        #-------------  row break insited the excel download
+
+        # row beack code Inside the excel 
         # sep_fill = PatternFill("solid", fgColor="E8EDF2")
         # for col in range(1, total_cols + 1):
         #     c = ws.cell(row=data_row, column=col, value="")
