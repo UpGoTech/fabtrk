@@ -1,0 +1,10 @@
+{
+    "doctype": "Page",
+    "name": "transaction-dashboard",
+    "page_name": "transaction-dashboard",
+    "title": "Project Dashboard",
+    "standard": "Yes",
+    "module": "Fabtrk",
+    "route": "dashboard",
+    "type": "page"
+}

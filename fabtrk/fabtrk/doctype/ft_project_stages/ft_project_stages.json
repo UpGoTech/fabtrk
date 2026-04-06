@@ -32,6 +32,8 @@
   {
    "fieldname": "project_number",
    "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Project Number",
    "options": "FT Project"
   },
@@ -42,11 +44,13 @@
   {
    "fieldname": "date",
    "fieldtype": "Date",
+   "in_list_view": 1,
    "label": "Date"
   },
   {
    "fieldname": "add_stages",
    "fieldtype": "Table",
+   "in_standard_filter": 1,
    "label": "Add Stages",
    "options": "FT Project Stages Child"
   }
@@ -54,7 +58,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-04-04 17:51:23.937317",
+ "modified": "2026-04-06 12:18:32.153925",
  "modified_by": "Administrator",
  "module": "Fabtrk",
  "name": "FT Project Stages",

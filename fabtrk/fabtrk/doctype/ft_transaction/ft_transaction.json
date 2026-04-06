@@ -2,6 +2,7 @@
  "actions": [],
  "allow_import": 1,
  "allow_rename": 1,
+ "autoname": "format:{project_number}/{stages}",
  "creation": "2026-04-04 17:33:44.653896",
  "doctype": "DocType",
  "engine": "InnoDB",
@@ -11,7 +12,7 @@
   "stages",
   "addition",
   "subtraction",
-  "completed"
+  "work_completed"
  ],
  "fields": [
   {
@@ -42,17 +43,18 @@
    "label": "Subtraction "
   },
   {
-   "fieldname": "completed",
+   "fieldname": "work_completed",
    "fieldtype": "Int",
-   "label": "Completed "
+   "label": "Work Completed "
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-04-04 18:01:34.284102",
+ "modified": "2026-04-06 16:01:16.421523",
  "modified_by": "Administrator",
  "module": "Fabtrk",
  "name": "FT Transaction",
+ "naming_rule": "Expression",
  "owner": "Administrator",
  "permissions": [
   {

@@ -71,6 +71,7 @@
    "fieldname": "position_no",
    "fieldtype": "Data",
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Position No"
   },
   {
@@ -96,7 +97,8 @@
   {
    "fieldname": "part_no",
    "fieldtype": "Data",
-   "label": "Part No (Mark No)"
+   "in_standard_filter": 1,
+   "label": "Mark No"
   },
   {
    "fieldname": "po_no",
@@ -107,7 +109,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-04-04 18:02:37.996620",
+ "modified": "2026-04-06 17:22:36.869556",
  "modified_by": "Administrator",
  "module": "Fabtrk",
  "name": "FT Drawing Parts",
