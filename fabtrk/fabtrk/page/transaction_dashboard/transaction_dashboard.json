@@ -1,0 +1,8 @@
+{
+ "doctype": "Page",
+ "module": "Fabtrk",
+ "name": "transaction-dashboard",
+ "page_name": "transaction-dashboard",
+ "standard": "Yes",
+ "title": "Transaction Dashboard"
+}

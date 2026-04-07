@@ -1,15 +1,7 @@
 // Copyright (c) 2026, UpGo Technologies and contributors
 // For license information, please see license.txt
 
-// frappe.ui.form.on("FT Transaction", {
-// 	refresh(frm) {
-
-// 	},
-// });
-
-
-
-frappe.ui.form.on('FT Transaction', {
+frappe.ui.form.on("FT Transaction", {
     stages: function (frm) {
         handle_fields(frm);
     },
