@@ -26,40 +26,112 @@ class FTDrawingParts(Document):
 # ─────────────────────────────────────────
 @frappe.whitelist()
 def export_with_value():
+    import io
+    from openpyxl import Workbook
+    from openpyxl.styles import PatternFill, Font, Alignment, Border, Side
+    from openpyxl.utils import get_column_letter
 
     meta       = frappe.get_meta("FT Drawing Parts")
     fieldnames = [f.fieldname for f in meta.fields]
     records    = frappe.get_all("FT Drawing Parts", fields=fieldnames)
 
-    data = [fieldnames]
-
+    # ── Build data rows ──────────────────────────────
+    data = []
     for d in records:
         row = []
         for field in fieldnames:
             value = d.get(field)
-
-            # Export item (computed_name instead of ID)
             if field == "item" and value:
-                value = frappe.db.get_value(
-                    "FT Stock RM List", value, "computed_name"
-                ) or value
-
+                value = frappe.db.get_value("FT Stock RM List", value, "computed_name") or value
             if field == "drawing_number" and value:
-                value = frappe.db.get_value(
-                    "FT Add Drawing", value, "name"
-                ) or value
-
+                value = frappe.db.get_value("FT Add Drawing", value, "name") or value
             if field == "project_number" and value:
-                value = frappe.db.get_value(
-                    "FT Project", value, "name"
-                ) or value
-
-            row.append(value)
+                value = frappe.db.get_value("FT Project", value, "name") or value
+            row.append(value if value is not None else "")
         data.append(row)
 
-    xlsx_file = make_xlsx(data, "FT Drawing Parts")
+    # ── Create Workbook ──────────────────────────────
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "FT Drawing Parts"
+
+    # ── Styles ──────────────────────────────────────
+    header_fill   = PatternFill("solid", fgColor="BDD7EE")   # Light blue like image
+    filter_fill   = PatternFill("solid", fgColor="D9E1F2")   
+    header_font   = Font(bold=True, size=10, color="000000")
+    data_font     = Font(size=10)
+    center_align  = Alignment(horizontal="center", vertical="center", wrap_text=True)
+    left_align    = Alignment(horizontal="left",   vertical="center", wrap_text=True)
+
+    thin = Side(style="thin", color="000000")
+    border = Border(left=thin, right=thin, top=thin, bottom=thin)
+
+    # ── Row 1: Header (fieldnames as labels) ────────
+    headers = []
+    for f in meta.fields:
+        headers.append((f.label or f.fieldname).upper())
+
+    ws.append(headers)
+    header_row = ws[1]
+    for cell in header_row:
+        cell.fill      = header_fill
+        cell.font      = header_font
+        cell.alignment = center_align
+        cell.border    = border
+
+    # ── Row 2: Filter indicator row (▼ dropdown look) ──
+    filter_row_data = ["▼"] * len(headers)
+    ws.append(filter_row_data)
+    for cell in ws[2]:
+        cell.fill      = filter_fill
+        cell.font      = Font(bold=True, size=9, color="595959")
+        cell.alignment = center_align
+        cell.border    = border
+
+    # Enable AutoFilter on header row
+    ws.auto_filter.ref = f"A1:{get_column_letter(len(headers))}1"
+
+    # ── Data rows ───────────────────────────────────
+    for row_idx, row in enumerate(data, start=3):
+        ws.append(row)
+        # Alternate row color
+        fill_color = PatternFill("solid", fgColor="FFFFFF") if row_idx % 2 == 1 else PatternFill("solid", fgColor="F2F2F2")
+        for col_idx, cell in enumerate(ws[row_idx], start=1):
+            cell.fill   = fill_color
+            cell.font   = data_font
+            cell.border = border
+            # Numbers center, text left
+            if isinstance(cell.value, (int, float)):
+                cell.alignment = center_align
+            else:
+                cell.alignment = left_align
+
+    # ── Column widths (auto-fit) ─────────────────────
+    for col_idx, col_cells in enumerate(ws.columns, start=1):
+        max_len = 0
+        for cell in col_cells:
+            try:
+                if cell.value:
+                    max_len = max(max_len, len(str(cell.value)))
+            except:
+                pass
+        col_letter = get_column_letter(col_idx)
+        ws.column_dimensions[col_letter].width = min(max(max_len + 4, 12), 35)
+
+    # ── Row heights ──────────────────────────────────
+    ws.row_dimensions[1].height = 30  
+    ws.row_dimensions[2].height = 18   
+
+    # ── Freeze top 2 rows ───────────────────────────
+    ws.freeze_panes = "A3"
+
+    # ── Save & Return ────────────────────────────────
+    output = io.BytesIO()
+    wb.save(output)
+    output.seek(0)
+
     frappe.local.response.filename    = "FT_Drawing_Parts.xlsx"
-    frappe.local.response.filecontent = xlsx_file.getvalue()
+    frappe.local.response.filecontent = output.getvalue()
     frappe.local.response.type        = "binary"
 
 

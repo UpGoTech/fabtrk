@@ -24,29 +24,104 @@ class FTStockRMList(Document):
 # ─────────────────────────────────────────
 @frappe.whitelist()
 def export_with_value():
+    import io
+    from openpyxl import Workbook
+    from openpyxl.styles import PatternFill, Font, Alignment, Border, Side
+    from openpyxl.utils import get_column_letter
 
     meta       = frappe.get_meta("FT Stock RM List")
     fieldnames = [f.fieldname for f in meta.fields]
     records    = frappe.get_all("FT Stock RM List", fields=fieldnames)
 
-    data = [fieldnames]
+    # ── Build headers (labels) ───────────────────────
+    headers = [(f.label or f.fieldname).upper() for f in meta.fields]
 
+    # ── Build data rows ──────────────────────────────
+    data = []
     for d in records:
         row = []
         for field in fieldnames:
             value = d.get(field)
+
+            # Grade → human readable
             if field == "grade" and value:
                 value = frappe.db.get_value(
                     "FT Material Grade Catalogues", value, "grade"
-                )
-            row.append(value)
+                ) or value
+
+            # THK → 1 ki jagah "THK", 0 ya None ki jagah blank
+            if field == "thk":
+                value = "THK" if value in [1, True, "1"] else ""
+
+            row.append(value if value is not None else "")
         data.append(row)
 
-    xlsx_file = make_xlsx(data, "FT Stock RM List")
-    frappe.local.response.filename    = "FT_Stock_RM_List.xlsx"
-    frappe.local.response.filecontent = xlsx_file.getvalue()
-    frappe.local.response.type        = "binary"
+    # ── Create Workbook ──────────────────────────────
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "FT Stock RM List"
 
+    # ── Styles ──────────────────────────────────────
+    header_fill  = PatternFill("solid", fgColor="BDD7EE")
+    header_font  = Font(bold=True, size=10, color="000000")
+    data_font    = Font(size=10)
+    center_align = Alignment(horizontal="center", vertical="center", wrap_text=True)
+    left_align   = Alignment(horizontal="left",   vertical="center", wrap_text=True)
+
+    thin   = Side(style="thin", color="000000")
+    border = Border(left=thin, right=thin, top=thin, bottom=thin)
+
+    # ── Row 1: Header ────────────────────────────────
+    ws.append(headers)
+    for cell in ws[1]:
+        cell.fill      = header_fill
+        cell.font      = header_font
+        cell.alignment = center_align
+        cell.border    = border
+
+    ws.row_dimensions[1].height = 30
+
+    # AutoFilter on header row
+    ws.auto_filter.ref = f"A1:{get_column_letter(len(headers))}1"
+
+    # Freeze row 1
+    ws.freeze_panes = "A2"
+
+    # ── Data rows ────────────────────────────────────
+    for row_idx, row in enumerate(data, start=2):
+        ws.append(row)
+        fill_color = (
+            PatternFill("solid", fgColor="FFFFFF")
+            if row_idx % 2 == 0
+            else PatternFill("solid", fgColor="F2F2F2")
+        )
+        for cell in ws[row_idx]:
+            cell.fill      = fill_color
+            cell.font      = data_font
+            cell.border    = border
+            cell.alignment = (
+                center_align if isinstance(cell.value, (int, float)) else left_align
+            )
+
+    # ── Column widths ────────────────────────────────
+    for col_idx, col_cells in enumerate(ws.columns, start=1):
+        max_len = 0
+        for cell in col_cells:
+            try:
+                if cell.value:
+                    max_len = max(max_len, len(str(cell.value)))
+            except:
+                pass
+        ws.column_dimensions[get_column_letter(col_idx)].width = min(max(max_len + 4, 12), 40)
+
+    # ── Save & Return ────────────────────────────────
+    output = io.BytesIO()
+    wb.save(output)
+    output.seek(0)
+
+    frappe.local.response.filename    = "FT_Stock_RM_List.xlsx"
+    frappe.local.response.filecontent = output.getvalue()
+    frappe.local.response.type        = "binary"
 
 # ─────────────────────────────────────────
 # computed_name — FIXED (int+str error fix)
@@ -98,7 +173,6 @@ def compute_name_python(d, grade_doc=None):
     ).strip()
 
     return " ".join(filter(None, [base_name, size_part, type_bis, main_bis, grade_display]))
-
 
 # ─────────────────────────────────────────
 # IMPORT

@@ -401,11 +401,11 @@ frappe.query_reports["FT Drawing Part"] = {
 			},
 			on_change() { frappe.query_report.refresh(); clear_item_details(); }
 		},
-		
+
 		// ---------------- ITEM ----------------
 		{
-			fieldname: "item", 
-			label: "Drawing Parts", 
+			fieldname: "item",
+			label: "Drawing Parts",
 			fieldtype: "MultiSelectList",
 			get_data: function (txt) {
 				let projects = frappe.query_report.get_filter_value("project_number") || [];
@@ -417,11 +417,11 @@ frappe.query_reports["FT Drawing Part"] = {
 					if (projects.length) return Promise.resolve(projects);
 					else if (is_active) return frappe.call({
 						method: "frappe.client.get_list",
-						args: { 
-							doctype: "FT Project", 
-							fields: ["name"], 
-							filters: [["is_active", "=", 1]], 
-							limit_page_length: 0 
+						args: {
+							doctype: "FT Project",
+							fields: ["name"],
+							filters: [["is_active", "=", 1]],
+							limit_page_length: 0
 						}
 					}).then(r => (r.message || []).map(d => d.name));
 					else return Promise.resolve([]);
@@ -434,7 +434,7 @@ frappe.query_reports["FT Drawing Part"] = {
 							doctype: "FT Drawing Parts",
 							fields: ["item"],
 							filters: [["drawing_number", "in", drawing_names]],
-							limit_page_length: 0  
+							limit_page_length: 0
 						}
 					}).then(r => {
 						let unique_items = [...new Set((r.message || []).map(d => d.item).filter(Boolean))];
@@ -450,7 +450,7 @@ frappe.query_reports["FT Drawing Part"] = {
 								doctype: "FT Stock RM List",
 								fields: ["name", "computed_name"],
 								filters: filters,
-								limit_page_length: 0  
+								limit_page_length: 0
 							}
 						}).then(res => (res.message || []).map(d => ({
 							value: d.name,
@@ -473,7 +473,7 @@ frappe.query_reports["FT Drawing Part"] = {
 								doctype: "FT Stock RM List",
 								fields: ["name", "computed_name"],
 								filters: filters,
-								limit_page_length: 0   
+								limit_page_length: 0
 							}
 						}).then(r => (r.message || []).map(d => ({
 							value: d.name,
@@ -650,7 +650,7 @@ frappe.query_reports["FT Drawing Part"] = {
 				+ "?filters=" + encodeURIComponent(JSON.stringify({ item: item_name, project: project_name }));
 			window.location.href = url;
 		});
-		
+
 
 		// In the JS file, update the nesting-export click handler:
 
