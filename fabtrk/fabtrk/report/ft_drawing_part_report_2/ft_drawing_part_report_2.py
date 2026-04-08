@@ -1,4 +1,3 @@
-
 import frappe
 from frappe.utils import get_url
 
@@ -536,7 +535,6 @@ def get_item_details(project, item, drawing_numbers=None):
     item_name = frappe.db.get_value("FT Stock RM List", item, "computed_name") or item
 
     return {"item_name": item_name, "data": rows}
-
 
 # 11 ---------------- EXCEL EXPORT ----------------
 # Only show Summary Details 
@@ -1090,7 +1088,6 @@ def get_all_details_for_export(filters):
 
     return file_doc.file_url
 
-
 #13 item details EXCEL    
 @frappe.whitelist()
 def download_item_details_excel(filters):
@@ -1319,6 +1316,108 @@ def download_item_details_excel(filters):
   
   
 # --------------------- GENERATE JSON FOR NESTING CENTER ---------------------
+# @frappe.whitelist()
+# def export_nesting_json(filters=None):
+#     import json
+#     import random
+#     # ---------- RANDOM COLOR FUNCTION ----------
+#     def get_random_color():
+#         return "#{:06x}".format(random.randint(0, 0xFFFFFF))
+
+#     filters = frappe.parse_json(filters)
+
+#     project = filters.get("project")
+#     item = filters.get("item")
+
+#     item_name = frappe.db.get_value(
+#         "FT Stock RM List",
+#         item,
+#         "computed_name"
+#     )
+
+#     rows = frappe.db.sql("""
+#         SELECT
+#             dp.quantity,
+#             dp.lenght,
+#             dp.width,
+#             dp.part_no
+#         FROM `tabFT Drawing Parts` dp
+#         LEFT JOIN `tabFT Add Drawing` ad ON ad.name = dp.drawing_number
+#         WHERE ad.project_number=%s
+#         AND dp.item_id=%s
+#     """,(project,item),as_dict=1)
+
+#     parts = []
+
+#     for row in rows:
+
+#         # ---------- DEFAULT WIDTH ----------
+#         width = int(row.width) if row.width and int(row.width) != 0 else 100
+
+#         parts.append({
+#             "Quantity": int(row.quantity or 0),
+#             "RectangularShape": {
+#                 "Length": str(int(row.lenght or 0)),
+#                 "Width": str(width)
+#             },
+#             "Name": f"{row.part_no}",
+#             "Colour": get_random_color()   
+#         })
+
+
+#     data = {
+
+#         "Settings": {
+#             "DimensionLimit": None,
+#             "DistancePartPart": "0",
+#             "DistancePartRawPlate": "0",
+#             "MirrorControl": "Allow",
+#             "NestingInHoles": True,
+#             "RotationControl": "Free",
+#             "SortRawPlates": True,
+#             "GroupLayouts": True,
+#             "PlacementDirection": "LeftDown",
+#             "RotationTwist": {"Deg": 0},
+#             "NestingMode": "General",
+#             "SettingsStrips": {"Sorting": "Length"},
+#             "LayoutDuplicationAuto": False
+#         },
+
+#         "Problem": {
+
+#             "Parts": parts,
+
+#             "RawPlates": [
+#                 {
+#                     "Quantity": 10,
+#                     "RectangularShape": {
+#                         "Length": "12000",
+#                         "Width": "100"
+#                     },
+#                     "Name": item_name,
+#                     "Colour": get_random_color()   
+#                 }
+#             ]
+#         },
+
+#         "StopConditions": {
+#             "AllPartsNested": False,
+#             "Scrap": False,
+#             "ScrapValue": 0,
+#             "Scrap2": False,
+#             "Scrap2Value": 0,
+#             "SmartStop": False,
+#             "Timeout": True,
+#             "TimeoutValue": 300
+#         }
+#     }
+
+#     frappe.response["filename"] = "nesting_data.json"
+#     frappe.response["filecontent"] = json.dumps(data, indent=4)
+#     frappe.response["type"] = "download"
+
+
+# NESTING JSON EXPORT — 1D aur 2D dono support karta hai
 @frappe.whitelist()
 def export_nesting_json(filters=None):
     import json
@@ -1327,7 +1426,11 @@ def export_nesting_json(filters=None):
     def get_random_color():
         return "#{:06x}".format(random.randint(0, 0xFFFFFF))
 
-    filters = frappe.parse_json(filters)
+    # ---------- FILTERS ----------
+    filters  = frappe.parse_json(filters)
+    project  = filters.get("project")
+    item     = filters.get("item")
+    mode     = filters.get("mode", "1d")   # default: 1d
 
     project = filters.get("project")
     item = filters.get("item")
@@ -1338,6 +1441,7 @@ def export_nesting_json(filters=None):
         "computed_name"
     )
 
+    # ---------- DB SE PARTS FETCH ----------
     rows = frappe.db.sql("""
         SELECT
             dp.quantity,
@@ -1346,13 +1450,103 @@ def export_nesting_json(filters=None):
             dp.part_no
         FROM `tabFT Drawing Parts` dp
         LEFT JOIN `tabFT Add Drawing` ad ON ad.name = dp.drawing_number
-        WHERE ad.project_number=%s
-        AND dp.item_id=%s
-    """,(project,item),as_dict=1)
+        WHERE ad.project_number = %s
+          AND dp.item_id = %s
+    """, (project, item), as_dict=1)
 
-    parts = []
+    # MODE: 1D  —  purana RectangularShape format (kuch nahi badla)
+    if mode != "2d":
+
+        parts = []
+        for row in rows:
+            length = int(row.lenght or 0)
+            width  = int(row.width) if row.width and int(row.width) != 0 else 100
+
+            parts.append({
+                "Quantity": int(row.quantity or 0),
+                "RectangularShape": {
+                    "Length": str(length),
+                    "Width":  str(width)
+                },
+                "Name":   f"{row.part_no}",
+                "Colour": get_random_color()
+            })
+
+        data = {
+            "Settings": {
+                "DimensionLimit":        None,
+                "DistancePartPart":      "0",
+                "DistancePartRawPlate":  "0",
+                "MirrorControl":         "Allow",
+                "NestingInHoles":        True,
+                "RotationControl":       "Free",
+                "SortRawPlates":         True,
+                "GroupLayouts":          True,
+                "PlacementDirection":    "LeftDown",
+                "RotationTwist":         {"Deg": 0},
+                "NestingMode":           "General",
+                "SettingsStrips":        {"Sorting": "Length"},
+                "LayoutDuplicationAuto": False
+            },
+            "Problem": {
+                "Parts": parts,
+                "RawPlates": [
+                    {
+                        "Quantity": 10,
+                        "RectangularShape": {
+                            "Length": "12000",
+                            "Width":  "100"
+                        },
+                        "Name":   item_name,
+                        "Colour": get_random_color()
+                    }
+                ]
+            },
+            "StopConditions": {
+                "AllPartsNested": False,
+                "Scrap":          False,
+                "ScrapValue":     0,
+                "Scrap2":         False,
+                "Scrap2Value":    0,
+                "SmartStop":      False,
+                "Timeout":        True,
+                "TimeoutValue":   300
+            }
+        }
+
+        frappe.response["filename"]    = "nesting_data.json"
+        frappe.response["filecontent"] = json.dumps(data, indent=4)
+        frappe.response["type"]        = "download"
+        return
+
+
+    # ==============================================================
+    # MODE: 2D — LoopBulge Contours format (exact match)
+    # ==============================================================
+
+    import re
+
+    def extract_width_from_name(item_name):
+        if not item_name:
+            return 100
+        name_upper = str(item_name).upper()
+        angle_match = re.search(r'(\d+)\s*X\s*(\d+)', name_upper)
+        if angle_match:
+            return int(angle_match.group(1))
+        flat_match = re.search(r'0*(\d+)\s*MM', name_upper)
+        if flat_match:
+            return int(flat_match.group(1))
+        number_match = re.search(r'\b(\d{2,4})\b', name_upper)
+        if number_match:
+            return int(number_match.group(1))
+        return 100
+
+    parts_2d = []
 
     for row in rows:
+        length = int(row.lenght or 0)
+        db_width = int(row.width) if row.width and int(row.width) != 0 else 0
+        width = db_width if db_width > 0 else extract_width_from_name(item_name)
 
         # ---------- DEFAULT WIDTH ----------
         width = int(row.width) if row.width and int(row.width) != 0 else 100
@@ -1367,25 +1561,25 @@ def export_nesting_json(filters=None):
             "Colour": get_random_color()   
         })
 
+    raw_plate_length = 12000
+    raw_plate_width  = extract_width_from_name(item_name)
 
-    data = {
-
+    data_2d = {
         "Settings": {
-            "DimensionLimit": None,
-            "DistancePartPart": "0",
-            "DistancePartRawPlate": "0",
-            "MirrorControl": "Allow",
-            "NestingInHoles": True,
-            "RotationControl": "Free",
-            "SortRawPlates": True,
-            "GroupLayouts": True,
-            "PlacementDirection": "LeftDown",
-            "RotationTwist": {"Deg": 0},
-            "NestingMode": "General",
-            "SettingsStrips": {"Sorting": "Length"},
+            "DimensionLimit":        None,
+            "DistancePartPart":      "0",
+            "DistancePartRawPlate":  "0",
+            "MirrorControl":         "Allow",
+            "NestingInHoles":        True,
+            "RotationControl":       "Free",
+            "SortRawPlates":         True,
+            "GroupLayouts":          True,
+            "PlacementDirection":    "LeftDown",
+            "RotationTwist":         {"Deg": 0},
+            "NestingMode":           "General",
+            "SettingsStrips":        {"Sorting": "Length"},
             "LayoutDuplicationAuto": False
         },
-
         "Problem": {
 
             "Parts": parts,
@@ -1402,23 +1596,26 @@ def export_nesting_json(filters=None):
                 }
             ]
         },
-
         "StopConditions": {
             "AllPartsNested": False,
-            "Scrap": False,
-            "ScrapValue": 0,
-            "Scrap2": False,
-            "Scrap2Value": 0,
-            "SmartStop": False,
-            "Timeout": True,
-            "TimeoutValue": 300
+            "Scrap":          False,
+            "ScrapValue":     0,
+            "Scrap2":         False,
+            "Scrap2Value":    0,
+            "SmartStop":      False,
+            "Timeout":        True,
+            "TimeoutValue":   300
         }
     }
 
-    frappe.response["filename"] = "nesting_data.json"
-    frappe.response["filecontent"] = json.dumps(data, indent=4)
-    frappe.response["type"] = "download"
+    frappe.response["filename"]    = "nesting_data_2d.json"
+    frappe.response["filecontent"] = json.dumps(data_2d, indent=4)
+    frappe.response["type"]        = "download"
 
+# # ================================================================
+# # YE POORA CODE apni existing ft_drawing_part_report_2.py ke
+# # BILKUL BOTTOM mein paste karo (last line ke baad)
+# # ================================================================
 
 #---------------------- Snapshort /Compaire =>Revision-1 /Revision2 ka difference ----------------
 @frappe.whitelist()
@@ -1512,7 +1709,6 @@ def save_row_data(sr_no, project, item_name, item_count, quantity, lenght, width
     frappe.db.commit()
     return {"status": "success", "msg": "✅ Data saved successfully!"}
 
-
 @frappe.whitelist()
 def compare_row_data(sr_no, project, item_name, item_count, quantity, lenght, width, total_weight):
     import json
@@ -1597,8 +1793,7 @@ def compare_row_data(sr_no, project, item_name, item_count, quantity, lenght, wi
         "project":           ", ".join(all_projects),  # ← "FXL-0001, FXL-0002, FXL-0003"
         "project_count":     len(all_projects),    # ← 3
         "item_name":         item_name
-    }
-      
+    }     
       
 @frappe.whitelist()
 def export_compare_snapshot_excel(snapshot_data):
@@ -1841,6 +2036,11 @@ def export_compare_snapshot_excel(snapshot_data):
     )
 
     return file_doc.file_url
+
+
+
+
+
 
 
 

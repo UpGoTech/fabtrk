@@ -37,7 +37,7 @@ def execute(filters=None):
         values["po_no"] = tuple(int(p) for p in filters.get("po_no"))
 
     if filters.get("item"):
-        conditions += " AND dp.item_id IN %(item)s"
+        conditions += " AND dp.item IN %(item)s"
         values["item"] = tuple(filters.get("item"))
 
     if filters.get("stock_rm_type"):
@@ -47,11 +47,10 @@ def execute(filters=None):
     if filters.get("is_active"):
         conditions += " AND p.is_active = 1"
 
-    #3 ---------------- MAIN DATA ----------------
     query = f"""
     SELECT
         p.name AS project_name,
-        dp.item_id AS item_id,
+        dp.item AS item,
         rm.computed_name AS item_name,
         dp.po_no AS po_no,
         COALESCE(CAST(st.sort_key AS UNSIGNED), 9999) AS sort_key,
@@ -64,15 +63,15 @@ def execute(filters=None):
     FROM `tabFT Project` p
     LEFT JOIN `tabFT Add Drawing` ad ON ad.project_number = p.name
     LEFT JOIN `tabFT Drawing Parts` dp ON dp.drawing_number = ad.name
-    LEFT JOIN `tabFT Stock RM List` rm ON rm.name = dp.item_id
+    LEFT JOIN `tabFT Stock RM List` rm ON rm.name = dp.item
     LEFT JOIN `tabFT Section Type` st ON st.name = rm.stock_rm_type
     WHERE 1=1
         {conditions}
-    GROUP BY p.name, dp.item_id, rm.computed_name, dp.po_no, st.sort_key
+    GROUP BY p.name, dp.item, rm.computed_name, dp.po_no, st.sort_key
     HAVING
-        dp.item_id IS NOT NULL
+        dp.item IS NOT NULL
         OR (
-            dp.item_id IS NULL
+            dp.item IS NULL
             AND NOT EXISTS (
                 SELECT 1
                 FROM `tabFT Add Drawing` ad2
@@ -156,7 +155,7 @@ def execute(filters=None):
             <div class="d-grid gap-2 col-6 mx-auto">
                 <button class="btn btn-xs btn-info view-btn"
                     data-project="{row.get('project_name')}"
-                    data-item="{row.get('item_id') or ''}">
+                    data-item="{row.get('item') or ''}">
                     Details
                 </button>
             </div>
@@ -464,7 +463,7 @@ def get_po_numbers(txt="", drawings=None, projects=None, is_active=0):
 def get_item_details(project, item, drawing_numbers=None):
     from collections import defaultdict
 
-    conditions = " WHERE p.name = %s AND dp.item_id = %s "
+    conditions = " WHERE p.name = %s AND dp.item = %s "
     values = [project, item]
 
     if drawing_numbers:
@@ -633,7 +632,7 @@ def download_item_excel(filters):
     data = frappe.db.sql(f"""
         SELECT
             p.name                          AS project,
-            IFNULL(rm.computed_name, '-')   AS item_id,
+            IFNULL(rm.computed_name, '-')   AS item,
             dp.po_no                        AS po_no,
             COUNT(dp.name)                  AS total_entries,
             IFNULL(SUM(dp.quantity), 0)     AS total_qty,
@@ -643,8 +642,8 @@ def download_item_excel(filters):
         FROM `tabFT Project` p
         LEFT JOIN `tabFT Add Drawing` ad ON ad.project_number = p.name
         LEFT JOIN `tabFT Drawing Parts` dp ON dp.drawing_number = ad.name
-        LEFT JOIN `tabFT Stock RM List` rm ON rm.name = dp.item_id
-        WHERE dp.item_id IS NOT NULL {conditions}
+        LEFT JOIN `tabFT Stock RM List` rm ON rm.name = dp.item
+        WHERE dp.item IS NOT NULL {conditions}
         GROUP BY p.name, rm.computed_name, dp.po_no
         ORDER BY p.name, rm.computed_name, dp.po_no
     """, values, as_dict=True)
@@ -740,7 +739,7 @@ def download_item_excel(filters):
         row_vals = [
             sr,
             d.get("project"),
-            d.get("item_id"),
+            d.get("item"),
             po_no,        # 0 if no value
             entries,
             qty,
@@ -844,7 +843,7 @@ def get_all_details_for_export(filters):
     summary_data = frappe.db.sql(f"""
         SELECT
             p.name                          AS project,
-            COALESCE(rm.computed_name, '-') AS item_id,
+            COALESCE(rm.computed_name, '-') AS item,
             dp.po_no                        AS po_no,
             COUNT(dp.name)                  AS total_entries,
             IFNULL(SUM(dp.quantity), 0)     AS total_qty,
@@ -854,8 +853,8 @@ def get_all_details_for_export(filters):
         FROM `tabFT Project` p
         LEFT JOIN `tabFT Add Drawing` ad ON ad.project_number = p.name
         LEFT JOIN `tabFT Drawing Parts` dp ON dp.drawing_number = ad.name
-        LEFT JOIN `tabFT Stock RM List` rm ON rm.name = dp.item_id
-        WHERE dp.item_id IS NOT NULL {conditions}
+        LEFT JOIN `tabFT Stock RM List` rm ON rm.name = dp.item
+        WHERE dp.item IS NOT NULL {conditions}
         GROUP BY p.name, rm.computed_name, dp.po_no
         ORDER BY p.name, rm.computed_name, dp.po_no
     """, values, as_dict=True)
@@ -902,7 +901,7 @@ def get_all_details_for_export(filters):
         FROM `tabFT Drawing Parts` dp
         LEFT JOIN `tabFT Add Drawing` ad ON ad.name = dp.drawing_number
         LEFT JOIN `tabFT Project` p ON p.name = ad.project_number
-        LEFT JOIN `tabFT Stock RM List` rm ON rm.name = dp.item_id
+        LEFT JOIN `tabFT Stock RM List` rm ON rm.name = dp.item
         LEFT JOIN (
             SELECT drawing_number, MIN(po_serial_no) as po_serial_no
             FROM `tabFT Po Drawing`
@@ -1013,8 +1012,8 @@ def get_all_details_for_export(filters):
         vals = [
             sr,
             d.project,
-            d.item_id,
-            po_no,                      # Col 4: PO No  (0 if empty)
+            d.item,
+            po_no,                     
             d.total_entries,
             d.total_qty,
             d.total_length,
@@ -1106,7 +1105,6 @@ def get_all_details_for_export(filters):
     file_doc = save_file("FT_Drawing_Report.xlsx", stream.getvalue(), None, None, is_private=0)
     return file_doc.file_url
 
-
 #13 item details EXCEL
 @frappe.whitelist()
 def download_item_details_excel(filters):
@@ -1143,7 +1141,7 @@ def download_item_details_excel(filters):
         LEFT JOIN `tabFT Po Drawing` pod
             ON pod.project_number = p.name
             AND pod.drawing_number = ad.name
-        WHERE dp.item_id = %(item)s
+        WHERE dp.item = %(item)s
         AND ad.project_number = %(project)s
         ORDER BY
             CAST(pod.po_serial_no AS UNSIGNED) ASC,
@@ -1266,66 +1264,244 @@ def download_item_details_excel(filters):
     frappe.response['filecontent'] = file_stream.getvalue()
     frappe.response['type']        = 'download'
 
-
 # --------------------- GENERATE JSON FOR NESTING CENTER ---------------------
+# --------------------- contours and PO quantity calculation ---------------
 @frappe.whitelist()
 def export_nesting_json(filters=None):
     import json
     import random
 
     def get_random_color():
+        """Generate random color for each part"""
         return "#{:06x}".format(random.randint(0, 0xFFFFFF))
 
-    filters = frappe.parse_json(filters)
-    project   = filters.get("project")
-    item      = filters.get("item")
-    item_name = frappe.db.get_value("FT Stock RM List", item, "computed_name")
+    def create_rectangle_contour(length, width):
+        """Create rectangle contour with 4 vertices"""
+        return {
+            "Type": "LoopBulge",
+            "Data": {
+                "Vertices": [
+                    {"X": 0, "Y": 0, "B": 0},
+                    {"X": length, "Y": 0, "B": 0},
+                    {"X": length, "Y": width, "B": 0},
+                    {"X": 0, "Y": width, "B": 0}
+                ]
+            }
+        }
 
-    rows = frappe.db.sql("""
-        SELECT dp.quantity, dp.lenght, dp.width, dp.part_no
+    filters = frappe.parse_json(filters)
+    project = filters.get("project")
+    item = filters.get("item")
+    
+    # Get report filters from the request
+    report_filters = filters.get("report_filters", {})
+    
+    item_name = frappe.db.get_value("FT Stock RM List", item, "computed_name") or item
+
+    # ── Step 1: Build conditions based on report filters ──
+    conditions = ""
+    values = {"project": project, "item": item}
+    
+    # Drawing numbers filter
+    drawing_numbers = report_filters.get("drawing_number", [])
+    if drawing_numbers:
+        conditions += " AND ad.name IN %(drawing_numbers)s"
+        values["drawing_numbers"] = tuple(drawing_numbers)
+    
+    # PO numbers filter
+    po_numbers = report_filters.get("po_no", [])
+    if po_numbers:
+        conditions += " AND dp.po_no IN %(po_numbers)s"
+        values["po_numbers"] = tuple(po_numbers)
+    
+    # Is active filter
+    if report_filters.get("is_active"):
+        conditions += " AND p.is_active = 1"
+
+    # ── Step 2: global_required_qty with SAME filters ──
+    po_global_conditions = "WHERE pod.project_number = %(project)s"
+    po_global_values = {"project": project}
+    
+    if drawing_numbers:
+        po_global_conditions += " AND pod.drawing_number IN %(drawing_numbers)s"
+        po_global_values["drawing_numbers"] = tuple(drawing_numbers)
+    
+    po_global_result = frappe.db.sql(f"""
+        SELECT SUM(COALESCE(pod.required_qty, 0))
+        FROM `tabFT Po Drawing` pod
+        {po_global_conditions}
+    """, po_global_values)
+
+    global_required_qty = int(po_global_result[0][0] or 0) if po_global_result else 0
+
+    # ── Step 3: Drawing Parts fetch karo WITH FILTERS ──
+    rows = frappe.db.sql(f"""
+        SELECT
+            dp.quantity,
+            dp.lenght,
+            dp.width,
+            dp.part_no,
+            ad.drawing_number,
+            dp.po_no
         FROM `tabFT Drawing Parts` dp
         LEFT JOIN `tabFT Add Drawing` ad ON ad.name = dp.drawing_number
-        WHERE ad.project_number=%s AND dp.item_id=%s
-    """, (project, item), as_dict=1)
+        LEFT JOIN `tabFT Project` p ON p.name = ad.project_number
+        WHERE ad.project_number = %(project)s 
+        AND dp.item = %(item)s
+        {conditions}
+        ORDER BY ad.drawing_number, dp.po_no
+    """, values, as_dict=True)
 
+    # Debug log
+    frappe.log_error(f"JSON Export: Found {len(rows)} rows for item {item} with drawing filters {drawing_numbers}", "Nesting Export")
+
+    # ── Step 4: Create parts with CORRECT rectangle contours ──
     parts = []
-    for row in rows:
-        width = int(row.width) if row.width and int(row.width) != 0 else 100
+    
+    for idx, row in enumerate(rows):
+        length = float(row.lenght or 0)
+        width = float(row.width or 0)
+        qty = int(row.quantity or 0)
+        part_no = row.part_no or f"Part_{idx + 1}"
+        
+        # If width is 0, use length as width (square)
+        if width == 0:
+            width = length
+        
+        # Calculate PO required quantity
+        po_qty = qty * global_required_qty if global_required_qty > 0 else qty
+        
+        # ✅ CORRECT: Create rectangle contour using the function
+        contours = [create_rectangle_contour(length, width)]
+        
+        # Create unique part name
+        unique_part_name = f"{part_no}_{length}x{width}"
+        
         parts.append({
-            "Quantity": int(row.quantity or 0),
-            "RectangularShape": {"Length": str(int(row.lenght or 0)), "Width": str(width)},
-            "Name": f"{row.part_no}",
+            "Quantity": po_qty,
+            "Contours": contours,
+            "RefPt": {"X": 0, "Y": 0},
+            "Name": unique_part_name,
             "Colour": get_random_color()
         })
 
+    # ── Step 5: RawPlates configuration ──
+    if rows:
+        max_length = max((row.get("lenght", 0) or 0 for row in rows), default=12000)
+        max_width = max((row.get("width", 0) or 0 for row in rows), default=1000)
+    else:
+        max_length = 12000
+        max_width = 600
+    
+    # Sheet size calculation
+    sheet_length = max(12000, max_length)
+    sheet_width = max(600, max_width * 2) if max_width > 0 else 600
+
+    raw_plates = [{
+        "Quantity": 10,
+        "RectangularShape": {
+            "Length": str(sheet_length),
+            "Width": str(sheet_width)
+        },
+        "Name": f"Sheet {sheet_length}x{sheet_width}"
+    }]
+
+    # ── Step 6: Final JSON structure ──
     data = {
         "Settings": {
-            "DimensionLimit": None, "DistancePartPart": "0", "DistancePartRawPlate": "0",
-            "MirrorControl": "Allow", "NestingInHoles": True, "RotationControl": "Free",
-            "SortRawPlates": True, "GroupLayouts": True, "PlacementDirection": "LeftDown",
-            "RotationTwist": {"Deg": 0}, "NestingMode": "General",
-            "SettingsStrips": {"Sorting": "Length"}, "LayoutDuplicationAuto": False
+            "DimensionLimit": None,
+            "DistancePartPart": "0",
+            "DistancePartRawPlate": "0",
+            "MirrorControl": "Allow",
+            "NestingInHoles": True,
+            "RotationControl": "Free",
+            "SortRawPlates": True,
+            "GroupLayouts": True,
+            "PlacementDirection": "LeftDown",
+            "RotationTwist": {"Deg": 0},
+            "NestingMode": "General",
+            "SettingsStrips": {"Sorting": "Length"},
+            "LayoutDuplicationAuto": False
         },
         "Problem": {
             "Parts": parts,
-            "RawPlates": [{
-                "Quantity": 10,
-                "RectangularShape": {"Length": "12000", "Width": "100"},
-                "Name": item_name,
-                "Colour": get_random_color()
-            }]
+            "RawPlates": raw_plates
         },
         "StopConditions": {
-            "AllPartsNested": False, "Scrap": False, "ScrapValue": 0,
-            "Scrap2": False, "Scrap2Value": 0, "SmartStop": False,
-            "Timeout": True, "TimeoutValue": 300
+            "AllPartsNested": False,
+            "Scrap": False,
+            "ScrapValue": 0,
+            "Scrap2": False,
+            "Scrap2Value": 0,
+            "SmartStop": False,
+            "Timeout": True,
+            "TimeoutValue": 300
         }
     }
 
-    frappe.response["filename"]    = "nesting_data.json"
+    # ── Step 7: Return JSON file for download ──
+    frappe.response["filename"] = f"nesting_{item_name}_{len(parts)}parts.json"
     frappe.response["filecontent"] = json.dumps(data, indent=4)
-    frappe.response["type"]        = "download"
+    frappe.response["type"] = "download"
 
+# --------------------- NESTING REPORT SAVE & FETCH ---------------------
+@frappe.whitelist()
+def save_nesting_report(item, project, sheets, nested_parts, scrap, pdf_url=""):
+    try:
+        existing = frappe.db.get_value(
+            "FT Nesting Report",
+            {"item": item, "project": project},
+            "name"
+        )
+
+        if existing:
+            doc = frappe.get_doc("FT Nesting Report", existing)
+        else:
+            doc = frappe.new_doc("FT Nesting Report")
+            doc.item    = item
+            doc.project = project
+
+        doc.sheets       = sheets
+        doc.nested_parts = nested_parts
+        doc.scrap        = scrap
+        doc.pdf_url      = pdf_url
+
+        doc.save(ignore_permissions=True)
+        frappe.db.commit()
+
+        return {"success": True, "name": doc.name}
+
+    except Exception as e:
+        frappe.log_error(frappe.get_traceback(), "save_nesting_report Error")
+        return {"success": False, "error": str(e)}
+
+@frappe.whitelist()
+def get_nesting_report(item, project):
+    try:
+        name = frappe.db.get_value(
+            "FT Nesting Report",
+            {"item": item, "project": project},
+            "name"
+        )
+
+        if not name:
+            return {"found": False}
+
+        doc = frappe.get_doc("FT Nesting Report", name)
+
+        return {
+            "found":        True,
+            "sheets":       doc.sheets       or "—",
+            "nested_parts": doc.nested_parts or "—",
+            "scrap":        doc.scrap        or "—",
+            "pdf_url":      doc.pdf_url      or "",
+        }
+
+    except Exception as e:
+        frappe.log_error(frappe.get_traceback(), "get_nesting_report Error")
+        return {"found": False, "error": str(e)}
+
+# --------------------- GENERATE JSON FOR NESTING CENTER ---------------------
 
 # ---------------------- Snapshot Save with drawing number -------------
 # @frappe.whitelist()
@@ -1783,7 +1959,7 @@ def save_row_data(sr_no, project, item_name, item_count, quantity, lenght, width
                 FROM `tabFT Drawing Parts` dp
                 LEFT JOIN `tabFT Add Drawing` ad ON ad.name = dp.drawing_number
                 WHERE ad.project_number = %(project)s
-                  AND dp.item_id = (
+                  AND dp.item = (
                       SELECT name FROM `tabFT Stock RM List`
                       WHERE computed_name = %(item_name)s
                       LIMIT 1
@@ -1849,7 +2025,7 @@ def save_row_data(sr_no, project, item_name, item_count, quantity, lenght, width
             FROM `tabFT Drawing Parts` dp
             LEFT JOIN `tabFT Add Drawing` ad ON ad.name = dp.drawing_number
             WHERE ad.project_number = %(project)s
-              AND dp.item_id = (
+              AND dp.item = (
                   SELECT name FROM `tabFT Stock RM List`
                   WHERE computed_name = %(item_name)s
                   LIMIT 1
@@ -1916,7 +2092,7 @@ def compare_row_data(sr_no, project, item_name, item_count, quantity, lenght, wi
             SELECT DISTINCT ad.drawing_number
             FROM `tabFT Drawing Parts` dp
             LEFT JOIN `tabFT Add Drawing` ad ON ad.name = dp.drawing_number
-            WHERE dp.item_id = %s AND ad.drawing_number IS NOT NULL
+            WHERE dp.item = %s AND ad.drawing_number IS NOT NULL
             ORDER BY ad.drawing_number ASC
         """, (item_id,), as_list=True)
         drawing_list = [r[0] for r in drawing_rows if r[0]]
@@ -1993,8 +2169,8 @@ def compare_row_data(sr_no, project, item_name, item_count, quantity, lenght, wi
         "item_name":         item_name,
         "drawing_numbers":   drawing_str,
     }
- 
- 
+
+
 @frappe.whitelist()
 def export_compare_snapshot_excel(snapshot_data):
     import json
@@ -2017,8 +2193,8 @@ def export_compare_snapshot_excel(snapshot_data):
         "total_length":    "Total Length",
         "total_width":     "Total Width",
         "total_weight":    "Total Weight",
-        "po_required_qty": "PO Required Qty",   # ✅ NEW
-        "po_total_weight": "PO Total Weight",    # ✅ NEW
+        "po_required_qty": "PO Required Qty",   
+        "po_total_weight": "PO Total Weight",   
     }
  
     max_revisions = 0
@@ -2148,8 +2324,8 @@ def export_compare_snapshot_excel(snapshot_data):
         for r in range(start_row, start_row + len(fields)):
             ws.row_dimensions[r].height = 38
         data_row += len(fields)
-
-        # row beack code Inside the excel 
+ 
+        #-------------  row break insited the excel download
         # sep_fill = PatternFill("solid", fgColor="E8EDF2")
         # for col in range(1, total_cols + 1):
         #     c = ws.cell(row=data_row, column=col, value="")
@@ -2170,4 +2346,6 @@ def export_compare_snapshot_excel(snapshot_data):
 
 # ---------------------- Snapshot Save with drawing number -------------
 
+
+#---------------------- Snapshot Save ------------------------------
 

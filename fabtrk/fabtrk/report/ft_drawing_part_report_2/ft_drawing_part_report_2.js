@@ -8,7 +8,6 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 		frappe.query_report.set_filter_value("item", []);
 		frappe.query_report.set_filter_value("is_active", 1);
 
-
 		// Add download item details button to summary table - Header button
 		report.page.add_inner_button("Download Summary", function () {
 			let filters = report.get_values();
@@ -20,7 +19,6 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 			// ✅ window.location.href — sabse reliable Frappe binary download ke liye
 			window.location.href = "/api/method/fabtrk.fabtrk.report.ft_drawing_part_report_2.ft_drawing_part_report_2.download_item_excel?" + params.toString();
 		});
-
 		// DOWNLOAD FULL REPORT BUTTON - Header button
 		report.page.add_inner_button("Download Full Report", function () {
 			frappe.call({
@@ -116,7 +114,6 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 				}
 			);
 		});
-
 		// COMPARE SNAPSHOT BUTTON - Header button
 		report.page.add_inner_button("📊 Compare Snapshot", function () {
 			let report_data = frappe.query_report.data || [];
@@ -296,12 +293,9 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 			});
 		});
 
-
 		setTimeout(() => {
 			frappe.query_report.refresh();
 		}, 100);
-
-
 	},
 
 	filters: [
@@ -345,7 +339,6 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 				frappe.query_report.set_filter_value("po_no", []);
 				frappe.query_report.set_filter_value("item", []);
 				frappe.query_report.refresh();
-
 				clear_item_details();
 			}
 		},
@@ -783,9 +776,16 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 								style="margin-top:20px; padding:20px; border:1px solid #ddd;">
 								<div style="display:flex;justify-content:space-between;align-items:center;">
 									<h4>Item Details - ${r.message.item_name}</h4>
-									<div style="display:flex; gap:20px;">
-										<button class="btn btn-xs btn-primary nesting-export">
-											Nesting data export
+									<div style="display:flex; gap:20px;">	
+																			
+										<button class="btn btn-xs btn-primary nesting-export nesting-export-1d" >
+											1D Nesting data export
+										</button>
+										<button class="btn btn-xs btn-primary nesting-export nesting-export-2d"
+											data-item="${item}"
+											data-project="${project}"
+											data-mode="2d">
+											2D Nesting data export
 										</button>
 										<!-- ✅ UPDATED: Nesting Report button with class + data attrs -->
 										<button class="btn btn-xs btn-primary nesting-report-btn"
@@ -845,7 +845,6 @@ frappe.query_reports["FT Drawing Part Report 2"] = {
 					item: item_name,
 					project: project_name
 				};
-
 				let url = "/api/method/fabtrk.fabtrk.report.ft_drawing_part_report_2.ft_drawing_part_report_2.download_item_details_excel"
 					+ "?filters=" + encodeURIComponent(JSON.stringify(filters));
 
@@ -923,7 +922,6 @@ function clear_item_details() {
 	$("#item-detail-container").remove();
 	$(".view-btn").removeClass("active-detail");
 }
-
 // EXCEL download current item details in Excel
 function download_item_details(item_name, project_name) {
 
@@ -942,7 +940,6 @@ function download_item_details(item_name, project_name) {
 	link.click();
 	document.body.removeChild(link);
 }
-
 // EXCEL download full report both summary and detail tables in Excel with two defferent sheet for detail and summary
 function download_full_report(report) {
 	if (!report.data || !report.data.length) {
@@ -1024,22 +1021,21 @@ function download_full_report(report) {
 
 	XLSX.writeFile(wb, "FT_Drawing_Part_Report.xlsx");
 }
-
 if (!window.XLSX) {
 	let script = document.createElement("script");
 	script.src = "https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js";
 	document.head.appendChild(script);
 }
 
-
+/**************************************************************** */
 // ── Nesting Report Modal ──
 // ✅ NEW FUNCTION: Nesting Report Modal
 // "Nesting Report" button click karne par ye open hota hai
 
 function show_nesting_report_modal(item, project, item_display_name) {
-
+ 
 	$("#nesting-report-modal-overlay").remove();
-
+ 
 	let modal_html = `
 	<div id="nesting-report-modal-overlay" style="
 		position:fixed; top:0; left:0; width:100%; height:100%;
@@ -1190,9 +1186,9 @@ function show_nesting_report_modal(item, project, item_display_name) {
 		</div>
 	</div>
 	`;
-
+ 
 	$("body").append(modal_html);
-
+ 
 	// Close on overlay click or close button
 	$("#close-nesting-modal").on("click", function () {
 		$("#nesting-report-modal-overlay").remove();
@@ -1202,17 +1198,17 @@ function show_nesting_report_modal(item, project, item_display_name) {
 			$("#nesting-report-modal-overlay").remove();
 		}
 	});
-
+ 
 	// Toggle manual entry
 	$("#toggle-manual-entry").on("click", function () {
 		$("#manual-stats-area").toggle();
 	});
-
+ 
 	// Parse JSON button
 	$("#parse-nesting-json").on("click", function () {
 		let file = document.getElementById("nesting-result-json").files[0];
 		if (!file) { frappe.msgprint("Pehle JSON file select karo!"); return; }
-
+ 
 		let reader = new FileReader();
 		reader.onload = function (e) {
 			try {
@@ -1226,7 +1222,7 @@ function show_nesting_report_modal(item, project, item_display_name) {
 		};
 		reader.readAsText(file);
 	});
-
+ 
 	// Apply manual stats
 	$("#apply-manual-stats").on("click", function () {
 		$("#stat-sheets").text($("#manual-sheets").val() || "—");
@@ -1236,7 +1232,7 @@ function show_nesting_report_modal(item, project, item_display_name) {
 		$("#manual-stats-area").hide();
 		frappe.show_alert({ message: "Stats apply ho gaye!", indicator: "green" });
 	});
-
+ 
 	// PDF upload
 	$("#nesting-pdf-upload").on("change", function () {
 		let file = this.files[0];
@@ -1245,7 +1241,94 @@ function show_nesting_report_modal(item, project, item_display_name) {
 		$("#nesting-pdf-frame").attr("src", url);
 		$("#pdf-download-link").attr("href", url);
 		$("#pdf-viewer-area").show();
-		frappe.show_alert({ message: "PDF load ho gaya!", indicator: "green" });
+		frappe.show_alert({ message: "PDF save!", indicator: "green" });
+	});
+ 
+	// ================================================================
+	// ✅ LOAD: Modal open hone par pehle se saved data load karo
+	// ================================================================
+	frappe.call({
+		method: "fabtrk.fabtrk.report.ft_drawing_part_report_2.ft_drawing_part_report_2.get_nesting_report",
+		args: { item: item, project: project },
+		callback: function (r) {
+			if (r.message && r.message.found) {
+				let d = r.message;
+ 
+				// Stats cards fill karo (previously saved)
+				$("#stat-sheets").text(d.sheets || "—");
+				$("#stat-nested-parts").text(d.nested_parts || "—");
+				$("#stat-scrap").text(d.scrap || "—");
+				$("#nesting-stats-area").show();
+ 
+				// Saved banner show karo
+				$("#saved-stat-sheets").text(d.sheets || "—");
+				$("#saved-stat-nested-parts").text(d.nested_parts || "—");
+				$("#saved-stat-scrap").text(d.scrap || "—");
+ 
+				if (d.pdf_url) {
+					$("#saved-pdf-link").attr("href", d.pdf_url);
+					$("#saved-pdf-link-area").show();
+ 
+					// PDF iframe mein bhi load karo
+					$("#nesting-pdf-frame").attr("src", d.pdf_url);
+					$("#pdf-download-link").attr("href", d.pdf_url);
+					$("#pdf-viewer-area").show();
+				}
+ 
+				$("#saved-data-banner").show();
+			}
+		}
+	});
+ 
+	// ================================================================
+	// ✅ SAVE: Stats + PDF Frappe server pe save karo
+	// ================================================================
+	$("#save-nesting-report").on("click", function () {
+ 
+		let sheets       = $("#stat-sheets").text().trim();
+		let nested_parts = $("#stat-nested-parts").text().trim();
+		let scrap        = $("#stat-scrap").text().trim();
+ 
+		if (sheets === "—" && nested_parts === "—" && scrap === "—") {
+			frappe.msgprint("Pehle stats enter ya parse karo, phir save karo!");
+			return;
+		}
+ 
+		let pdf_file = document.getElementById("nesting-pdf-upload").files[0];
+ 
+		let save_btn = document.getElementById("save-nesting-report");
+		save_btn.disabled = true;
+		save_btn.textContent = "⏳ Saving...";
+ 
+		// ---- PDF hai toh pehle upload karo ----
+		if (pdf_file) {
+			let form_data = new FormData();
+			form_data.append("file", pdf_file, pdf_file.name);
+			form_data.append("is_private", 0);
+			form_data.append("doctype",    "FT Stock RM List");
+			form_data.append("docname",    item);
+			form_data.append("fieldname",  "nesting_pdf");
+ 
+			fetch("/api/method/upload_file", {
+				method: "POST",
+				headers: { "X-Frappe-CSRF-Token": frappe.csrf_token },
+				body: form_data
+			})
+			.then(res => res.json())
+			.then(res => {
+				let pdf_url = res.message ? res.message.file_url : null;
+				save_nesting_stats_to_backend(item, project, sheets, nested_parts, scrap, pdf_url, save_btn);
+			})
+			.catch(err => {
+				console.error("PDF upload error:", err);
+				// PDF upload fail ho toh bhi stats save karo (without PDF)
+				save_nesting_stats_to_backend(item, project, sheets, nested_parts, scrap, null, save_btn);
+			});
+ 
+		} else {
+			// PDF nahi hai — sirf stats save karo
+			save_nesting_stats_to_backend(item, project, sheets, nested_parts, scrap, null, save_btn);
+		}
 	});
 }
 
@@ -1253,53 +1336,53 @@ function show_nesting_report_modal(item, project, item_display_name) {
 //    Multiple output formats handle karta hai
 
 function parse_nesting_result_json(json) {
-
+ 
 	let sheets = "—", nested_parts = "—", scrap = "—";
 	let layouts = [];
-
+ 
 	// Format 1: { Result: { Sheets, NestedParts, TotalParts, Scrap, ... } }
 	if (json.Result) {
 		let r = json.Result;
-		sheets = r.Sheets || r.sheets || "—";
-		let np_done = r.NestedParts || r.nested_parts || r.PartsNested || 0;
-		let np_total = r.TotalParts || r.total_parts || r.Parts || 0;
+		sheets       = r.Sheets        || r.sheets        || "—";
+		let np_done  = r.NestedParts   || r.nested_parts  || r.PartsNested  || 0;
+		let np_total = r.TotalParts    || r.total_parts   || r.Parts        || 0;
 		nested_parts = np_total ? `${np_done} / ${np_total}` : String(np_done);
 		scrap = r.Scrap !== undefined ? `${parseFloat(r.Scrap).toFixed(2)}%` : "—";
 		layouts = r.Layouts || r.layouts || [];
 	}
 	// Format 2: Flat { Sheets, NestedParts, ... }
 	else if (json.Sheets !== undefined || json.sheets !== undefined) {
-		sheets = json.Sheets || json.sheets || "—";
-		let np_done = json.NestedParts || json.nested_parts || 0;
-		let np_total = json.TotalParts || json.total_parts || 0;
+		sheets       = json.Sheets       || json.sheets       || "—";
+		let np_done  = json.NestedParts  || json.nested_parts || 0;
+		let np_total = json.TotalParts   || json.total_parts  || 0;
 		nested_parts = np_total ? `${np_done} / ${np_total}` : String(np_done);
 		scrap = json.Scrap !== undefined ? `${parseFloat(json.Scrap).toFixed(2)}%` : "—";
 		layouts = json.Layouts || json.layouts || [];
 	}
 	// Format 3: { Solution: { ... } }
 	else if (json.Solution) {
-		let s = json.Solution;
-		sheets = s.NumberOfSheets || s.Sheets || "—";
-		scrap = s.ScrapPercentage !== undefined ? `${parseFloat(s.ScrapPercentage).toFixed(2)}%` : "—";
-		layouts = s.Layouts || s.Sheets_list || [];
+		let s        = json.Solution;
+		sheets       = s.NumberOfSheets  || s.Sheets     || "—";
+		scrap        = s.ScrapPercentage !== undefined ? `${parseFloat(s.ScrapPercentage).toFixed(2)}%` : "—";
+		layouts      = s.Layouts || s.Sheets_list || [];
 	}
 	else {
-		frappe.msgprint("JSON format pehchana nahi gaya. Manually enter karo.");
+		// frappe.msgprint("JSON format pehchana nahi gaya. Manually enter karo.");
 		$("#manual-stats-area").show();
 		return;
 	}
-
+ 
 	// Apply to stat cards
 	$("#stat-sheets").text(sheets);
 	$("#stat-nested-parts").text(nested_parts);
 	$("#stat-scrap").text(scrap);
 	$("#nesting-stats-area").show();
-
+ 
 	// Per-sheet breakdown
 	if (layouts && layouts.length) {
 		let rows_html = "";
 		layouts.forEach((layout, idx) => {
-			let name = layout.Name || layout.RawPlateName || layout.name || `Sheet ${idx + 1}`;
+			let name  = layout.Name || layout.RawPlateName || layout.name || `Sheet ${idx + 1}`;
 			let s_pct = layout.Scrap !== undefined
 				? `${parseFloat(layout.Scrap).toFixed(2)}%`
 				: layout.ScrapPercentage !== undefined
@@ -1317,11 +1400,13 @@ function parse_nesting_result_json(json) {
 		$("#sheet-breakdown-rows").html(rows_html);
 		$("#sheet-breakdown").show();
 	}
-
+ 
 	frappe.show_alert({ message: "Nesting results parse ho gaye!", indicator: "green" });
 }
 
 // ── Nesting Report Modal ──
+/**************************************************************** */
+
 $(`<style>
 
 .datatable .dt-scrollable {
@@ -1451,5 +1536,4 @@ $(`<style>
 	padding: 0 !important;
 }
 </style>`).appendTo("head");
-
 
