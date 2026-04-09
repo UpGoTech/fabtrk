@@ -378,30 +378,30 @@ def execute(filters=None):
         }
     ]
 
-    # GRAND TOTAL ROW
-    if data:
-        grand_total_entries    = sum(float(d.get("item_count") or 0) for d in data)
-        grand_total_weight     = sum(float(d.get("total_weight") or 0) for d in data)
-        grand_total_qty        = sum(float(d.get("quantity") or 0) for d in data)
-        grand_total_length     = sum(float(d.get("lenght") or 0) for d in data)
-        grand_total_width      = sum(float(d.get("width") or 0) for d in data)
-        grand_po_req_qty_total = sum(float(d.get("po_required_qty") or 0) for d in data)
-        grand_po_wt_total      = sum(float(d.get("po_total_weight") or 0) for d in data)
+    # # GRAND TOTAL ROW
+    # if data:
+    #     grand_total_entries    = sum(float(d.get("item_count") or 0) for d in data)
+    #     grand_total_weight     = sum(float(d.get("total_weight") or 0) for d in data)
+    #     grand_total_qty        = sum(float(d.get("quantity") or 0) for d in data)
+    #     grand_total_length     = sum(float(d.get("lenght") or 0) for d in data)
+    #     grand_total_width      = sum(float(d.get("width") or 0) for d in data)
+    #     grand_po_req_qty_total = sum(float(d.get("po_required_qty") or 0) for d in data)
+    #     grand_po_wt_total      = sum(float(d.get("po_total_weight") or 0) for d in data)
 
-        data.append({
-            "sr_no":           None,
-            "project_name":    "TOTAL",
-            "item_name":       "",
-            "po_no":           None,
-            "item_count":      grand_total_entries,
-            "quantity":        grand_total_qty,
-            "lenght":          grand_total_length,
-            "width":           grand_total_width,
-            "total_weight":    grand_total_weight,
-            "po_required_qty": grand_po_req_qty_total,
-            "po_total_weight": grand_po_wt_total,
-            "view":            ""
-        })
+    #     data.append({
+    #         "sr_no":           None,
+    #         "project_name":    "TOTAL",
+    #         "item_name":       "",
+    #         "po_no":           None,
+    #         "item_count":      grand_total_entries,
+    #         "quantity":        grand_total_qty,
+    #         "lenght":          grand_total_length,
+    #         "width":           grand_total_width,
+    #         "total_weight":    grand_total_weight,
+    #         "po_required_qty": grand_po_req_qty_total,
+    #         "po_total_weight": grand_po_wt_total,
+    #         "view":            ""
+    #     })
 
     return columns, data, None, None, report_summary
 

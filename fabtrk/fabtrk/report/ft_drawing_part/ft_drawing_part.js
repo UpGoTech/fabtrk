@@ -651,9 +651,7 @@ frappe.query_reports["FT Drawing Part"] = {
 			window.location.href = url;
 		});
 
-
-		// In the JS file, update the nesting-export click handler:
-
+		// In the JS file, update the nesting-export click handler:		
 		$(document).off("click", ".nesting-export").on("click", ".nesting-export", function () {
 			let item_name = $(".summary-download").data("item");
 			let project_name = $(".summary-download").data("project");
@@ -676,34 +674,107 @@ frappe.query_reports["FT Drawing Part"] = {
 			let display_name = $(this).data("item-name") || item_name;
 			show_nesting_report_modal(item_name, project_name, display_name);
 		});
-
-		setTimeout(() => {
-			$(report.wrapper).find(".datatable .dt-row").each(function () {
-				let project_cell = $(this).find(".dt-cell").eq(1);
-				if (project_cell.text().trim() === "TOTAL") {
-					$(this).find(".dt-cell").eq(0).html("");
-					$(this).css("font-weight", "600");
-				}
-			});
-		}, 100);
+		// ✅ YAHAN FOOTER CALL KARO — DOM yahan guaranteed ready hota hai
+    	attach_sticky_total_footer(report);		
 	},
-
 	formatter: function (value, row, column, data, default_formatter) {
-		if (data && data.project_name === "TOTAL") {
-			if (column.id === "_index") return `<span style="visibility:hidden;">0</span>`;
-			value = default_formatter(value, row, column, data);
-			return `<span style="font-weight:bold; background:#f2f2f2;">${value}</span>`;
-		}
 		return default_formatter(value, row, column, data);
 	}
 };
-
 
 function clear_item_details() {
 	$("#item-detail-container").remove();
 	$(".view-btn").removeClass("active-detail");
 }
 
+// Footer sticky karne ke liye function
+function attach_sticky_total_footer(report) {
+    $(report.wrapper).find("#ft-sticky-total-footer").remove();
+
+    let $wrapper = $(report.wrapper);
+    let $dt_body = $wrapper.find(".dt-scrollable");
+    if (!$dt_body.length) return;
+
+    let data = frappe.query_report.data || [];
+    let columns = frappe.query_report.columns || [];
+
+    let totals = {
+        item_count: 0, quantity: 0, lenght: 0, width: 0,
+        total_weight: 0, po_required_qty: 0, po_total_weight: 0
+    };
+
+    data.forEach(d => {
+        totals.item_count     += parseFloat(d.item_count     || 0);
+        totals.quantity       += parseFloat(d.quantity       || 0);
+        totals.lenght         += parseFloat(d.lenght         || 0);
+        totals.width          += parseFloat(d.width          || 0);
+        totals.total_weight   += parseFloat(d.total_weight   || 0);
+        totals.po_required_qty+= parseFloat(d.po_required_qty|| 0);
+        totals.po_total_weight+= parseFloat(d.po_total_weight|| 0);
+    });
+
+    // ✅ FIX: header cells se width lo, missing ones ke liye fallback
+    let col_widths = [];
+    $wrapper.find(".dt-header .dt-cell").each(function () {
+        let w = $(this).outerWidth();
+        col_widths.push(w > 0 ? w : 100);
+    });
+
+    if (!col_widths.length) return; 
+
+    let cells_html = `
+        <div style="
+            width:${col_widths[0]}px; min-width:${col_widths[0]}px;
+            display:inline-flex; align-items:center; justify-content:center;
+            padding:8px 4px; border-right:2px solid #ddd;
+            flex-shrink:0; box-sizing:border-box;
+            font-weight:900; color:#000; font-size:13px;
+        "></div>`;
+
+    columns.forEach(function (col, i) {
+        let w = col_widths[i + 1] || 100;
+        let val = "";
+        let fn = col.fieldname;
+
+        if (fn === "project_name") {
+            val = `<span style="font-weight:900; font-size:13px; color:#000;">TOTAL</span>`;
+        } else if (fn && totals[fn] !== undefined) {
+            let v = totals[fn];
+            if (["lenght","width","total_weight","po_total_weight"].includes(fn)) {
+                val = v.toLocaleString('en-IN', {minimumFractionDigits:3, maximumFractionDigits:3});
+            } else if (["item_count","quantity","po_required_qty"].includes(fn)) {
+                val = v.toLocaleString('en-IN', {minimumFractionDigits:0, maximumFractionDigits:0});
+            }
+        }
+
+        cells_html += `
+            <div style="
+                width:${w}px; min-width:${w}px; max-width:${w}px;
+                display:inline-flex; align-items:center; justify-content:center;
+                padding:8px 4px; border-right:1px solid #ddd;
+                flex-shrink:0; box-sizing:border-box;
+                font-weight:700; font-size:13px; white-space:nowrap; color:#000;
+            ">${val}</div>`;
+    });
+
+    let $footer = $(`<div id="ft-sticky-total-footer" style="
+        background: #f3f3f3 !important;
+        border-top:3px solid #f3f3f3;
+        overflow:hidden;
+        width:100%;
+    "><div id="ft-footer-inner" style="
+        display:inline-flex;
+        flex-wrap:nowrap;
+        transform:translateX(0px);
+    ">${cells_html}</div></div>`);
+
+    // ✅ FIX: dt-scrollable ke baad lagao (datatable ke baad nahi)
+    $dt_body.after($footer);
+
+    $dt_body.off("scroll.ft_footer").on("scroll.ft_footer", function () {
+        $("#ft-footer-inner").css("transform", `translateX(-${this.scrollLeft}px)`);
+    });
+}
 // -------------- Excel -------------
 function download_item_details(item_name, project_name) {
 	let url = "/api/method/fabtrk.fabtrk.report.ft_drawing_part.ft_drawing_part.download_item_details_excel"
@@ -1316,9 +1387,21 @@ $(`<style>
 .datatable .dt-cell__content--header-0, .datatable .dt-cell__content--col-0 {
 	padding:0 !important;
 }
+#ft-sticky-total-footer {
+    /* Ye properties ensure karengi ki footer bottom par stick kare */
+    position: sticky !important;
+    bottom: 0 !important;
+    z-index: 50 !important;
+    background-color: #f3f3f3 !important;
+    border-top: 3px solid #f3f3f3 !important;
+    width: 100% !important;
+    display: flex !important;
+}
 
-// .dt-cell__content>div{
-// 	text-align: center !important;
-// }
+/* Agar footer ka background transparent ho gaya toh text overlap hoga, isliye background fix karein */
+#ft-sticky-total-footer > div {
+    background-color: #f3f3f3 !important;
+}
 </style>`).appendTo("head");
+
 
