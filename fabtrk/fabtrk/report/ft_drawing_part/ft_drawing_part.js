@@ -500,11 +500,20 @@ frappe.query_reports["FT Drawing Part"] = {
 			on_change() { clear_item_details(); frappe.query_report.refresh(); }
 		},
 
+
 		// ---------------- SECTION TYPE ----------------
 		{
-			fieldname: "stock_rm_type", label: "Section Type", fieldtype: "MultiSelectList",
-			get_data: function (txt) { return frappe.db.get_link_options("FT Section Type", txt); },
-			on_change() { frappe.query_report.refresh(); clear_item_details(); }
+			fieldname: "stock_rm_type",
+			label: "Section Type",
+			fieldtype: "MultiSelectList",
+			get_data: function (txt) {
+				return frappe.db.get_link_options("FT Section Type", txt);
+			},
+			on_change() {
+				frappe.query_report.set_filter_value("item", []);
+				frappe.query_report.refresh();
+				clear_item_details();
+			}
 		},
 
 		// ---------------- IS ACTIVE ----------------

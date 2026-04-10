@@ -1,6 +1,6 @@
 {
  "charts": [],
- "content": "[{\"id\":\"nODy7KBzB7\",\"type\":\"card\",\"data\":{\"card_name\":\"Customer Master \",\"col\":4}},{\"id\":\"tQ-xGQIfWi\",\"type\":\"card\",\"data\":{\"card_name\":\"Raw Material Master\",\"col\":4}},{\"id\":\"C-CdGnQA5C\",\"type\":\"card\",\"data\":{\"card_name\":\"Project Master\",\"col\":4}},{\"id\":\"v270zy698r\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"UM6iMJgOWS\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Reports</b></span>\",\"col\":12}},{\"id\":\"4yf-S8zJPU\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Drawings\",\"col\":7}},{\"id\":\"ia3Yl3cnx2\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Drawings MRP\",\"col\":7}},{\"id\":\"Mgdh6M-4M-\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"oquJS_BNoY\",\"type\":\"card\",\"data\":{\"card_name\":\"Report Store Data\",\"col\":6}},{\"id\":\"Ht_717svoS\",\"type\":\"card\",\"data\":{\"card_name\":\"Go To Doctype\",\"col\":6}}]",
+ "content": "[{\"id\":\"nODy7KBzB7\",\"type\":\"card\",\"data\":{\"card_name\":\"Customer Master \",\"col\":4}},{\"id\":\"tQ-xGQIfWi\",\"type\":\"card\",\"data\":{\"card_name\":\"Raw Material Master\",\"col\":4}},{\"id\":\"C-CdGnQA5C\",\"type\":\"card\",\"data\":{\"card_name\":\"Project Master\",\"col\":4}},{\"id\":\"v270zy698r\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"UM6iMJgOWS\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Reports</b></span>\",\"col\":12}},{\"id\":\"4yf-S8zJPU\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Drawings\",\"col\":7}},{\"id\":\"ia3Yl3cnx2\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Drawings MRP\",\"col\":7}},{\"id\":\"Mgdh6M-4M-\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"oquJS_BNoY\",\"type\":\"card\",\"data\":{\"card_name\":\"Report Store Data\",\"col\":6}},{\"id\":\"Ht_717svoS\",\"type\":\"card\",\"data\":{\"card_name\":\"Go To Doctype\",\"col\":6}},{\"id\":\"Xovfp8GhBw\",\"type\":\"card\",\"data\":{\"card_name\":\"Stages \",\"col\":7}},{\"id\":\"e-m8w2Z165\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Transaction Report\",\"col\":6}},{\"id\":\"h-vvvrreCj\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Transaction Dashboard \",\"col\":3}}]",
  "creation": "2026-02-17 11:42:12.136765",
  "custom_blocks": [],
  "docstatus": 0,
@@ -177,9 +177,48 @@
    "link_type": "DocType",
    "onboard": 0,
    "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Stages ",
+   "link_count": 3,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Stages Master",
+   "link_count": 0,
+   "link_to": "FT Stages Master",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Project Stages",
+   "link_count": 0,
+   "link_to": "FT Project Stages",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Transaction",
+   "link_count": 0,
+   "link_to": "FT Transaction",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
   }
  ],
- "modified": "2026-03-25 18:06:40.149726",
+ "modified": "2026-04-07 18:23:27.636359",
  "modified_by": "Administrator",
  "module": "Fabtrk",
  "name": "Fab Trk",
@@ -191,6 +230,20 @@
  "roles": [],
  "sequence_id": 1.0,
  "shortcuts": [
+  {
+   "color": "Grey",
+   "doc_view": "List",
+   "label": "Transaction Dashboard ",
+   "type": "URL",
+   "url": "/app/transaction-dashboard"
+  },
+  {
+   "color": "Grey",
+   "doc_view": "List",
+   "label": "Transaction Report",
+   "link_to": "FT Transaction",
+   "type": "Report"
+  },
   {
    "color": "Grey",
    "doc_view": "List",
