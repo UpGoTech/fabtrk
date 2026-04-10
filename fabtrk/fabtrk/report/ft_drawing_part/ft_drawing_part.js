@@ -357,17 +357,52 @@ frappe.query_reports["FT Drawing Part"] = {
 
 		// ---------------- PO NUMBER ----------------
 		{
-			fieldname: "po_no", label: "PO Number", fieldtype: "MultiSelectList",
+			fieldname: "po_no",
+			label: "PO Number",
+			fieldtype: "MultiSelectList",
 			get_data: function (txt) {
+
 				let drawings = frappe.query_report.get_filter_value("drawing_number") || [];
 				let projects = frappe.query_report.get_filter_value("project_number") || [];
 				let is_active = frappe.query_report.get_filter_value("is_active");
+
+				// ✅ FIX: agar koi bhi filter select nahi hai → ALL PO show
+				if (!drawings.length && !projects.length && !is_active) {
+
+					let filters = [];
+					if (txt) filters.push(["po_no", "like", "%" + txt + "%"]);
+
+					return frappe.call({
+						method: "frappe.client.get_list",
+						args: {
+							doctype: "FT Drawing Parts",
+							fields: ["po_no"],
+							filters: filters,
+							limit_page_length: 0   // 🔥 IMPORTANT
+						}
+					}).then(r => {
+						let unique = {};
+						(r.message || []).forEach(d => {
+							if (d.po_no && !unique[d.po_no]) unique[d.po_no] = true;
+						});
+
+						return Object.keys(unique).map(po => ({
+							value: po,
+							label: po,
+							description: ""
+						}));
+					});
+				}
 
 				let get_active_projects = () => {
 					if (projects.length) return Promise.resolve(projects);
 					else if (is_active) return frappe.call({
 						method: "frappe.client.get_list",
-						args: { doctype: "FT Project", fields: ["name"], filters: [["is_active", "=", 1]] }
+						args: {
+							doctype: "FT Project",
+							fields: ["name"],
+							filters: [["is_active", "=", 1]]
+						}
 					}).then(r => (r.message || []).map(d => d.name));
 					else return Promise.resolve([]);
 				};
@@ -375,12 +410,20 @@ frappe.query_reports["FT Drawing Part"] = {
 				if (drawings.length) {
 					let filters = [["drawing_number", "in", drawings]];
 					if (txt) filters.push(["po_no", "like", "%" + txt + "%"]);
+
 					return frappe.call({
 						method: "frappe.client.get_list",
-						args: { doctype: "FT Drawing Parts", fields: ["po_no"], filters: filters }
+						args: {
+							doctype: "FT Drawing Parts",
+							fields: ["po_no"],
+							filters: filters,
+							limit_page_length: 0
+						}
 					}).then(r => {
 						let unique = {};
-						(r.message || []).forEach(d => { if (d.po_no && !unique[d.po_no]) unique[d.po_no] = true; });
+						(r.message || []).forEach(d => {
+							if (d.po_no && !unique[d.po_no]) unique[d.po_no] = true;
+						});
 						return Object.keys(unique).map(po => ({ value: po, label: po, description: "" }));
 					});
 				}
@@ -389,17 +432,28 @@ frappe.query_reports["FT Drawing Part"] = {
 					let filters = [];
 					if (txt) filters.push(["po_no", "like", "%" + txt + "%"]);
 					if (project_names.length) filters.push(["project_number", "in", project_names]);
+
 					return frappe.call({
 						method: "frappe.client.get_list",
-						args: { doctype: "FT Drawing Parts", fields: ["po_no"], filters: filters }
+						args: {
+							doctype: "FT Drawing Parts",
+							fields: ["po_no"],
+							filters: filters,
+							limit_page_length: 0
+						}
 					}).then(r => {
 						let unique = {};
-						(r.message || []).forEach(d => { if (d.po_no && !unique[d.po_no]) unique[d.po_no] = true; });
+						(r.message || []).forEach(d => {
+							if (d.po_no && !unique[d.po_no]) unique[d.po_no] = true;
+						});
 						return Object.keys(unique).map(po => ({ value: po, label: po, description: "" }));
 					});
 				});
 			},
-			on_change() { frappe.query_report.refresh(); clear_item_details(); }
+			on_change() {
+				frappe.query_report.refresh();
+				clear_item_details();
+			}
 		},
 
 		// ---------------- ITEM ----------------
@@ -536,113 +590,182 @@ frappe.query_reports["FT Drawing Part"] = {
 				$(".view-btn").removeClass("active-detail");
 				$(this).addClass("active-detail");
 
-				let project = $(this).data("project");
 				let item = $(this).data("item");
-				let drawings = frappe.query_report.get_filter_value("drawing_number") || [];
+				if (!item) { frappe.msgprint("No Data"); return; }
 
-				if (!project || !item) { frappe.msgprint("No Data"); return; }
+				// Report filters se project_numbers aur drawing_numbers lo
+				let project_numbers = frappe.query_report.get_filter_value("project_number") || [];
+				let drawings = frappe.query_report.get_filter_value("drawing_number") || [];
+				let po_numbers = frappe.query_report.get_filter_value("po_no") || [];
 
 				frappe.call({
 					method: "fabtrk.fabtrk.report.ft_drawing_part.ft_drawing_part.get_item_details",
 					args: {
-						project,
-						item,
-						drawing_numbers: drawings.length ? JSON.stringify(drawings) : null
+						project: "",
+						item: item,
+						drawing_numbers: drawings.length ? JSON.stringify(drawings) : null,
+						project_numbers: project_numbers.length ? JSON.stringify(project_numbers) : null,
+						po_numbers: po_numbers.length ? JSON.stringify(po_numbers) : null
 					},
 					callback: function (r) {
 						if (!r.message || !r.message.data || !r.message.data.length) {
 							frappe.msgprint("No Details Found"); return;
 						}
 
+						// Remove old container
 						$("#item-detail-container").remove();
-						let rows = "";
 
-						r.message.data.forEach(d => {
-							let is_total_row = String(d.project_number).toLowerCase().includes("total");
+						let all_rows = r.message.data;
+						let data_rows = all_rows.filter(d => !d._is_total_row);
+						let total_row = all_rows.find(d => d._is_total_row);
 
-							let qty = d.quantity !== undefined && d.quantity !== "" ? String(d.quantity).padStart(2, '0') : "";
-							let length = d.lenght !== undefined && d.lenght !== "" ? String(d.lenght).padStart(2, '0') : "";
-							let width = d.width !== undefined && d.width !== "" ? String(d.width).padStart(2, '0') : "";
-							let single_weight = d.single_weight !== undefined && d.single_weight !== "" ? parseFloat(d.single_weight).toFixed(3) : "";
-							let total_weight = d.total_weight !== undefined && d.total_weight !== "" ? parseFloat(String(d.total_weight).replace(/<[^>]+>/g, '')).toFixed(3) : "";
+						// ── Body rows ────────────────────────────────────────
+						let body_rows_html = "";
+						data_rows.forEach(d => {
+							let qty = (d.quantity !== undefined && d.quantity !== "") ? String(d.quantity).padStart(2, "0") : "";
+							let length = (d.lenght !== undefined && d.lenght !== "") ? String(d.lenght).padStart(2, "0") : "";
+							let width = (d.width !== undefined && d.width !== "") ? String(d.width).padStart(2, "0") : "";
+							let single_weight = (d.single_weight !== undefined && d.single_weight !== "") ? parseFloat(d.single_weight).toFixed(3) : "";
+							let total_weight = (d.total_weight !== undefined && d.total_weight !== "") ? parseFloat(String(d.total_weight).replace(/<[^>]+>/g, "")).toFixed(3) : "";
+							let po_req_qty = (d.po_required_qty !== undefined && d.po_required_qty !== "") ? d.po_required_qty : "";
+							let po_wt = (d.po_item_total_weight !== undefined && d.po_item_total_weight !== "") ? parseFloat(d.po_item_total_weight).toFixed(3) : "";
+							let po_no = d.po_no || "";
 
-							let po_required_qty = (d.po_required_qty !== undefined && d.po_required_qty !== "") ? d.po_required_qty : "";
-							let po_item_total_weight = (d.po_item_total_weight !== undefined && d.po_item_total_weight !== "") ? parseFloat(d.po_item_total_weight).toFixed(3) : "";
+							let po_qty_style = "text-align:center;";
+							let po_wt_style = "text-align:center;";
+							if (po_req_qty && parseInt(po_req_qty) > 0) po_qty_style = "text-align:center; color:#e65c00; font-weight:700;";
+							if (po_wt && parseFloat(po_wt) > 0) po_wt_style = "text-align:center; color:#1a7abf; font-weight:700;";
 
-							let row_style = "";
-							let val_style = "text-align:center;";
-
-							if (is_total_row) {
-								row_style = "background-color:#f0f4ff; font-weight:600;";
-								val_style = "text-align:center; color:#000; font-weight:700; font-size:15px;";
-							}
-
-							let po_qty_style = val_style;
-							if (!is_total_row && po_required_qty && parseInt(po_required_qty) > 0) {
-								po_qty_style = "text-align:center; color:#e65c00; font-weight:700;";
-							}
-							let po_wt_style = val_style;
-							if (!is_total_row && po_item_total_weight && parseFloat(po_item_total_weight) > 0) {
-								po_wt_style = "text-align:center; color:#1a7abf; font-weight:700;";
-							}
-
-							rows += `
-								<tr style="${row_style}">
+							body_rows_html += `
+								<tr>
 									<td style="text-align:center;">${d.serial_no || ""}</td>
 									<td>${d.project_number || ""}</td>
-									<td>${d.po_serial_no || ""}</td>
+									<td style="text-align:center; white-space:nowrap;">${po_no}</td>
+									<td style="white-space:nowrap;">${d.po_serial_no || ""}</td>
 									<td>${d.drawing_number || ""}</td>
 									<td style="text-align:center;">${d.position_no || ""}</td>
 									<td style="text-align:center;">${d.part_no || ""}</td>
 									<td style="text-align:center;">${d.entry_count || ""}</td>
-									<td style="${val_style}">${qty}</td>
-									<td style="${val_style}">${length}</td>
-									<td style="${val_style}">${width}</td>
+									<td style="text-align:center;">${qty}</td>
+									<td style="text-align:center;">${length}</td>
+									<td style="text-align:center;">${width}</td>
 									<td style="text-align:center;">${single_weight}</td>
-									<td style="${val_style}">${total_weight}</td>
-									<td style="${po_qty_style}">${po_required_qty}</td>
-									<td style="${po_wt_style}">${po_item_total_weight}</td>
+									<td style="text-align:center;">${total_weight}</td>
+									<td style="${po_qty_style}">${po_req_qty}</td>
+									<td style="${po_wt_style}">${po_wt}</td>
 								</tr>`;
 						});
 
+						// ── Footer (Total) row ───────────────────────────────
+						let footer_html = "";
+						if (total_row) {
+							let t = total_row;
+							let qty = (t.quantity !== undefined && t.quantity !== "") ? String(t.quantity).padStart(2, "0") : "";
+							let len = (t.lenght !== undefined && t.lenght !== "") ? String(t.lenght).padStart(2, "0") : "";
+							let wid = (t.width !== undefined && t.width !== "") ? String(t.width).padStart(2, "0") : "";
+							let tw = (t.total_weight !== undefined && t.total_weight !== "") ? parseFloat(String(t.total_weight).replace(/<[^>]+>/g, "")).toFixed(3) : "";
+							let prq = (t.po_required_qty !== undefined && t.po_required_qty !== "") ? t.po_required_qty : "";
+							let ptw = (t.po_item_total_weight !== undefined && t.po_item_total_weight !== "") ? parseFloat(t.po_item_total_weight).toFixed(3) : "";
+
+							footer_html = `
+								<tr style="background:#f0f4ff; border-top:2px solid #1F4E79; box-shadow:0 -2px 5px rgba(0,0,0,0.07);">
+									<td></td>
+									<td style="color:#1F4E79; font-weight:700;">Total</td>
+									<td></td><td></td><td></td><td></td><td></td><td></td>
+									<td style="text-align:center; font-weight:700; font-size:14px;">${qty}</td>
+									<td style="text-align:center; font-weight:700; font-size:14px;">${len}</td>
+									<td style="text-align:center; font-weight:700; font-size:14px;">${wid}</td>
+									<td></td>
+									<td style="text-align:center; font-weight:700; font-size:14px;">${tw}</td>
+									<td style="text-align:center; color:#e65c00; font-weight:700; font-size:14px;">${prq}</td>
+									<td style="text-align:center; color:#1a7abf; font-weight:700; font-size:14px;">${ptw}</td>
+								</tr>`;
+						}
+
+						// ── colgroup — 15 columns now (added PO No) ──────────
+						let colgroup = `
+							<colgroup>
+								<col style="width:48px;">
+								<col style="width:85px;">
+								<col style="width:100px;">
+								<col style="width:100px;">
+								<col style="width:150px;">
+								<col style="width:85px;">
+								<col style="width:65px;">
+								<col style="width:72px;">
+								<col style="width:48px;">
+								<col style="width:65px;">
+								<col style="width:52px;">
+								<col style="width:95px;">
+								<col style="width:95px;">
+								<col style="width:115px;">
+								<col style="width:105px;">
+							</colgroup>`;
+
+						let header_row = `
+							<tr style="background:#1F4E79; color:#fff;">
+								<th style="text-align:center;">Sr No</th>
+								<th>Project No</th>
+								<th style="text-align:center; white-space:nowrap;">PO No</th>
+								<th style="white-space:nowrap;">Po Serial No</th>
+								<th>Drawing</th>
+								<th style="text-align:center;">Item No / Position No</th>
+								<th style="text-align:center;">Mark No</th>
+								<th style="text-align:center;">Entry Count</th>
+								<th style="text-align:center;">Qty</th>
+								<th style="text-align:center;">Length</th>
+								<th style="text-align:center;">Width</th>
+								<th style="text-align:center;">Single Weight</th>
+								<th style="text-align:center;">Total Weight</th>
+								<th style="text-align:center; color:#ffd700;">PO Required Qty</th>
+								<th style="text-align:center; color:#7ec8e3;">PO Total Weight</th>
+							</tr>`;
+
+						// ✅ Full layout rendered OUTSIDE report.wrapper (report.wrapper.parentElement)
 						let html = `
-							<div id="item-detail-container" style="margin-top:20px; padding:20px; border:1px solid #ddd;">
-								<div style="display:flex;justify-content:space-between;align-items:center;">
-									<h4>Item Details - ${r.message.item_name}</h4>
-									<div style="display:flex; gap:20px;">
+							<div id="item-detail-container" style="margin-top:24px; padding:16px 20px 20px 20px; border:1px solid #ddd; border-radius:6px; background:#fff;">
+ 
+								<!-- Title + Action buttons -->
+								<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:8px;">
+									<h4 style="margin:0; font-size:15px; color:#1F4E79; font-weight:700;">
+										Item Details &mdash; ${r.message.item_name}
+									</h4>
+									<div style="display:flex; gap:8px; flex-wrap:wrap;">
 										<button class="btn btn-xs btn-primary nesting-export">Nesting data export</button>
 										<button class="btn btn-xs btn-primary nesting-report-btn"
-											data-item="${item}" data-project="${project}"
+											data-item="${item}" data-project=""
 											data-item-name="${r.message.item_name}">Nesting Report</button>
 										<button class="btn btn-xs btn-primary summary-download"
-											data-item="${item}" data-project="${project}">Download List</button>
+											data-item="${item}" data-project="">Download List</button>
 										<button class="btn btn-xs btn-danger close-view">Close</button>
 									</div>
 								</div>
-								<table class="table table-bordered" style="margin-top:15px;">
-									<thead style="background:#f0f4ff;">
-										<tr>
-											<th style="text-align:center;">Sr No</th>
-											<th>Project No</th>
-											<th>Po Serial No</th>
-											<th>Drawing</th>
-											<th style="text-align:center;">Position No</th>
-											<th style="text-align:center;">Part No</th>
-											<th style="text-align:center;">Entry Count</th>
-											<th style="text-align:center;">Qty</th>
-											<th style="text-align:center;">Length</th>
-											<th style="text-align:center;">Width</th>
-											<th style="text-align:center;">Single Weight</th>
-											<th style="text-align:center;">Total Weight</th>
-											<th style="text-align:center; color:#e65c00;">PO Required Qty</th>
-											<th style="text-align:center; color:#1a7abf;">PO Total Weight</th>
-										</tr>
-									</thead>
-									<tbody>${rows}</tbody>
-								</table>
+ 
+								<!-- Table: sticky header + scrollable body + sticky footer -->
+								<div style="border:1px solid #dee2e6; border-radius:4px; overflow:hidden; max-height:480px; overflow-y:auto; overflow-x:auto;">
+									<table class="table table-bordered table-hover" style="margin:0; font-size:12px; table-layout:fixed; width:100%; border-collapse:separate; border-spacing:0;">
+										<!--<table class="table table-bordered table-hover" style="margin:0; font-size:12px; table-layout:auto; width:100%; border-collapse:separate; border-spacing:0;">-->
+										${colgroup}
+										<thead style="position:sticky; top:0; z-index:10;">
+											${header_row}
+										</thead>
+										<tbody>${body_rows_html}</tbody>
+										<tfoot style="position:sticky; bottom:0; z-index:10;">
+											${footer_html}
+										</tfoot>
+									</table>
+								</div>
 							</div>`;
 
-						$(report.wrapper).find(".datatable").after(html);
+						// ✅ report.wrapper ke PARENT mein append karo
+						// — isse default datatable ke sorting/column menu se bilkul alag rahega
+						$(report.wrapper.parentElement || report.wrapper).append(html);
+
+						// Smooth scroll to detail table
+						setTimeout(() => {
+							let el = document.getElementById("item-detail-container");
+							if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+						}, 120);
 
 						$(".close-view").on("click", function () {
 							$("#item-detail-container").remove();
@@ -664,15 +787,12 @@ frappe.query_reports["FT Drawing Part"] = {
 		$(document).off("click", ".nesting-export").on("click", ".nesting-export", function () {
 			let item_name = $(".summary-download").data("item");
 			let project_name = $(".summary-download").data("project");
-
-			// Get current report filters
 			let report_filters = frappe.query_report.get_filter_values();
-
 			let url = "/api/method/fabtrk.fabtrk.report.ft_drawing_part.ft_drawing_part.export_nesting_json"
 				+ "?filters=" + encodeURIComponent(JSON.stringify({
 					item: item_name,
 					project: project_name,
-					report_filters: report_filters  // ← IMPORTANT: current filters bhej rahe hain
+					report_filters: report_filters
 				}));
 			window.location.href = url;
 		});
@@ -683,9 +803,19 @@ frappe.query_reports["FT Drawing Part"] = {
 			let display_name = $(this).data("item-name") || item_name;
 			show_nesting_report_modal(item_name, project_name, display_name);
 		});
+
+		// setTimeout(() => {
+		// 	$(report.wrapper).find(".datatable .dt-row").each(function () {
+		// 		let first_cell = $(this).find(".dt-cell").first();
+		// 		if (first_cell.text().trim() === "TOTAL") {
+		// 			$(this).css("font-weight", "600");
+		// 		}
+		// 	});
+		// }, 100);
 		// ✅ YAHAN FOOTER CALL KARO — DOM yahan guaranteed ready hota hai
-    	attach_sticky_total_footer(report);		
+		attach_sticky_total_footer(report);
 	},
+
 	formatter: function (value, row, column, data, default_formatter) {
 		return default_formatter(value, row, column, data);
 	}
@@ -696,42 +826,43 @@ function clear_item_details() {
 	$(".view-btn").removeClass("active-detail");
 }
 
-// Footer sticky karne ke liye function
+//------------------ Footer sticky karne ke liye function
 function attach_sticky_total_footer(report) {
-    $(report.wrapper).find("#ft-sticky-total-footer").remove();
+	$(report.wrapper).find("#ft-sticky-total-footer").remove();
 
-    let $wrapper = $(report.wrapper);
-    let $dt_body = $wrapper.find(".dt-scrollable");
-    if (!$dt_body.length) return;
+	let $wrapper = $(report.wrapper);
+	let $dt_body = $wrapper.find(".dt-scrollable");
+	if (!$dt_body.length) return;
 
-    let data = frappe.query_report.data || [];
-    let columns = frappe.query_report.columns || [];
+	let data = frappe.query_report.data || [];
+	let columns = frappe.query_report.columns || [];
 
-    let totals = {
-        item_count: 0, quantity: 0, lenght: 0, width: 0,
-        total_weight: 0, po_required_qty: 0, po_total_weight: 0
-    };
+	let totals = {
+		item_count: 0, quantity: 0, lenght: 0, width: 0,
+		total_weight: 0, po_required_qty: 0, po_total_weight: 0
+	};
 
-    data.forEach(d => {
-        totals.item_count     += parseFloat(d.item_count     || 0);
-        totals.quantity       += parseFloat(d.quantity       || 0);
-        totals.lenght         += parseFloat(d.lenght         || 0);
-        totals.width          += parseFloat(d.width          || 0);
-        totals.total_weight   += parseFloat(d.total_weight   || 0);
-        totals.po_required_qty+= parseFloat(d.po_required_qty|| 0);
-        totals.po_total_weight+= parseFloat(d.po_total_weight|| 0);
-    });
+	data.forEach(d => {
+		totals.item_count += parseFloat(d.item_count || 0);
+		totals.quantity += parseFloat(d.quantity || 0);
+		totals.lenght += parseFloat(d.lenght || 0);
+		totals.width += parseFloat(d.width || 0);
+		totals.total_weight += parseFloat(d.total_weight || 0);
+		totals.po_required_qty += parseFloat(d.po_required_qty || 0);
+		totals.po_total_weight += parseFloat(d.po_total_weight || 0);
+	});
 
-    // ✅ FIX: header cells se width lo, missing ones ke liye fallback
-    let col_widths = [];
-    $wrapper.find(".dt-header .dt-cell").each(function () {
-        let w = $(this).outerWidth();
-        col_widths.push(w > 0 ? w : 100);
-    });
+	// ✅ FIX: header cells se width lo, missing ones ke liye fallback
+	let col_widths = [];
+	$wrapper.find(".dt-header .dt-cell").each(function () {
+		let w = $(this).outerWidth();
+		col_widths.push(w > 0 ? w : 100);
+	});
 
-    if (!col_widths.length) return; 
+	if (!col_widths.length) return;
 
-    let cells_html = `
+	// --- Remove serial number remove form table default
+	let cells_html = `
         <div style="
             width:${col_widths[0]}px; min-width:${col_widths[0]}px;
             display:inline-flex; align-items:center; justify-content:center;
@@ -740,33 +871,33 @@ function attach_sticky_total_footer(report) {
             font-weight:900; color:#000; font-size:13px;
         "></div>`;
 
-    columns.forEach(function (col, i) {
-        let w = col_widths[i + 1] || 100;
-        let val = "";
-        let fn = col.fieldname;
+	columns.forEach(function (col, i) {
+		let w = col_widths[i + 1] || 100;
+		let val = "";
+		let fn = col.fieldname;
 
-        if (fn === "project_name") {
-            val = `<span style="font-weight:900; font-size:13px; color:#000;">TOTAL</span>`;
-        } else if (fn && totals[fn] !== undefined) {
-            let v = totals[fn];
-            if (["lenght","width","total_weight","po_total_weight"].includes(fn)) {
-                val = v.toLocaleString('en-IN', {minimumFractionDigits:3, maximumFractionDigits:3});
-            } else if (["item_count","quantity","po_required_qty"].includes(fn)) {
-                val = v.toLocaleString('en-IN', {minimumFractionDigits:0, maximumFractionDigits:0});
-            }
-        }
+		if (fn === "item_name") {
+			val = `<span style="font-weight:900; font-size:13px; color:#000;">TOTAL</span>`;
+		} else if (fn && totals[fn] !== undefined) {
+			let v = totals[fn];
+			if (["lenght", "width", "total_weight", "po_total_weight"].includes(fn)) {
+				val = v.toLocaleString('en-IN', { minimumFractionDigits: 3, maximumFractionDigits: 3 });
+			} else if (["item_count", "quantity", "po_required_qty"].includes(fn)) {
+				val = v.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+			}
+		}
 
-        cells_html += `
+		cells_html += `
             <div style="
                 width:${w}px; min-width:${w}px; max-width:${w}px;
-                display:inline-flex; align-items:center; justify-content:center;
+                display:inline-flex; align-items:center; justify-content:right;
                 padding:8px 4px; border-right:1px solid #ddd;
                 flex-shrink:0; box-sizing:border-box;
                 font-weight:700; font-size:13px; white-space:nowrap; color:#000;
             ">${val}</div>`;
-    });
+	});
 
-    let $footer = $(`<div id="ft-sticky-total-footer" style="
+	let $footer = $(`<div id="ft-sticky-total-footer" style="
         background: #f3f3f3 !important;
         border-top:3px solid #f3f3f3;
         overflow:hidden;
@@ -777,12 +908,12 @@ function attach_sticky_total_footer(report) {
         transform:translateX(0px);
     ">${cells_html}</div></div>`);
 
-    // ✅ FIX: dt-scrollable ke baad lagao (datatable ke baad nahi)
-    $dt_body.after($footer);
+	// ✅ FIX: dt-scrollable ke baad lagao (datatable ke baad nahi)
+	$dt_body.after($footer);
 
-    $dt_body.off("scroll.ft_footer").on("scroll.ft_footer", function () {
-        $("#ft-footer-inner").css("transform", `translateX(-${this.scrollLeft}px)`);
-    });
+	$dt_body.off("scroll.ft_footer").on("scroll.ft_footer", function () {
+		$("#ft-footer-inner").css("transform", `translateX(-${this.scrollLeft}px)`);
+	});
 }
 // -------------- Excel -------------
 function download_item_details(item_name, project_name) {
@@ -829,7 +960,7 @@ if (!window.XLSX) {
 	document.head.appendChild(script);
 }
 
-/**************************************************************** */
+/*******************  Nesting  ********************************** */
 
 // NEW FUNCTION: Nesting Report Modal for nesting button in item details view
 function show_nesting_report_modal(item, project, item_display_name) {
