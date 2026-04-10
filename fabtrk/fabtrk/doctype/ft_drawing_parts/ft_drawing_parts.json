@@ -16,7 +16,8 @@
   "quantity",
   "single_weight",
   "total_weight",
-  "painted_surface_percentage"
+  "painted_surface_percentage",
+  "dummy"
  ],
  "fields": [
   {
@@ -97,11 +98,16 @@
    "in_standard_filter": 1,
    "label": "Item",
    "options": "FT Stock RM List"
+  },
+  {
+   "fieldname": "dummy",
+   "fieldtype": "Data",
+   "label": "Dummy"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-04-06 18:17:56.766201",
+ "modified": "2026-04-10 12:48:03.910919",
  "modified_by": "Administrator",
  "module": "Fabtrk",
  "name": "FT Drawing Parts",
