@@ -282,20 +282,20 @@ def execute(filters=None):
         }
     ]
  
-    # GRAND TOTAL ROW
-    if data:
-        grand_total_entries    = sum(float(d.get("item_count") or 0) for d in data)
-        grand_po_req_qty_total = sum(float(d.get("po_required_qty") or 0) for d in data)
-        grand_po_wt_total      = sum(float(d.get("po_total_weight") or 0) for d in data)
+    # # GRAND TOTAL ROW
+    # if data:
+    #     grand_total_entries    = sum(float(d.get("item_count") or 0) for d in data)
+    #     grand_po_req_qty_total = sum(float(d.get("po_required_qty") or 0) for d in data)
+    #     grand_po_wt_total      = sum(float(d.get("po_total_weight") or 0) for d in data)
  
-        data.append({
-            "sr_no":           None,
-           "item_name":       "TOTAL",
-            "item_count":      grand_total_entries,
-            "po_required_qty": grand_po_req_qty_total,
-            "po_total_weight": grand_po_wt_total,
-            "view":            ""
-        })
+    #     data.append({
+    #         "sr_no":           None,
+    #         "item_name":       "TOTAL",
+    #         "item_count":      grand_total_entries,
+    #         "po_required_qty": grand_po_req_qty_total,
+    #         "po_total_weight": grand_po_wt_total,
+    #         "view":            ""
+    #     })
  
     return columns, data, None, None, report_summary
  
@@ -355,7 +355,7 @@ def get_po_numbers(txt="", drawings=None, projects=None, is_active=0):
  
 # ----------------- Details button ──────────────────────────────────────────────────────────
 @frappe.whitelist()
-def get_item_details(project, item, drawing_numbers=None, project_numbers=None):
+def get_item_details(project, item, drawing_numbers=None, project_numbers=None,po_numbers=None):
     from collections import defaultdict
     import json
 
@@ -388,6 +388,20 @@ def get_item_details(project, item, drawing_numbers=None, project_numbers=None):
             conditions += " AND ad.name IN %s "
             values.append(tuple(drawing_numbers))
  
+    # ✅ po_numbers filter
+    if po_numbers:
+        if isinstance(po_numbers, str):
+            try:
+                parsed_po = json.loads(po_numbers)
+            except:
+                parsed_po = []
+        else:
+            parsed_po = list(po_numbers)
+        if parsed_po:
+            conditions += " AND dp.po_no IN %s "
+            values.append(tuple(int(p) for p in parsed_po))
+            
+            
     rows = frappe.db.sql(f"""
         SELECT
             p.name AS project_number,
@@ -511,10 +525,6 @@ def get_item_details(project, item, drawing_numbers=None, project_numbers=None):
  
     item_name = frappe.db.get_value("FT Stock RM List", item, "computed_name") or item
     return {"item_name": item_name, "data": rows}
-
-
-
-
 
 
 
