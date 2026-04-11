@@ -1428,6 +1428,447 @@ def get_nesting_report(item, project):
 
 
 # ---------------------- Snapshot Save with drawing number -------------
+# @frappe.whitelist()
+# def save_row_data(sr_no, project, item_name, item_count, quantity, lenght, width,
+#                   total_weight, po_required_qty=0, po_total_weight=0, drawing_number=None):
+#     import json
+#     from frappe.utils import now_datetime
+
+#     timestamp = now_datetime().strftime("%d/%m/%Y (%H:%M:%S)")
+#     new_entry = {
+#         "timestamp":       timestamp,
+#         "total_entries":   float(item_count      or 0),
+#         "total_qty":       float(quantity         or 0),
+#         "total_length":    float(lenght           or 0),
+#         "total_width":     float(width            or 0),
+#         "total_weight":    float(total_weight     or 0),
+#         "po_required_qty": float(po_required_qty  or 0),
+#         "po_total_weight": float(po_total_weight  or 0),
+#     }
+
+#     existing_docs = frappe.get_all(
+#         "FT Store Revision Data",
+#         filters={"project_number": project, "item": item_name},
+#         fields=["name"],
+#         order_by="creation asc"
+#     )
+
+#     clean_item = item_name.replace(" ", "-").replace("/", "-")
+
+#     if existing_docs:
+#         last_doc_name = existing_docs[-1].name
+#         doc = frappe.get_doc("FT Store Revision Data", last_doc_name)
+
+#         try:
+#             revision_log = json.loads(doc.revision_log or "[]")
+#         except:
+#             revision_log = []
+
+#         if revision_log:
+#             last = revision_log[-1]
+
+#             # ✅ KEY FIX: Compare incoming data with DB ka LIVE full data
+#             # (filter ke bina — project + item ke saare drawings ka sum)
+#             live_data = frappe.db.sql("""
+#                 SELECT
+#                     COUNT(dp.name)              AS total_entries,
+#                     SUM(COALESCE(dp.quantity,0)) AS total_qty,
+#                     SUM(COALESCE(dp.lenght,0))   AS total_length,
+#                     SUM(COALESCE(dp.width,0))    AS total_width,
+#                     SUM(COALESCE(dp.total_weight,0)) AS total_weight
+#                 FROM `tabFT Drawing Parts` dp
+#                 LEFT JOIN `tabFT Add Drawing` ad ON ad.name = dp.drawing_number
+#                 WHERE ad.project_number = %(project)s
+#                   AND dp.item = (
+#                       SELECT name FROM `tabFT Stock RM List`
+#                       WHERE computed_name = %(item_name)s
+#                       LIMIT 1
+#                   )
+#             """, {"project": project, "item_name": item_name}, as_dict=True)
+
+#             if live_data and live_data[0]:
+#                 live = live_data[0]
+#                 # ✅ Saved last revision se LIVE DB data compare karo
+#                 changed = any([
+#                     float(last.get("total_entries") or 0) != float(live.get("total_entries") or 0),
+#                     float(last.get("total_qty")     or 0) != float(live.get("total_qty")     or 0),
+#                     float(last.get("total_length")  or 0) != float(live.get("total_length")  or 0),
+#                     float(last.get("total_width")   or 0) != float(live.get("total_width")   or 0),
+#                     float(last.get("total_weight")  or 0) != float(live.get("total_weight")  or 0),
+#                 ])
+#             else:
+#                 changed = False
+
+#             if not changed:
+#                 return {"status": "success", "msg": "The Data is the same, there has been no change."}
+
+#             # ✅ Agar change hua hai toh new_entry mein bhi LIVE data use karo
+#             # (filter wala data nahi — complete data)
+#             if live_data and live_data[0]:
+#                 live = live_data[0]
+#                 new_entry["total_entries"] = float(live.get("total_entries") or 0)
+#                 new_entry["total_qty"]     = float(live.get("total_qty")     or 0)
+#                 new_entry["total_length"]  = float(live.get("total_length")  or 0)
+#                 new_entry["total_width"]   = float(live.get("total_width")   or 0)
+#                 new_entry["total_weight"]  = float(live.get("total_weight")  or 0)
+
+#         revision_log.append(new_entry)
+#         next_revision = len(existing_docs) + 1
+#         new_name = f"Revision-{next_revision}-{clean_item}-{str(sr_no).zfill(3)}"
+
+#         new_doc = frappe.get_doc({
+#             "doctype":        "FT Store Revision Data",
+#             "name":           new_name,
+#             "sr_no":          sr_no,
+#             "project_number": project,
+#             "item":           item_name,
+#             "drawing_number": drawing_number,
+#             "total_entries":  new_entry["total_entries"],
+#             "total_qty":      new_entry["total_qty"],
+#             "total_length":   new_entry["total_length"],
+#             "total_width":    new_entry["total_width"],
+#             "total_weight":   new_entry["total_weight"],
+#             "revision_log":   json.dumps(revision_log)
+#         })
+#         new_doc.insert(ignore_permissions=True)
+#         frappe.rename_doc("FT Store Revision Data", new_doc.name, new_name, force=True)
+
+#     else:
+#         # Pehli baar save — LIVE full data fetch karo (filter ke bina)
+#         live_data = frappe.db.sql("""
+#             SELECT
+#                 COUNT(dp.name)               AS total_entries,
+#                 SUM(COALESCE(dp.quantity,0)) AS total_qty,
+#                 SUM(COALESCE(dp.lenght,0))   AS total_length,
+#                 SUM(COALESCE(dp.width,0))    AS total_width,
+#                 SUM(COALESCE(dp.total_weight,0)) AS total_weight
+#             FROM `tabFT Drawing Parts` dp
+#             LEFT JOIN `tabFT Add Drawing` ad ON ad.name = dp.drawing_number
+#             WHERE ad.project_number = %(project)s
+#               AND dp.item = (
+#                   SELECT name FROM `tabFT Stock RM List`
+#                   WHERE computed_name = %(item_name)s
+#                   LIMIT 1
+#               )
+#         """, {"project": project, "item_name": item_name}, as_dict=True)
+
+#         if live_data and live_data[0]:
+#             live = live_data[0]
+#             new_entry["total_entries"] = float(live.get("total_entries") or 0)
+#             new_entry["total_qty"]     = float(live.get("total_qty")     or 0)
+#             new_entry["total_length"]  = float(live.get("total_length")  or 0)
+#             new_entry["total_width"]   = float(live.get("total_width")   or 0)
+#             new_entry["total_weight"]  = float(live.get("total_weight")  or 0)
+
+#         revision_log = [new_entry]
+#         new_name = f"Revision-1-{clean_item}-{str(sr_no).zfill(3)}"
+
+#         frappe.db.sql("""
+#             INSERT INTO `tabFT Store Revision Data`
+#                 (name, sr_no, project_number, item, drawing_number,
+#                  total_entries, total_qty, total_length, total_width, total_weight,
+#                  revision_log, owner, creation, modified, modified_by, docstatus)
+#             VALUES
+#                 (%(name)s, %(sr_no)s, %(project_number)s, %(item)s, %(drawing_number)s,
+#                  %(total_entries)s, %(total_qty)s, %(total_length)s, %(total_width)s, %(total_weight)s,
+#                  %(revision_log)s, %(owner)s, NOW(), NOW(), %(owner)s, 0)
+#         """, {
+#             "name":           new_name,
+#             "sr_no":          sr_no,
+#             "project_number": project,
+#             "item":           item_name,
+#             "drawing_number": drawing_number,
+#             "total_entries":  new_entry["total_entries"],
+#             "total_qty":      new_entry["total_qty"],
+#             "total_length":   new_entry["total_length"],
+#             "total_width":    new_entry["total_width"],
+#             "total_weight":   new_entry["total_weight"],
+#             "revision_log":   json.dumps(revision_log),
+#             "owner":          frappe.session.user,
+#         })
+
+#     frappe.db.commit()
+#     return {"status": "success", "msg": "✅ Data saved successfully!"}
+ 
+ 
+# @frappe.whitelist()
+# def compare_row_data(sr_no, project, item_name, item_count, quantity, lenght, width, total_weight):
+#     import json
+#     from frappe.utils import now_datetime
+ 
+#     all_saved = frappe.db.get_all(
+#         "FT Store Revision Data",
+#         filters={"item": item_name},
+#         fields=["project_number", "revision_log", "total_entries",
+#                 "total_qty", "total_length", "total_width", "total_weight"]
+#     )
+ 
+#     if not all_saved:
+#         return {"status": "error", "msg": "No saved data found, First save the data "}
+ 
+#     item_id = frappe.db.get_value("FT Stock RM List", {"computed_name": item_name}, "name")
+ 
+#     if item_id:
+#         drawing_rows = frappe.db.sql("""
+#             SELECT DISTINCT ad.drawing_number
+#             FROM `tabFT Drawing Parts` dp
+#             LEFT JOIN `tabFT Add Drawing` ad ON ad.name = dp.drawing_number
+#             WHERE dp.item = %s AND ad.drawing_number IS NOT NULL
+#             ORDER BY ad.drawing_number ASC
+#         """, (item_id,), as_list=True)
+#         drawing_list = [r[0] for r in drawing_rows if r[0]]
+#     else:
+#         drawing_list = []
+ 
+#     drawing_str = ", ".join(sorted(drawing_list))
+ 
+#     all_projects  = [d.project_number for d in all_saved if d.project_number]
+#     max_rev_count = 0
+#     for d in all_saved:
+#         try:
+#             log = json.loads(d.revision_log or "[]")
+#             max_rev_count = max(max_rev_count, len(log))
+#         except:
+#             pass
+ 
+#     # ✅ NEW: po_required_qty aur po_total_weight bhi fields mein add kiye
+#     fields = [
+#         "total_entries", "total_qty", "total_length", "total_width", "total_weight",
+#         "po_required_qty", "po_total_weight"
+#     ]
+ 
+#     revision_sums = []
+#     for ri in range(max_rev_count):
+#         rev_sum = {f: 0.0 for f in fields}
+#         rev_sum["timestamp"] = ""
+#         for d in all_saved:
+#             try:
+#                 log = json.loads(d.revision_log or "[]")
+#                 if ri < len(log):
+#                     for f in fields:
+#                         rev_sum[f] += float(log[ri].get(f) or 0)
+#                     if log[ri].get("timestamp"):
+#                         rev_sum["timestamp"] = log[ri]["timestamp"]
+#             except:
+#                 pass
+#         revision_sums.append(rev_sum)
+ 
+#     db_sum = frappe.db.sql("""
+#         SELECT
+#             SUM(CAST(total_entries AS DECIMAL(20,3))) as total_entries,
+#             SUM(CAST(total_qty     AS DECIMAL(20,3))) as total_qty,
+#             SUM(CAST(total_length  AS DECIMAL(20,3))) as total_length,
+#             SUM(CAST(total_width   AS DECIMAL(20,3))) as total_width,
+#             SUM(CAST(total_weight  AS DECIMAL(20,3))) as total_weight
+#         FROM `tabFT Store Revision Data`
+#         WHERE item = %(item)s
+#     """, {"item": item_name}, as_dict=True)
+ 
+#     current_values = (
+#         {f: float(db_sum[0].get(f) or 0) for f in ["total_entries","total_qty","total_length","total_width","total_weight"]}
+#         if db_sum and db_sum[0]
+#         else {f: 0.0 for f in fields}
+#     )
+#     # ✅ po fields ke liye latest revision se current value lo
+#     if revision_sums:
+#         last_rev = revision_sums[-1]
+#         current_values["po_required_qty"] = last_rev.get("po_required_qty", 0.0)
+#         current_values["po_total_weight"]  = last_rev.get("po_total_weight",  0.0)
+#     else:
+#         current_values["po_required_qty"] = 0.0
+#         current_values["po_total_weight"]  = 0.0
+ 
+#     current_timestamp = now_datetime().strftime("%d/%m/%Y (%H:%M:%S)")
+ 
+#     return {
+#         "status":            "success",
+#         "revision_log":      revision_sums,
+#         "current":           current_values,
+#         "current_timestamp": current_timestamp,
+#         "project":           ", ".join(all_projects),
+#         "project_count":     len(all_projects),
+#         "item_name":         item_name,
+#         "drawing_numbers":   drawing_str,
+#     }
+
+
+# @frappe.whitelist()
+# def export_compare_snapshot_excel(snapshot_data):
+#     import json
+#     import openpyxl
+#     from io import BytesIO
+#     from frappe.utils.file_manager import save_file
+#     from openpyxl.styles import Font, PatternFill, Border, Side, Alignment
+#     from openpyxl.utils import get_column_letter
+ 
+#     snapshot_data = frappe.parse_json(snapshot_data)
+ 
+#     # ✅ NEW: po_required_qty aur po_total_weight add kiye
+#     fields = [
+#         "total_entries", "total_qty", "total_length", "total_width", "total_weight",
+#         "po_required_qty", "po_total_weight"
+#     ]
+#     field_labels = {
+#         "total_entries":   "Total Entries",
+#         "total_qty":       "Total Qty",
+#         "total_length":    "Total Length",
+#         "total_width":     "Total Width",
+#         "total_weight":    "Total Weight",
+#         "po_required_qty": "PO Required Qty",   
+#         "po_total_weight": "PO Total Weight",   
+#     }
+ 
+#     max_revisions = 0
+#     for item_data in snapshot_data:
+#         max_revisions = max(max_revisions, len(item_data.get("revision_log") or []))
+ 
+#     wb = openpyxl.Workbook()
+#     ws = wb.active
+#     ws.title = "Compare Snapshot"
+ 
+#     thin       = Side(style="thin")
+#     border     = Border(left=thin, right=thin, top=thin, bottom=thin)
+#     center     = Alignment(horizontal="center", vertical="center", wrap_text=True)
+#     left_align = Alignment(horizontal="left",   vertical="center", wrap_text=True)
+ 
+#     title_font  = Font(bold=True, size=14, color="FFFFFF")
+#     title_fill  = PatternFill("solid", fgColor="1F4E79")
+#     header_font = Font(bold=True, size=11, color="FFFFFF")
+#     header_fill = PatternFill("solid", fgColor="2F75B5")
+#     diff_hfill  = PatternFill("solid", fgColor="7B2D8B")
+#     diff_hfont  = Font(bold=True, size=11, color="FFFFFF")
+ 
+#     changed_font   = Font(bold=True, color="C55A11")
+#     normal_font    = Font(size=11,   color="333333")
+#     diff_pos_font  = Font(bold=True, color="1A7ABF")
+#     diff_neg_font  = Font(bold=True, color="C00000")
+#     diff_zero_font = Font(size=11,   color="888888")
+ 
+#     yellow_fill   = PatternFill("solid", fgColor="FFF8E1")
+#     diff_pos_fill = PatternFill("solid", fgColor="E8F4FD")
+#     diff_neg_fill = PatternFill("solid", fgColor="FFE8E8")
+#     white_fill    = PatternFill("solid", fgColor="FFFFFF")
+ 
+#     total_cols = 5 + max_revisions + 1
+ 
+#     ws.merge_cells(start_row=1, start_column=1, end_row=1, end_column=total_cols)
+#     tc = ws.cell(row=1, column=1, value="Revision History — Grouped by Item")
+#     tc.font = title_font; tc.fill = title_fill; tc.alignment = center
+#     ws.row_dimensions[1].height = 26
+ 
+#     headers = ["Projects", "Item", "Drawing Numbers", "Project Count", "Field"]
+#     for i in range(max_revisions):
+#         headers.append(f"Revision {i + 1}")
+#     headers.append("Difference\n(Rev 1 - Rev 2)")
+ 
+#     for col, h in enumerate(headers, 1):
+#         is_diff = col == total_cols
+#         c = ws.cell(row=2, column=col, value=h)
+#         c.font = diff_hfont if is_diff else header_font
+#         c.fill = diff_hfill if is_diff else header_fill
+#         c.border = border; c.alignment = center
+#     ws.row_dimensions[2].height = 30
+ 
+#     data_row = 3
+ 
+#     for item_data in snapshot_data:
+#         if item_data.get("status") != "success":
+#             continue
+ 
+#         project         = item_data.get("project", "")
+#         item_name_val   = item_data.get("item_name", "")
+#         drawing_numbers = item_data.get("drawing_numbers", "")
+#         project_count   = item_data.get("project_count", 0)
+#         revision_log    = item_data.get("revision_log") or []
+#         current         = item_data.get("current") or {}
+ 
+#         rev1 = revision_log[0] if len(revision_log) > 0 else None
+#         rev2 = revision_log[1] if len(revision_log) > 1 else None
+#         start_row = data_row
+ 
+#         for fi, f in enumerate(fields):
+#             row_num  = data_row + fi
+#             rev1_val = float(rev1.get(f) or 0) if rev1 else None
+#             rev2_val = float(rev2.get(f) or 0) if rev2 else None
+ 
+#             diff_val = (rev2_val - rev1_val) if (rev1_val is not None and rev2_val is not None) else None
+ 
+#             last     = revision_log[-1] if revision_log else None
+#             last_val = float(last.get(f) or 0) if last else None
+#             row_fill = (
+#                 yellow_fill
+#                 if (last_val is not None and last_val != float(current.get(f) or 0))
+#                 else white_fill
+#             )
+ 
+#             fixed_cols = [
+#                 (project         if fi == 0 else "", Font(bold=True, size=10, color="1F4E79"), center,     row_fill),
+#                 (item_name_val   if fi == 0 else "", Font(size=10),                            left_align, row_fill),
+#                 (drawing_numbers if fi == 0 else "", Font(size=9, color="555555"),             left_align, row_fill),
+#                 (project_count   if fi == 0 else "", Font(bold=True, size=13, color="2F75B5"), center,     row_fill),
+#                 (field_labels[f],                    Font(bold=True, size=11),                  center,     row_fill),
+#             ]
+ 
+#             for col_idx, (val, fnt, algn, fil) in enumerate(fixed_cols, 1):
+#                 c = ws.cell(row=row_num, column=col_idx, value=val)
+#                 c.font = fnt; c.border = border; c.alignment = algn; c.fill = fil
+ 
+#             for ri in range(max_revisions):
+#                 col_num = 6 + ri
+#                 if ri < len(revision_log):
+#                     rev      = revision_log[ri]
+#                     rev_val  = float(rev.get(f) or 0)
+#                     prev_val = float(revision_log[ri - 1].get(f) or 0) if ri > 0 else None
+#                     rev_chg  = prev_val is not None and prev_val != rev_val
+#                     c = ws.cell(row=row_num, column=col_num,
+#                                 value=f"{rev_val}\n{rev.get('timestamp', '')}")
+#                     c.font = changed_font if rev_chg else normal_font
+#                     c.border = border; c.alignment = center; c.fill = row_fill
+#                 else:
+#                     c = ws.cell(row=row_num, column=col_num, value="-")
+#                     c.font = Font(color="CCCCCC"); c.border = border
+#                     c.alignment = center; c.fill = row_fill
+ 
+#             diff_col = 6 + max_revisions
+#             if diff_val is None:
+#                 dd, df, dfi = "0.000\n(No Changes)", diff_zero_font, white_fill
+#             elif diff_val > 0:
+#                 dd, df, dfi = f"+{diff_val:.3f}\n(▲ Increased)", diff_pos_font, diff_pos_fill
+#             elif diff_val < 0:
+#                 dd, df, dfi = f"{diff_val:.3f}\n(▼ Decreased)", diff_neg_font, diff_neg_fill
+#             else:
+#                 dd, df, dfi = "0.000\n(No Change)", diff_zero_font, white_fill
+ 
+#             c = ws.cell(row=row_num, column=diff_col, value=dd)
+#             c.font = df; c.border = border; c.alignment = center; c.fill = dfi
+ 
+#         for r in range(start_row, start_row + len(fields)):
+#             ws.row_dimensions[r].height = 38
+#         data_row += len(fields)
+ 
+#         #-------------  row break insited the excel download
+#         # sep_fill = PatternFill("solid", fgColor="E8EDF2")
+#         # for col in range(1, total_cols + 1):
+#         #     c = ws.cell(row=data_row, column=col, value="")
+#         #     c.fill = sep_fill
+#         # ws.row_dimensions[data_row].height = 8
+#         # data_row += 1
+ 
+#     col_widths = [30, 38, 35, 14, 16] + [22] * max_revisions + [22]
+#     for i, w in enumerate(col_widths, 1):
+#         ws.column_dimensions[get_column_letter(i)].width = w
+ 
+#     ws.freeze_panes = "A3"
+ 
+#     stream = BytesIO()
+#     wb.save(stream); stream.seek(0)
+#     file_doc = save_file("Compare_Snapshot.xlsx", stream.getvalue(), None, None, is_private=0)
+#     return file_doc.file_url
+
+# ---------------------- Snapshot Save with drawing number -------------
+
+
+
 @frappe.whitelist()
 def save_row_data(sr_no, project, item_name, item_count, quantity, lenght, width,
                   total_weight, po_required_qty=0, po_total_weight=0, drawing_number=None):
@@ -1446,12 +1887,27 @@ def save_row_data(sr_no, project, item_name, item_count, quantity, lenght, width
         "po_total_weight": float(po_total_weight  or 0),
     }
 
-    existing_docs = frappe.get_all(
-        "FT Store Revision Data",
-        filters={"project_number": project, "item": item_name},
-        fields=["name"],
-        order_by="creation asc"
-    )
+    # existing_docs = frappe.get_all(
+    #     "FT Store Revision Data",
+    #     filters={"project_number": project, "item": item_name},
+    #     fields=["name"],
+    #     order_by="creation asc"
+    # )
+    # project empty ho to sirf item se search karo
+    if project:
+        existing_docs = frappe.get_all(
+            "FT Store Revision Data",
+            filters={"item": item_name, "project_number": project},
+            fields=["name"],
+            order_by="creation asc"
+        )
+    else:
+        existing_docs = frappe.get_all(
+            "FT Store Revision Data",
+            filters={"item": item_name},
+            fields=["name"],
+            order_by="creation asc"
+        )
 
     clean_item = item_name.replace(" ", "-").replace("/", "-")
 
@@ -1469,22 +1925,55 @@ def save_row_data(sr_no, project, item_name, item_count, quantity, lenght, width
 
             # ✅ KEY FIX: Compare incoming data with DB ka LIVE full data
             # (filter ke bina — project + item ke saare drawings ka sum)
-            live_data = frappe.db.sql("""
-                SELECT
-                    COUNT(dp.name)              AS total_entries,
-                    SUM(COALESCE(dp.quantity,0)) AS total_qty,
-                    SUM(COALESCE(dp.lenght,0))   AS total_length,
-                    SUM(COALESCE(dp.width,0))    AS total_width,
-                    SUM(COALESCE(dp.total_weight,0)) AS total_weight
-                FROM `tabFT Drawing Parts` dp
-                LEFT JOIN `tabFT Add Drawing` ad ON ad.name = dp.drawing_number
-                WHERE ad.project_number = %(project)s
-                  AND dp.item = (
-                      SELECT name FROM `tabFT Stock RM List`
-                      WHERE computed_name = %(item_name)s
-                      LIMIT 1
-                  )
-            """, {"project": project, "item_name": item_name}, as_dict=True)
+            # live_data = frappe.db.sql("""
+            #     SELECT
+            #         COUNT(dp.name)              AS total_entries,
+            #         SUM(COALESCE(dp.quantity,0)) AS total_qty,
+            #         SUM(COALESCE(dp.lenght,0))   AS total_length,
+            #         SUM(COALESCE(dp.width,0))    AS total_width,
+            #         SUM(COALESCE(dp.total_weight,0)) AS total_weight
+            #     FROM `tabFT Drawing Parts` dp
+            #     LEFT JOIN `tabFT Add Drawing` ad ON ad.name = dp.drawing_number
+            #     WHERE ad.project_number = %(project)s
+            #       AND dp.item = (
+            #           SELECT name FROM `tabFT Stock RM List`
+            #           WHERE computed_name = %(item_name)s
+            #           LIMIT 1
+            #       )
+            # """, {"project": project, "item_name": item_name}, as_dict=True)
+            if project:
+                live_data = frappe.db.sql("""
+                    SELECT
+                        COUNT(dp.name)               AS total_entries,
+                        SUM(COALESCE(dp.quantity,0)) AS total_qty,
+                        SUM(COALESCE(dp.lenght,0))   AS total_length,
+                        SUM(COALESCE(dp.width,0))    AS total_width,
+                        SUM(COALESCE(dp.total_weight,0)) AS total_weight
+                    FROM `tabFT Drawing Parts` dp
+                    LEFT JOIN `tabFT Add Drawing` ad ON ad.name = dp.drawing_number
+                    WHERE ad.project_number = %(project)s
+                      AND dp.item = (
+                          SELECT name FROM `tabFT Stock RM List`
+                          WHERE computed_name = %(item_name)s
+                          LIMIT 1
+                      )
+                """, {"project": project, "item_name": item_name}, as_dict=True)
+            else:
+                live_data = frappe.db.sql("""
+                    SELECT
+                        COUNT(dp.name)               AS total_entries,
+                        SUM(COALESCE(dp.quantity,0)) AS total_qty,
+                        SUM(COALESCE(dp.lenght,0))   AS total_length,
+                        SUM(COALESCE(dp.width,0))    AS total_width,
+                        SUM(COALESCE(dp.total_weight,0)) AS total_weight
+                    FROM `tabFT Drawing Parts` dp
+                    LEFT JOIN `tabFT Add Drawing` ad ON ad.name = dp.drawing_number
+                    WHERE dp.item = (
+                        SELECT name FROM `tabFT Stock RM List`
+                        WHERE computed_name = %(item_name)s
+                        LIMIT 1
+                    )
+                """, {"item_name": item_name}, as_dict=True)
 
             if live_data and live_data[0]:
                 live = live_data[0]
@@ -1535,23 +2024,39 @@ def save_row_data(sr_no, project, item_name, item_count, quantity, lenght, width
 
     else:
         # Pehli baar save — LIVE full data fetch karo (filter ke bina)
-        live_data = frappe.db.sql("""
-            SELECT
-                COUNT(dp.name)               AS total_entries,
-                SUM(COALESCE(dp.quantity,0)) AS total_qty,
-                SUM(COALESCE(dp.lenght,0))   AS total_length,
-                SUM(COALESCE(dp.width,0))    AS total_width,
-                SUM(COALESCE(dp.total_weight,0)) AS total_weight
-            FROM `tabFT Drawing Parts` dp
-            LEFT JOIN `tabFT Add Drawing` ad ON ad.name = dp.drawing_number
-            WHERE ad.project_number = %(project)s
-              AND dp.item = (
-                  SELECT name FROM `tabFT Stock RM List`
-                  WHERE computed_name = %(item_name)s
-                  LIMIT 1
-              )
-        """, {"project": project, "item_name": item_name}, as_dict=True)
-
+        if project:
+            live_data = frappe.db.sql("""
+                SELECT
+                    COUNT(dp.name)               AS total_entries,
+                    SUM(COALESCE(dp.quantity,0)) AS total_qty,
+                    SUM(COALESCE(dp.lenght,0))   AS total_length,
+                    SUM(COALESCE(dp.width,0))    AS total_width,
+                    SUM(COALESCE(dp.total_weight,0)) AS total_weight
+                FROM `tabFT Drawing Parts` dp
+                LEFT JOIN `tabFT Add Drawing` ad ON ad.name = dp.drawing_number
+                WHERE ad.project_number = %(project)s
+                  AND dp.item = (
+                      SELECT name FROM `tabFT Stock RM List`
+                      WHERE computed_name = %(item_name)s
+                      LIMIT 1
+                  )
+            """, {"project": project, "item_name": item_name}, as_dict=True)
+        else:
+            live_data = frappe.db.sql("""
+                SELECT
+                    COUNT(dp.name)               AS total_entries,
+                    SUM(COALESCE(dp.quantity,0)) AS total_qty,
+                    SUM(COALESCE(dp.lenght,0))   AS total_length,
+                    SUM(COALESCE(dp.width,0))    AS total_width,
+                    SUM(COALESCE(dp.total_weight,0)) AS total_weight
+                FROM `tabFT Drawing Parts` dp
+                LEFT JOIN `tabFT Add Drawing` ad ON ad.name = dp.drawing_number
+                WHERE dp.item = (
+                    SELECT name FROM `tabFT Stock RM List`
+                    WHERE computed_name = %(item_name)s
+                    LIMIT 1
+                )
+            """, {"item_name": item_name}, as_dict=True)
         if live_data and live_data[0]:
             live = live_data[0]
             new_entry["total_entries"] = float(live.get("total_entries") or 0)
@@ -1572,6 +2077,15 @@ def save_row_data(sr_no, project, item_name, item_count, quantity, lenght, width
                 (%(name)s, %(sr_no)s, %(project_number)s, %(item)s, %(drawing_number)s,
                  %(total_entries)s, %(total_qty)s, %(total_length)s, %(total_width)s, %(total_weight)s,
                  %(revision_log)s, %(owner)s, NOW(), NOW(), %(owner)s, 0)
+            ON DUPLICATE KEY UPDATE
+                total_entries  = VALUES(total_entries),
+                total_qty      = VALUES(total_qty),
+                total_length   = VALUES(total_length),
+                total_width    = VALUES(total_width),
+                total_weight   = VALUES(total_weight),
+                revision_log   = VALUES(revision_log),
+                modified       = NOW(),
+                modified_by    = VALUES(modified_by)
         """, {
             "name":           new_name,
             "sr_no":          sr_no,
@@ -1622,7 +2136,17 @@ def compare_row_data(sr_no, project, item_name, item_count, quantity, lenght, wi
  
     drawing_str = ", ".join(sorted(drawing_list))
  
-    all_projects  = [d.project_number for d in all_saved if d.project_number]
+    # project_number blank ho to item ke drawings se projects fetch karo
+    all_projects = [d.project_number for d in all_saved if d.project_number]
+    if not all_projects and item_id:
+        proj_rows = frappe.db.sql("""
+            SELECT DISTINCT ad.project_number
+            FROM `tabFT Drawing Parts` dp
+            LEFT JOIN `tabFT Add Drawing` ad ON ad.name = dp.drawing_number
+            WHERE dp.item = %s AND ad.project_number IS NOT NULL
+            ORDER BY ad.project_number ASC
+        """, (item_id,), as_list=True)
+        all_projects = [r[0] for r in proj_rows if r[0]]
     max_rev_count = 0
     for d in all_saved:
         try:
@@ -1865,5 +2389,18 @@ def export_compare_snapshot_excel(snapshot_data):
     file_doc = save_file("Compare_Snapshot.xlsx", stream.getvalue(), None, None, is_private=0)
     return file_doc.file_url
 
-# ---------------------- Snapshot Save with drawing number -------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

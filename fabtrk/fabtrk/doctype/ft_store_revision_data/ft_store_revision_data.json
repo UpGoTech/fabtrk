@@ -16,7 +16,8 @@
   "po_required_qty",
   "po_total_weight",
   "total_weight",
-  "revision_log"
+  "revision_log",
+  "item_details_json"
  ],
  "fields": [
   {
@@ -78,11 +79,16 @@
    "fieldname": "po_total_weight",
    "fieldtype": "Float",
    "label": "PO Total Weight"
+  },
+  {
+   "fieldname": "item_details_json",
+   "fieldtype": "Long Text",
+   "label": "Item Details JSON"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-04-02 13:03:58.411820",
+ "modified": "2026-04-11 15:20:12.832979",
  "modified_by": "Administrator",
  "module": "Fabtrk",
  "name": "FT Store Revision Data",
