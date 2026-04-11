@@ -17,7 +17,8 @@
   "single_weight",
   "total_weight",
   "painted_surface_percentage",
-  "dummy"
+  "dummy",
+  "dummy_1"
  ],
  "fields": [
   {
@@ -103,11 +104,16 @@
    "fieldname": "dummy",
    "fieldtype": "Data",
    "label": "Dummy"
+  },
+  {
+   "fieldname": "dummy_1",
+   "fieldtype": "Data",
+   "label": "Dummy 1"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-04-10 12:48:03.910919",
+ "modified": "2026-04-11 13:03:37.904866",
  "modified_by": "Administrator",
  "module": "Fabtrk",
  "name": "FT Drawing Parts",

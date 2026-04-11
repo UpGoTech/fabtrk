@@ -366,9 +366,7 @@ class FTDrawingParts(Document):
     pass
 
 
-# ─────────────────────────────────────────
 # EXPORT — ✅ cached=False
-# ─────────────────────────────────────────
 @frappe.whitelist()
 def export_with_value():
     import io
@@ -454,9 +452,8 @@ def export_with_value():
     frappe.local.response.type        = "binary"
 
 
-# ─────────────────────────────────────────
+
 # GET FILE HEADERS — ✅ cached=False
-# ─────────────────────────────────────────
 @frappe.whitelist()
 def get_file_headers(file_url):
 
@@ -513,9 +510,8 @@ def get_file_headers(file_url):
     }
 
 
-# ─────────────────────────────────────────
+
 # IMPORT — ✅ 100% DYNAMIC — zero hardcoded lists
-# ─────────────────────────────────────────
 @frappe.whitelist()
 def import_with_value(file_url, custom_mapping=None):
 

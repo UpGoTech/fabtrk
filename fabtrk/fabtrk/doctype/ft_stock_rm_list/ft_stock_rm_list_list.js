@@ -1,11 +1,14 @@
+// Export and Import buttons with dynamic file upload and column mapping for unmatched fields.
 frappe.listview_settings['FT Stock RM List'] = {
     refresh: function(listview) {
 
+        // ── Export Button ──────────────────────────────────────
         listview.page.add_inner_button('Export', function() {
             window.location.href =
                 '/api/method/fabtrk.fabtrk.doctype.ft_stock_rm_list.ft_stock_rm_list.export_with_value';
         });
 
+        // ── Import Button ──────────────────────────────────────
         listview.page.add_inner_button('Import', function() {
 
             let selected_file_url = null;
@@ -21,172 +24,75 @@ frappe.listview_settings['FT Stock RM List'] = {
                             </svg>
                         </div>
                         <div>
-                            <div style="font-weight:500; font-size:15px; color:var(--color-text-primary); line-height:1.3;">Import Stock RM List</div>
-                            <div style="font-size:12px; color:var(--color-text-secondary); font-weight:400; line-height:1.3;">Excel file se data import karo</div>
+                            <div style="font-weight:500; font-size:15px; color:var(--color-text-primary);">Import Stock RM List</div>
+                            <div style="font-size:12px; color:var(--color-text-secondary); font-weight:400;">Import data from Excel or CSV file</div>
                         </div>
                     </div>
                 `,
-                fields: [
-                    {
-                        fieldname: 'dialog_html',
-                        fieldtype: 'HTML',
-                        options: `
-                        <div id="import-dialog-root">
-
-                            <!-- Drop Zone -->
-                            <div id="drop-zone" style="
-                                border: 1.5px dashed #b8b8c0;
-                                border-radius: 12px;
-                                background: rgba(232, 231, 225, 0.5);
-                                padding: 2rem 1rem;
-                                text-align: center;
-                                margin-bottom: 14px;
-                                cursor: pointer;
-                            ">
-                                <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="var(--color-text-secondary)" stroke-width="1.5" style="display:block; margin:0 auto 10px;">
-                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                                    <polyline points="14 2 14 8 20 8"/>
-                                    <line x1="12" y1="18" x2="12" y2="12"/>
-                                    <line x1="9" y1="15" x2="15" y2="15"/>
-                                </svg>
-                                <div id="drop-text" style="font-size:14px; font-weight:500; color:var(--color-text-primary); margin-bottom:4px;">Upload Excel or CSV File</div>
-                                <div style="font-size:12px; color:var(--color-text-secondary); margin-bottom:14px;">Drag & drop your Excel or CSV file here, or click the button below to browse</div>
-                                <button id="choose-file-btn" style="
-                                    background: #ffffff;
-                                    border: 0.5px solid #C0C0B8;
-                                    border-radius: 8px;
-                                    padding: 7px 20px;
-                                    font-size: 13px;
-                                    cursor: pointer;
-                                    color: var(--color-text-primary);
-                                ">Choose File</button>
-                                <input type="file" id="file-input" accept=".xlsx" style="display:none;" />
-                            </div>
-
-                            <!-- Note -->
-                            <div style="background:#EBF5FF; border-radius:8px; padding:10px 14px; margin-bottom:14px;">
-                                <div style="font-size:12px; color:#1D4ED8; line-height:1.7;">
-                                    <strong>Note:</strong> currently support .xlsx format &nbsp;·&nbsp; Grade value automatically match
-                                    &nbsp;·&nbsp; Duplicate records skiped
-                                </div>
-                            </div>
-
-                            <!-- Supported Fields -->
-                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; font-size:12px; color:var(--color-text-secondary); margin-bottom:20px;">
-                                <div style="display:flex; align-items:center; gap:6px;">
-                                    <div style="width:7px; height:7px; border-radius:50%; background:#888; flex-shrink:0;"></div>
-                                    Section / Plate
-                                </div>
-                                <div style="display:flex; align-items:center; gap:6px;">
-                                    <div style="width:7px; height:7px; border-radius:50%; background:#888; flex-shrink:0;"></div>
-                                    Grade auto-link
-                                </div>
-                                <div style="display:flex; align-items:center; gap:6px;">
-                                    <div style="width:7px; height:7px; border-radius:50%; background:#888; flex-shrink:0;"></div>
-                                    KG / Meter
-                                </div>
-                                <div style="display:flex; align-items:center; gap:6px;">
-                                    <div style="width:7px; height:7px; border-radius:50%; background:#888; flex-shrink:0;"></div>
-                                    Computed name auto
-                                </div>
-                            </div>
-
-                            <!-- Buttons -->
-                            <div style="display:flex; gap:10px;">
-                                <button id="cancel-btn" style="
-                                    flex:1;
-                                    background: transparent;
-                                    border: 0.5px solid #C0C0B8;
-                                    border-radius: 8px;
-                                    padding: 10px;
-                                    font-size: 14px;
-                                    cursor: pointer;
-                                    color: var(--color-text-secondary);
-                                ">Cancel</button>
-                                <button id="import-btn" style="
-                                    flex:2;
-                                    background: rgb(20, 20, 19);
-                                    border: none;
-                                    border-radius: 8px;
-                                    padding: 10px;
-                                    font-size: 14px;
-                                    font-weight: 500;
-                                    cursor: pointer;
-                                    color: #fff;
-                                ">Import</button>
-                            </div>
-
+                fields: [{
+                    fieldname: 'dialog_html',
+                    fieldtype: 'HTML',
+                    options: `
+                    <div id="rm-import-root">
+                        <div class="rm-drop-zone" style="border:1.5px dashed #C0C0B8; border-radius:12px; background:#F9FAFB; padding:2rem 1rem; text-align:center; margin-bottom:14px; cursor:pointer;">
+                            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="var(--color-text-secondary)" stroke-width="1.5" style="display:block; margin:0 auto 10px;">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                <polyline points="14 2 14 8 20 8"/>
+                                <line x1="12" y1="18" x2="12" y2="12"/>
+                                <line x1="9" y1="15" x2="15" y2="15"/>
+                            </svg>
+                            <div class="rm-drop-text" style="font-size:14px; font-weight:500; color:var(--color-text-primary); margin-bottom:4px;">Upload Excel or CSV File</div>
+                            <div style="font-size:12px; color:var(--color-text-secondary); margin-bottom:14px;">Drag & drop your file here, or click below to browse</div>
+                            <label class="rm-choose-btn" style="display:inline-block; background:#fff; border:0.5px solid #C0C0B8; border-radius:8px; padding:7px 20px; font-size:13px; cursor:pointer; color:var(--color-text-primary);">Choose File</label>
+                            <input type="file" class="rm-file-input" accept=".xlsx,.csv" style="display:none;" />
                         </div>
-                        `
-                    }
-                ]
+
+                        <div style="background:#EBF5FF; border-radius:8px; padding:10px 14px; margin-bottom:14px;">
+                            <div style="font-size:12px; color:#1D4ED8; line-height:1.7;">
+                                <strong>Note:</strong> Supported formats: .xlsx and .csv &nbsp;·&nbsp; Unmatched columns will prompt a mapping dialog
+                            </div>
+                        </div>
+
+                        <div style="display:flex; gap:10px;">
+                            <button class="rm-cancel-btn" style="flex:1; background:transparent; border:0.5px solid #C0C0B8; border-radius:8px; padding:10px; font-size:14px; cursor:pointer; color:var(--color-text-secondary);">Cancel</button>
+                            <button class="rm-import-btn" style="flex:2; background:#000; border:none; border-radius:8px; padding:10px; font-size:14px; font-weight:500; cursor:pointer; color:#fff;">Import</button>
+                        </div>
+                    </div>
+                    `
+                }]
             });
 
-            // ✅ Frappe default footer hide
             d.$wrapper.find('.modal-footer').hide();
-
             d.show();
 
-            setTimeout(function() {
+            d.$wrapper.off('shown.bs.modal').on('shown.bs.modal', function () {
 
-                let dropZone  = document.getElementById('drop-zone');
-                let fileInput = document.getElementById('file-input');
-                let dropText  = document.getElementById('drop-text');
+                selected_file_url = null;
 
-                // Cancel
-                document.getElementById('cancel-btn').addEventListener('click', function() {
-                    d.hide();
-                });
+                let $dropZone  = d.$wrapper.find('.rm-drop-zone');
+                let $dropText  = d.$wrapper.find('.rm-drop-text');
+                let $chooseBtn = d.$wrapper.find('.rm-choose-btn');
+                let $fileInput = d.$wrapper.find('.rm-file-input');
 
-                // Choose file button
-                document.getElementById('choose-file-btn').addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    fileInput.click();
-                });
+                let dropZone  = $dropZone[0];
+                let fileInput = $fileInput[0];
 
-                // Drop zone click
-                dropZone.addEventListener('click', function() {
-                    fileInput.click();
-                });
-
-                // Drag over
-                dropZone.addEventListener('dragover', function(e) {
-                    e.preventDefault();
-                    dropZone.style.borderColor = '#3B82F6';
-                    dropZone.style.background  = '#EBF5FF';
-                });
-
-                dropZone.addEventListener('dragleave', function() {
+                function reset_dropzone() {
+                    $dropText.text('Upload Excel or CSV File');
                     dropZone.style.borderColor = '#C0C0B8';
-                    dropZone.style.background  = '';
-                });
-
-                // Drop
-                dropZone.addEventListener('drop', function(e) {
-                    e.preventDefault();
-                    dropZone.style.borderColor = '#C0C0B8';
-                    dropZone.style.background  = '';
-                    let file = e.dataTransfer.files[0];
-                    if (file) handle_file(file);
-                });
-
-                // File input change
-                fileInput.addEventListener('change', function() {
-                    if (fileInput.files[0]) handle_file(fileInput.files[0]);
-                });
+                    dropZone.style.borderStyle = 'dashed';
+                    dropZone.style.background  = '#F9FAFB';
+                    selected_file_url = null;
+                    fileInput.value = '';
+                }
 
                 function handle_file(file) {
-
-                    if (!file.name.endsWith('.xlsx')) {
-                        frappe.msgprint({
-                            title: 'Wrong Format',
-                            message: 'Sirf .xlsx file allowed hai.',
-                            indicator: 'orange'
-                        });
+                    if (!file.name.endsWith('.xlsx') && !file.name.endsWith('.csv')) {
+                        frappe.msgprint({ title: 'Invalid Format', message: 'Only .xlsx or .csv files are allowed.', indicator: 'orange' });
                         return;
                     }
 
-                    dropText.textContent       = 'Uploading: ' + file.name + '...';
+                    $dropText.text('Uploading: ' + file.name + '...');
                     dropZone.style.borderColor = '#3B82F6';
                     dropZone.style.borderStyle = 'solid';
 
@@ -203,74 +109,416 @@ frappe.listview_settings['FT Stock RM List'] = {
                     .then(r => r.json())
                     .then(res => {
                         if (res.message && res.message.file_url) {
-                            selected_file_url          = res.message.file_url;
-                            dropText.textContent       = '✓ Ready: ' + file.name;
+                            selected_file_url = res.message.file_url;
+                            $dropText.text('✓ Ready: ' + file.name);
                             dropZone.style.borderColor = '#1D9E75';
+                            dropZone.style.borderStyle = 'solid';
                         } else {
-                            dropText.textContent       = 'Excel file yahan drop karo';
-                            dropZone.style.borderColor = '#C0C0B8';
-                            dropZone.style.borderStyle = 'dashed';
-                            frappe.msgprint({
-                                title: 'Upload Error',
-                                message: 'File upload nahi hui. Dobara try karo.',
-                                indicator: 'red'
-                            });
+                            reset_dropzone();
+                            frappe.msgprint({ title: 'Upload Failed', message: 'File upload failed. Please try again.', indicator: 'red' });
                         }
                     })
-                    .catch(function() {
-                        dropText.textContent       = 'Excel file yahan drop karo';
-                        dropZone.style.borderColor = '#C0C0B8';
-                        dropZone.style.borderStyle = 'dashed';
-                        frappe.msgprint({
-                            title: 'Upload Error',
-                            message: 'Network error. Dobara try karo.',
-                            indicator: 'red'
-                        });
+                    .catch(function () {
+                        reset_dropzone();
+                        frappe.msgprint({ title: 'Upload Error', message: 'Network error occurred.', indicator: 'red' });
                     });
                 }
 
-                // Import button
-                document.getElementById('import-btn').addEventListener('click', function() {
+                $fileInput.on('change', function () {
+                    if (fileInput.files && fileInput.files[0]) {
+                        handle_file(fileInput.files[0]);
+                    }
+                    fileInput.value = '';
+                });
 
+                $chooseBtn.on('click', function () {
+                    fileInput.value = '';
+                    fileInput.click();
+                });
+
+                d.$wrapper.find('.rm-cancel-btn').on('click', function () {
+                    reset_dropzone();
+                    d.hide();
+                });
+
+                $dropZone.on('click', function (e) {
+                    if ($(e.target).hasClass('rm-choose-btn') || $(e.target).closest('.rm-choose-btn').length) return;
+                    fileInput.value = '';
+                    fileInput.click();
+                });
+
+                $dropZone.on('dragover', function (e) {
+                    e.preventDefault();
+                    dropZone.style.borderColor = '#3B82F6';
+                    dropZone.style.background  = '#EBF5FF';
+                });
+                $dropZone.on('dragleave', function () {
+                    dropZone.style.borderColor = '#C0C0B8';
+                    dropZone.style.background  = '#F9FAFB';
+                });
+                $dropZone.on('drop', function (e) {
+                    e.preventDefault();
+                    dropZone.style.borderColor = '#C0C0B8';
+                    dropZone.style.background  = '#F9FAFB';
+                    let dt = e.originalEvent.dataTransfer;
+                    if (dt && dt.files[0]) handle_file(dt.files[0]);
+                });
+
+                d.$wrapper.find('.rm-import-btn').on('click', function () {
                     if (!selected_file_url) {
-                        frappe.msgprint({
-                            title: 'File Missing',
-                            message: 'Pehle Excel file select karo.',
-                            indicator: 'orange'
-                        });
+                        frappe.msgprint({ title: 'No File Selected', message: 'Please select a file first.', indicator: 'orange' });
                         return;
                     }
 
-                    let btn         = document.getElementById('import-btn');
-                    btn.textContent = 'Importing...';
-                    btn.disabled    = true;
+                    let $btn = d.$wrapper.find('.rm-import-btn');
+                    $btn.text('Checking...').prop('disabled', true);
 
                     frappe.call({
-                        method: 'fabtrk.fabtrk.doctype.ft_stock_rm_list.ft_stock_rm_list.import_with_value',
+                        method: 'fabtrk.fabtrk.doctype.ft_stock_rm_list.ft_stock_rm_list.get_file_headers',
                         args: { file_url: selected_file_url },
-                        freeze: true,
-                        freeze_message: 'Import ho raha hai...',
-                        callback: function(r) {
-                            btn.textContent = 'Import Karo';
-                            btn.disabled    = false;
-                            if (r.message) {
-                                frappe.msgprint({
-                                    title: 'Import Complete',
-                                    message: r.message.replace(/\n/g, '<br>'),
-                                    indicator: r.message.includes('❌') ? 'red'
-                                             : r.message.includes('⚠️') ? 'orange'
-                                             : 'green'
-                                });
-                                listview.refresh();
+                        callback: function (r) {
+                            $btn.text('Import').prop('disabled', false);
+                            if (!r.message) return;
+
+                            let { unmatched, all_fields } = r.message;
+                            if (unmatched && unmatched.length > 0) {
                                 d.hide();
+                                rm_show_mapping_dialog(unmatched, all_fields, selected_file_url, listview, d);
+                            } else {
+                                rm_run_import(selected_file_url, null, $btn[0], listview, d);
                             }
                         }
                     });
                 });
-
-            }, 300);
+            });
         });
     }
 };
+
+
+// PORTAL — Global (body mein, dialog overflow se bahar)
+let $rm_portal    = null;
+let rm_active_dd  = null;
+
+function rm_get_portal() {
+    if (!$rm_portal) {
+        $rm_portal = $(`
+            <div id="rm-dd-portal" style="
+                position:fixed; z-index:99999; display:none;
+                background:#fff; border:1px solid #D1D5DB;
+                border-radius:6px; box-shadow:0 4px 20px rgba(0,0,0,0.15);
+                overflow:hidden;
+            ">
+                <div style="padding:6px 8px; border-bottom:1px solid #f0f0f0; background:#fff;">
+                    <input id="rm-portal-search" type="text" placeholder="Search fields..." style="
+                        width:100%; padding:5px 8px; border:1px solid #E5E7EB;
+                        border-radius:4px; font-size:12px; outline:none; box-sizing:border-box;
+                    " />
+                </div>
+                <div id="rm-portal-options" style="max-height:220px; overflow-y:auto;"></div>
+            </div>
+        `).appendTo('body');
+
+        $rm_portal.on('input', '#rm-portal-search', function () {
+            let q = $(this).val().toLowerCase();
+            $rm_portal.find('.rm-portal-opt').each(function () {
+                $(this).toggle($(this).text().toLowerCase().includes(q));
+            });
+        });
+
+        $rm_portal.on('click', '.rm-portal-opt', function (e) {
+            e.stopPropagation();
+            if (!rm_active_dd) return;
+
+            let val      = $(this).data('value');
+            let labelTxt = $(this).find('.rm-opt-label').text();
+            let subTxt   = $(this).find('.rm-opt-sub').text();
+            let hasSub   = ($(this).find('.rm-opt-sub').length > 0 && val !== '');
+
+            let $dd = $(rm_active_dd);
+            $dd.data('selected-value', val);
+
+            if (hasSub) {
+                $dd.find('.rm-dd-trigger').html(`
+                    <div style="line-height:1.3;">
+                        <div style="font-size:13px; color:var(--color-text-primary);">${labelTxt}</div>
+                        <div style="font-size:11px; color:#9CA3AF; font-family:monospace,'Courier New',sans-serif;">${subTxt}</div>
+                    </div>
+                `).css('color', 'var(--color-text-primary)');
+            } else {
+                $dd.find('.rm-dd-trigger').html(`<span>${labelTxt}</span>`).css('color', '#6B7280');
+            }
+            $dd.find('.rm-dd-trigger').css('border-color', val ? '#1D9E75' : '#D1D5DB');
+            rm_close_portal();
+        });
+
+        $rm_portal.on('click', '#rm-portal-search', function (e) { e.stopPropagation(); });
+
+        $(document).on('click.rm_portal_global', function (e) {
+            if (
+                $rm_portal && !$rm_portal.is(':hidden') &&
+                !$rm_portal[0].contains(e.target) &&
+                !(rm_active_dd && rm_active_dd.contains(e.target))
+            ) {
+                rm_close_portal();
+            }
+        });
+    }
+    return $rm_portal;
+}
+
+function rm_close_portal() {
+    if ($rm_portal) $rm_portal.hide();
+    rm_active_dd = null;
+}
+
+function rm_open_portal($dd, all_fields) {
+    let portal = rm_get_portal();
+    let $opts  = portal.find('#rm-portal-options');
+    $opts.empty();
+
+    $opts.append(`
+        <div class="rm-portal-opt" data-value="" style="padding:8px 12px; cursor:pointer; border-bottom:1px solid #f0f0f0;">
+            <div class="rm-opt-label" style="font-size:13px; color:#6B7280;">Don't Import</div>
+        </div>
+    `);
+
+    let selectedVal = $dd.data('selected-value') || '';
+
+    all_fields.forEach(function (f) {
+        let label     = f.label || f.fieldname;
+        let fieldname = f.fieldname;
+        let showSub   = (label !== fieldname);
+        let isSelected = (fieldname === selectedVal);
+
+        let subHtml = showSub
+            ? `<div class="rm-opt-sub" style="font-size:11px; color:#9CA3AF; margin-top:1px; font-family:monospace,'Courier New',sans-serif;">${fieldname}</div>`
+            : '';
+
+        $opts.append(`
+            <div class="rm-portal-opt" data-value="${fieldname}" style="
+                padding:8px 12px; cursor:pointer; border-bottom:1px solid #f0f0f0;
+                background:${isSelected ? '#EFF6FF' : '#fff'};
+            ">
+                <div class="rm-opt-label" style="font-size:13px; color:var(--color-text-primary);">${label}</div>
+                ${subHtml}
+            </div>
+        `);
+    });
+
+    $opts.find('.rm-portal-opt').on('mouseenter', function () {
+        if ($(this).data('value') !== selectedVal) $(this).css('background', '#F9FAFB');
+    }).on('mouseleave', function () {
+        $(this).css('background', $(this).data('value') === selectedVal ? '#EFF6FF' : '#fff');
+    });
+
+    let trigger    = $dd.find('.rm-dd-trigger')[0];
+    let rect       = trigger.getBoundingClientRect();
+    let portalW    = Math.max(rect.width, 240);
+    let spaceBelow = window.innerHeight - rect.bottom;
+    let spaceAbove = rect.top;
+
+    portal.css({ width: portalW + 'px', display: 'block', left: rect.left + 'px' });
+
+    if (spaceBelow >= 220 || spaceBelow >= spaceAbove) {
+        portal.css({ top: (rect.bottom + 4) + 'px', bottom: 'auto' });
+    } else {
+        portal.css({ top: 'auto', bottom: (window.innerHeight - rect.top + 4) + 'px' });
+    }
+
+    portal.find('#rm-portal-search').val('').trigger('input');
+    setTimeout(function () { portal.find('#rm-portal-search').focus(); }, 50);
+    rm_active_dd = $dd[0];
+}
+
+
+// MAPPING DROPDOWN TRIGGER
+function rm_build_mapping_dropdown(excel_col) {
+    return `
+        <div class="rm-custom-dd" data-excel-col="${excel_col}" style="position:relative; width:100%;">
+            <div class="rm-dd-trigger" style="
+                width:100%; padding:7px 30px 7px 10px; border:1px solid #D1D5DB;
+                border-radius:6px; font-size:13px; background:#fff; color:#6B7280;
+                cursor:pointer; min-height:36px; box-sizing:border-box;
+                display:flex; align-items:center; user-select:none;
+            ">Don't Import</div>
+            <svg class="rm-dd-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="2.5" style="
+                position:absolute; right:10px; top:50%; transform:translateY(-50%);
+                pointer-events:none; transition:transform 0.2s;
+            "><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+    `;
+}
+
+
+// MAPPING DIALOG
+function rm_show_mapping_dialog(unmatched_columns, all_fields, file_url, listview, upload_dialog) {
+
+    let proper_rows = '';
+    unmatched_columns.forEach(function (col) {
+        proper_rows += `
+            <tr style="border-bottom:1px solid #f0f0f0;">
+                <td style="padding:12px 10px; font-size:13px; color:#171717; font-weight:500; width:38%; vertical-align:middle;">
+                    <span>${col}</span>
+                </td>
+                <td style="padding:12px 8px; text-align:center; color:#D1D5DB; font-size:16px; width:5%; vertical-align:middle;">→</td>
+                <td style="padding:6px; width:57%; vertical-align:middle;">
+                    ${rm_build_mapping_dropdown(col)}
+                </td>
+            </tr>
+        `;
+    });
+
+    let map_dialog = new frappe.ui.Dialog({
+        title: `
+            <div style="display:flex; align-items:center; gap:10px;">
+                <div style="width:36px; height:36px; border-radius:8px; background:#FEF3C7; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#D97706" stroke-width="2">
+                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                        <line x1="12" y1="9" x2="12" y2="13"/>
+                        <line x1="12" y1="17" x2="12.01" y2="17"/>
+                    </svg>
+                </div>
+                <div>
+                    <div style="font-weight:500; font-size:15px; color:var(--color-text-primary);">Map Columns</div>
+                    <div style="font-size:12px; color:var(--color-text-secondary); font-weight:400;">${unmatched_columns.length} column(s) could not be matched automatically</div>
+                </div>
+            </div>
+        `,
+        fields: [{
+            fieldname: 'mapping_html',
+            fieldtype: 'HTML',
+            options: `
+            <div class="rm-mapping-container" style="margin-bottom:14px;">
+                <div style="background:#FEF3C7; border-radius:8px; padding:12px 14px; margin-bottom:16px; border:1px solid #FCD34D;">
+                    <div style="font-size:12px; color:#92400E; line-height:1.8;">
+                        <strong>⚠️ Action Required:</strong> The following columns could not be automatically matched.
+                        Select the correct field for each column, or choose "Don't Import" to skip it.
+                    </div>
+                </div>
+                <div style="border:1px solid #E5E7EB; border-radius:8px; overflow:hidden; margin-bottom:16px;">
+                    <div style="background:#F9FAFB; padding:10px 12px; border-bottom:1px solid #E5E7EB;">
+                        <div style="display:grid; grid-template-columns:38% 5% 57%; font-size:11px; font-weight:600; color:#6B7280; text-transform:uppercase; letter-spacing:0.05em;">
+                            <span>CSV Column</span>
+                            <span></span>
+                            <span>Map To Field</span>
+                        </div>
+                    </div>
+                    <div style="max-height:260px; overflow-y:auto;">
+                        <table style="width:100%; border-collapse:collapse; background:#fff;">
+                            ${proper_rows}
+                        </table>
+                    </div>
+                </div>
+                <div style="display:flex; gap:10px;">
+                    <button class="rm-map-back-btn" style="flex:1; background:transparent; border:0.5px solid #C0C0B8; border-radius:8px; padding:10px; font-size:14px; cursor:pointer; color:var(--color-text-secondary);">
+                        ← Back
+                    </button>
+                    <button class="rm-map-confirm-btn" style="flex:2; background:#000; border:none; border-radius:8px; padding:10px; font-size:14px; font-weight:500; cursor:pointer; color:#fff;">
+                        Confirm & Import
+                    </button>
+                </div>
+            </div>
+            `
+        }]
+    });
+
+    map_dialog.$wrapper.find('.modal-footer').hide();
+    map_dialog.$wrapper.find('.modal-dialog').css({ 'width': '720px', 'max-width': '92vw' });
+    map_dialog.show();
+
+    map_dialog.$wrapper.off('shown.bs.modal').on('shown.bs.modal', function () {
+
+        let $all_dd = map_dialog.$wrapper.find('.rm-custom-dd');
+
+        $all_dd.on('click', '.rm-dd-trigger', function (e) {
+            e.stopPropagation();
+            let $dd = $(this).closest('.rm-custom-dd');
+
+            if (rm_active_dd === $dd[0]) {
+                rm_close_portal();
+                $dd.find('.rm-dd-arrow').css('transform', 'translateY(-50%)');
+                return;
+            }
+
+            rm_close_portal();
+            rm_open_portal($dd, all_fields);
+            $dd.find('.rm-dd-arrow').css('transform', 'translateY(-50%) rotate(180deg)');
+        });
+
+        $(document).on('click.rm_map_arrow', function () {
+            if (rm_active_dd) {
+                $(rm_active_dd).find('.rm-dd-arrow').css('transform', 'translateY(-50%)');
+            }
+        });
+
+        map_dialog.$wrapper.find('.rm-map-back-btn').on('click', function () {
+            rm_close_portal();
+            $(document).off('click.rm_map_arrow');
+            map_dialog.hide();
+            upload_dialog.show();
+        });
+
+        map_dialog.$wrapper.find('.rm-map-confirm-btn').on('click', function () {
+            rm_close_portal();
+            $(document).off('click.rm_map_arrow');
+
+            let custom_mapping = {};
+            $all_dd.each(function () {
+                let col = $(this).data('excel-col');
+                let val = $(this).data('selected-value') || '';
+                if (val) custom_mapping[col] = val;
+            });
+
+            let $btn = map_dialog.$wrapper.find('.rm-map-confirm-btn');
+            $btn.text('Importing...').prop('disabled', true);
+
+            rm_run_import(file_url, custom_mapping, $btn[0], listview, map_dialog);
+        });
+
+        map_dialog.$wrapper.on('hidden.bs.modal', function () {
+            rm_close_portal();
+            $(document).off('click.rm_map_arrow');
+        });
+    });
+}
+
+
+// RUN IMPORT
+function rm_run_import(file_url, custom_mapping, btn, listview, dialog) {
+    frappe.call({
+        method: 'fabtrk.fabtrk.doctype.ft_stock_rm_list.ft_stock_rm_list.import_with_value',
+        args: {
+            file_url: file_url,
+            custom_mapping: custom_mapping ? JSON.stringify(custom_mapping) : null
+        },
+        freeze: true,
+        freeze_message: 'Importing data...',
+        callback: function (r) {
+            if (btn) {
+                btn.textContent = 'Confirm & Import';
+                btn.disabled = false;
+            }
+            if (r.message) {
+                frappe.msgprint({
+                    title: 'Import Complete',
+                    message: r.message.replace(/\n/g, '<br>'),
+                    indicator: r.message.includes('❌') ? 'red'
+                             : r.message.includes('⚠️') ? 'orange'
+                             : 'green'
+                });
+                listview.refresh();
+                dialog.hide();
+            }
+        }
+    });
+}
+
+
+
+
+
+
+
 
 
