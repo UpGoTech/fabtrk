@@ -16,7 +16,8 @@
   "kg__meter",
   "surface_area_sqm__mtr",
   "surface_area_sqm__ton",
-  "computed_name"
+  "computed_name",
+  "dummy"
  ],
  "fields": [
   {
@@ -98,11 +99,16 @@
    "fieldname": "thk",
    "fieldtype": "Check",
    "label": "THK"
+  },
+  {
+   "fieldname": "dummy",
+   "fieldtype": "Data",
+   "label": "Dummy"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-04-01 12:42:05.037574",
+ "modified": "2026-04-11 14:27:08.961873",
  "modified_by": "Administrator",
  "module": "Fabtrk",
  "name": "FT Stock RM List",

@@ -9,17 +9,83 @@ frappe.query_reports["FT Drawing Part"] = {
 		frappe.query_report.set_filter_value("stock_rm_type", []);
 		frappe.query_report.set_filter_value("is_active", 1);
 
-		// ---------- Header Excel Button -----------
+		// ---------- Header Excel Button -----------		
 		report.page.add_inner_button("Download Summary", function () {
 			let filters = report.get_values();
-			let params = new URLSearchParams({ filters: JSON.stringify(filters) });
+
+			// ✅ Dynamic columns — jo report mein dikh rahe hain wohi bhejo
+			let columns = (frappe.query_report.columns || [])
+				.filter(col => col.fieldname && col.fieldname !== "view")
+				.map(col => ({
+					fieldname: col.fieldname,
+					label: col.label,
+					fieldtype: col.fieldtype || "Data"
+				}));
+
+			let params = new URLSearchParams({
+				filters: JSON.stringify(filters),
+				columns: JSON.stringify(columns)
+			});
 			window.location.href = "/api/method/fabtrk.fabtrk.report.ft_drawing_part.ft_drawing_part.download_item_excel?" + params.toString();
 		});
 
+		// report.page.add_inner_button("Download Full Report", function () {
+
+		// 	// ✅ Current report ke visible columns lo — dynamic
+		// 	// Jab bhi doctype mein column add/remove ho, yahan automatically reflect hoga
+		// 	let columns = (frappe.query_report.columns || [])
+		// 		.filter(col => col.fieldname && col.fieldname !== "view")
+		// 		.map(col => ({
+		// 			fieldname: col.fieldname,
+		// 			label: col.label,
+		// 			fieldtype: col.fieldtype || "Data"
+		// 		}));
+
+		// 	frappe.call({
+		// 		method: "fabtrk.fabtrk.report.ft_drawing_part.ft_drawing_part.get_all_details_for_export",
+		// 		args: {
+		// 			filters: report.get_values(),
+		// 			columns: JSON.stringify(columns)   // ✅ dynamic columns pass karo
+		// 		},
+		// 		callback: function (r) {
+		// 			if (r.message) {
+		// 				const link = document.createElement("a");
+		// 				link.href = r.message;
+		// 				link.download = "FT_Drawing_Part_Report.xlsx";
+		// 				document.body.appendChild(link);
+		// 				link.click();
+		// 				document.body.removeChild(link);
+		// 			}
+		// 		}
+		// 	});
+		// });
+
+
+		// Save Snapshot button — po_required_qty aur po_total_weight bhi bhejo
+
+		// ================================================================
+		// ✅ SIRF YE BUTTON REPLACE KARO — "Download Full Report" wala
+		// ft_drawing_part.js mein onload() ke andar
+		// ================================================================
+
 		report.page.add_inner_button("Download Full Report", function () {
+
+			// ✅ Current report ke visible columns — dynamic
+			// Doctype mein column add/remove hone par yahan automatically reflect hoga
+			let columns = (frappe.query_report.columns || [])
+				.filter(col => col.fieldname && col.fieldname !== "view")
+				.map(col => ({
+					fieldname: col.fieldname,
+					label: col.label,
+					fieldtype: col.fieldtype || "Data"
+				}));
+
 			frappe.call({
 				method: "fabtrk.fabtrk.report.ft_drawing_part.ft_drawing_part.get_all_details_for_export",
-				args: { filters: report.get_values() },
+				args: {
+					filters: report.get_values(),
+					columns: JSON.stringify(columns)   // ✅ dynamic columns + filters dono pass
+				},
 				callback: function (r) {
 					if (r.message) {
 						const link = document.createElement("a");
