@@ -11,26 +11,31 @@
 
 import frappe
 import openpyxl
+import csv
+import os
+import json
 from frappe.model.document import Document
-from frappe.utils.xlsxutils import make_xlsx
 
 
 class FTStockRMList(Document):
     pass
 
 
-# ─────────────────────────────────────────
 # EXPORT
-# ─────────────────────────────────────────
 @frappe.whitelist()
 def export_with_value():
+    import io
+    from openpyxl import Workbook
+    from openpyxl.styles import PatternFill, Font, Alignment, Border, Side
+    from openpyxl.utils import get_column_letter
 
     meta       = frappe.get_meta("FT Stock RM List")
     fieldnames = [f.fieldname for f in meta.fields]
     records    = frappe.get_all("FT Stock RM List", fields=fieldnames)
 
-    data = [fieldnames]
+    headers = [(f.label or f.fieldname).upper() for f in meta.fields]
 
+    data = []
     for d in records:
         row = []
         for field in fieldnames:
@@ -38,21 +43,126 @@ def export_with_value():
             if field == "grade" and value:
                 value = frappe.db.get_value(
                     "FT Material Grade Catalogues", value, "grade"
-                )
-            row.append(value)
+                ) or value
+            if field == "thk":
+                value = "THK" if value in [1, True, "1"] else ""
+            row.append(value if value is not None else "")
         data.append(row)
 
-    xlsx_file = make_xlsx(data, "FT Stock RM List")
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "FT Stock RM List"
+
+    header_fill  = PatternFill("solid", fgColor="BDD7EE")
+    header_font  = Font(bold=True, size=10, color="000000")
+    data_font    = Font(size=10)
+    center_align = Alignment(horizontal="center", vertical="center", wrap_text=True)
+    left_align   = Alignment(horizontal="left",   vertical="center", wrap_text=True)
+    thin         = Side(style="thin", color="000000")
+    border       = Border(left=thin, right=thin, top=thin, bottom=thin)
+
+    ws.append(headers)
+    for cell in ws[1]:
+        cell.fill      = header_fill
+        cell.font      = header_font
+        cell.alignment = center_align
+        cell.border    = border
+
+    ws.row_dimensions[1].height = 30
+    ws.auto_filter.ref = f"A1:{get_column_letter(len(headers))}1"
+    ws.freeze_panes   = "A2"
+
+    for row_idx, row in enumerate(data, start=2):
+        ws.append(row)
+        fill_color = (
+            PatternFill("solid", fgColor="FFFFFF")
+            if row_idx % 2 == 0
+            else PatternFill("solid", fgColor="F2F2F2")
+        )
+        for cell in ws[row_idx]:
+            cell.fill      = fill_color
+            cell.font      = data_font
+            cell.border    = border
+            cell.alignment = (
+                center_align if isinstance(cell.value, (int, float)) else left_align
+            )
+
+    for col_idx, col_cells in enumerate(ws.columns, start=1):
+        max_len = 0
+        for cell in col_cells:
+            try:
+                if cell.value:
+                    max_len = max(max_len, len(str(cell.value)))
+            except:
+                pass
+        ws.column_dimensions[get_column_letter(col_idx)].width = min(max(max_len + 4, 12), 40)
+
+    output = io.BytesIO()
+    wb.save(output)
+    output.seek(0)
+
     frappe.local.response.filename    = "FT_Stock_RM_List.xlsx"
-    frappe.local.response.filecontent = xlsx_file.getvalue()
+    frappe.local.response.filecontent = output.getvalue()
     frappe.local.response.type        = "binary"
 
 
-# ─────────────────────────────────────────
-# computed_name — FIXED (int+str error fix)
-# ─────────────────────────────────────────
-def compute_name_python(d, grade_doc=None):
+# GET FILE HEADERS
+@frappe.whitelist()
+def get_file_headers(file_url):
+    try:
+        file_doc  = frappe.get_doc("File", {"file_url": file_url})
+        file_path = file_doc.get_full_path()
+    except Exception as e:
+        frappe.throw(f"File not found: {str(e)}")
 
+    file_ext = os.path.splitext(file_url)[1].lower()
+    headers  = []
+
+    if file_ext == ".xlsx":
+        wb      = openpyxl.load_workbook(file_path)
+        ws      = wb.active
+        headers = [str(c).strip() if c is not None else "" for c in next(ws.iter_rows(values_only=True))]
+    elif file_ext == ".csv":
+        with open(file_path, "r", encoding="utf-8-sig") as f:
+            headers = [h.strip() for h in next(csv.reader(f))]
+    else:
+        frappe.throw("Only .xlsx or .csv files are allowed.")
+
+    meta = frappe.get_meta("FT Stock RM List", cached=False)
+
+    label_to_field = {}
+    for f in meta.fields:
+        if f.label:
+            label_to_field[f.label.strip()] = f.fieldname
+        label_to_field[f.fieldname.strip()]  = f.fieldname
+
+    all_fields = [
+        {"label": f.label, "fieldname": f.fieldname}
+        for f in meta.fields
+        if f.fieldtype not in ("Section Break", "Column Break", "HTML", "Heading")
+    ]
+
+    matched   = {}
+    unmatched = []
+
+    for h in headers:
+        if not h:
+            continue
+        if h in label_to_field:
+            matched[h] = label_to_field[h]
+        else:
+            unmatched.append(h)
+
+    return {
+        "headers"   : headers,
+        "matched"   : matched,
+        "unmatched" : unmatched,
+        "all_fields": all_fields
+    }
+
+
+# computed_name
+def compute_name_python(d, grade_doc=None):
     section_type  = str(d.get("section_type") or "").strip()
     stock_rm_type = str(d.get("stock_rm_type") or "").strip()
     thk_val       = d.get("thk")
@@ -62,7 +172,6 @@ def compute_name_python(d, grade_doc=None):
     size_part = ""
 
     if section_type == "Section":
-        # ✅ FIX — name1 ko str() mein wrap karo
         name1 = str(d.get("name1") or "").strip()
         if name1:
             size_part = name1 + (" " + thk_text if thk_text else "")
@@ -71,7 +180,6 @@ def compute_name_python(d, grade_doc=None):
         thickness = d.get("thickness_mm")
         if thickness is not None and str(thickness).strip() not in ["", "None"]:
             try:
-                # ✅ FIX — pehle float, phir string
                 thickness_str = str(float(thickness))
                 if thickness_str.endswith(".0"):
                     thickness_str = thickness_str[:-2]
@@ -100,11 +208,9 @@ def compute_name_python(d, grade_doc=None):
     return " ".join(filter(None, [base_name, size_part, type_bis, main_bis, grade_display]))
 
 
-# ─────────────────────────────────────────
-# IMPORT
-# ─────────────────────────────────────────
+# IMPORT — Dynamic with mapping support
 @frappe.whitelist()
-def import_with_value(file_url):
+def import_with_value(file_url, custom_mapping=None):
 
     try:
         file_doc  = frappe.get_doc("File", {"file_url": file_url})
@@ -112,76 +218,88 @@ def import_with_value(file_url):
     except Exception as e:
         frappe.throw(f"File nahi mili: {str(e)}")
 
-    try:
-        wb = openpyxl.load_workbook(file_path)
-        ws = wb.active
-    except Exception as e:
-        frappe.throw(f"Excel open nahi hui: {str(e)}")
+    rows     = []
+    file_ext = os.path.splitext(file_url)[1].lower()
 
-    rows = list(ws.iter_rows(values_only=True))
+    if file_ext == ".xlsx":
+        try:
+            wb   = openpyxl.load_workbook(file_path)
+            ws   = wb.active
+            rows = list(ws.iter_rows(values_only=True))
+        except Exception as e:
+            frappe.throw(f"Excel open nahi hui: {str(e)}")
+    elif file_ext == ".csv":
+        try:
+            with open(file_path, "r", encoding="utf-8-sig") as f:
+                rows = list(csv.reader(f))
+        except Exception as e:
+            frappe.throw(f"CSV open nahi hui: {str(e)}")
+    else:
+        frappe.throw("Only .xlsx or .csv format ki file upload karo.")
+
     if not rows:
         frappe.throw("File mein koi data nahi hai.")
 
-    meta           = frappe.get_meta("FT Stock RM List")
-    label_to_field = {f.label.strip(): f.fieldname for f in meta.fields}
-    excel_headers  = [str(h).strip() if h is not None else "" for h in rows[0]]
+    meta = frappe.get_meta("FT Stock RM List", cached=False)
+
+    label_to_field = {}
+    for f in meta.fields:
+        if f.label:
+            label_to_field[f.label.strip()] = f.fieldname
+        label_to_field[f.fieldname.strip()]  = f.fieldname
+
+    if custom_mapping:
+        extra = json.loads(custom_mapping) if isinstance(custom_mapping, str) else custom_mapping
+        label_to_field.update(extra)
+
+    float_fields  = ["thickness_mm", "kg__sqm", "kg__meter",
+                     "surface_area_sqm__mtr", "surface_area_sqm__ton"]
+    check_fields  = ["thk"]
+    string_fields = ["name1", "stock_rm_type", "section_type"]
+
+    excel_headers = [str(h).strip() if h is not None else "" for h in rows[0]]
 
     matched   = [h for h in excel_headers if h and label_to_field.get(h)]
     unmatched = [h for h in excel_headers if h and not label_to_field.get(h)]
-
-    float_fields = [
-        "thickness_mm", "kg__sqm", "kg__meter",
-        "surface_area_sqm__mtr", "surface_area_sqm__ton"
-    ]
-    check_fields = ["thk"]
-
-    # ✅ String fields — Excel number de toh str karo
-    string_fields = ["name1", "stock_rm_type", "section_type"]
 
     success = 0
     errors  = []
 
     for i, row in enumerate(rows[1:], start=2):
-
         try:
             d = {}
+
+            if not row or all(cell is None or str(cell).strip() == "" for cell in row):
+                continue
 
             for idx, excel_label in enumerate(excel_headers):
                 if not excel_label:
                     continue
-
                 fieldname = label_to_field.get(excel_label.strip())
                 if not fieldname:
                     continue
 
                 val = row[idx] if idx < len(row) else None
 
-                # Float
                 if fieldname in float_fields:
                     try:
                         val = float(val) if val not in [None, ""] else None
                     except:
                         val = None
-
-                # Check
                 elif fieldname in check_fields:
                     val = 1 if val in [True, 1, "1", "True", "true"] else 0
-
-                # ✅ String fields — int/float → str convert
                 elif fieldname in string_fields:
                     val = str(val).strip() if val not in [None, ""] else None
 
-                # Empty → None
                 if val == "" or str(val) == "None":
                     val = None
 
                 d[fieldname] = val
 
-            # Empty row skip
             if not any(v is not None for v in d.values()):
                 continue
 
-            # Grade value → MGC ID
+            # Grade lookup
             grade_doc = None
             if d.get("grade"):
                 grade_id = frappe.db.get_value(
@@ -198,11 +316,21 @@ def import_with_value(file_url):
                     )
                     d["grade"] = grade_id
                 else:
-                    errors.append(f"Row {i}: Grade '{d['grade']}' nahi mila — skip")
+                    errors.append(f"⚠️ Row {i}: Grade '{d['grade']}' nahi mila — skipped")
                     continue
 
-            # computed_name set
+            # Computed name
             d["computed_name"] = compute_name_python(d, grade_doc)
+
+            # Duplicate check
+            existing = frappe.db.get_value(
+                "FT Stock RM List",
+                {"computed_name": d["computed_name"]},
+                "name"
+            )
+            if existing:
+                errors.append(f"⚠️ Row {i}: '{d['computed_name']}' already exists — skipped")
+                continue
 
             d.pop("name", None)
             d.pop("naming_series", None)
@@ -210,11 +338,10 @@ def import_with_value(file_url):
             doc = frappe.new_doc("FT Stock RM List")
             doc.update(d)
             doc.insert(ignore_permissions=True)
-
             success += 1
 
         except Exception as e:
-            errors.append(f"Row {i}: {str(e)}")
+            errors.append(f"❌ Row {i}: {str(e)}")
             frappe.log_error(
                 title=f"Import Error Row {i}",
                 message=f"Row: {row}\nError: {str(e)}"
@@ -227,7 +354,6 @@ def import_with_value(file_url):
     if unmatched:
         msg += f"\n⚠️ Skip hue fields ({len(unmatched)}): {', '.join(unmatched)}"
     if errors:
-        msg += f"\n\n❌ {len(errors)} rows mein error:\n" + "\n".join(errors)
+        msg += f"\n\n❌/⚠️ {len(errors)} rows mein issue:\n" + "\n".join(errors)
 
     return msg
-

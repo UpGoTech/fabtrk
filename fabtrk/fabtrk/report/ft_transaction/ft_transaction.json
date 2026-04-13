@@ -1,7 +1,7 @@
 {
  "add_total_row": 0,
  "columns": [],
- "creation": "2026-02-16 16:03:20.037660",
+ "creation": "2026-04-04 18:27:23.316600",
  "disabled": 0,
  "docstatus": 0,
  "doctype": "Report",
@@ -9,14 +9,14 @@
  "idx": 0,
  "is_standard": "Yes",
  "letterhead": null,
- "modified": "2026-02-21 14:51:32.980306",
+ "modified": "2026-04-04 18:27:23.316600",
  "modified_by": "Administrator",
  "module": "Fabtrk",
- "name": "FT Drawing Part Report 2",
+ "name": "FT Transaction",
  "owner": "Administrator",
  "prepared_report": 0,
- "ref_doctype": "FT Drawing Parts",
- "report_name": "FT Drawing Part Report 2",
+ "ref_doctype": "FT Transaction",
+ "report_name": "FT Transaction",
  "report_type": "Script Report",
  "roles": [
   {
