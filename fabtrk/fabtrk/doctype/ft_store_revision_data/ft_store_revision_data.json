@@ -16,6 +16,7 @@
   "po_required_qty",
   "po_total_weight",
   "total_weight",
+  "drawing_details",
   "revision_log"
  ],
  "fields": [
@@ -27,6 +28,7 @@
   {
    "fieldname": "project_number",
    "fieldtype": "Data",
+   "hidden": 1,
    "label": "Project Number"
   },
   {
@@ -67,22 +69,31 @@
   {
    "fieldname": "drawing_number",
    "fieldtype": "Data",
+   "hidden": 1,
    "label": "Drawing Number"
   },
   {
    "fieldname": "po_required_qty",
    "fieldtype": "Float",
+   "hidden": 1,
    "label": "PO Required Qty"
   },
   {
    "fieldname": "po_total_weight",
    "fieldtype": "Float",
+   "hidden": 1,
    "label": "PO Total Weight"
+  },
+  {
+   "fieldname": "drawing_details",
+   "fieldtype": "Table",
+   "label": "Drawing Details",
+   "options": "FT Revision Drawing Detail"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-04-02 13:03:58.411820",
+ "modified": "2026-04-13 13:12:22.048478",
  "modified_by": "Administrator",
  "module": "Fabtrk",
  "name": "FT Store Revision Data",

@@ -137,7 +137,7 @@ function toggle_dimension_fields(frm) {
 
     // if (!frm.doc.item) return;
     if (!frm.doc.item) {
-        calculate_total(frm);   // yeh kam me nhi hai
+        calculate_total(frm);   
         return;
     }
 
