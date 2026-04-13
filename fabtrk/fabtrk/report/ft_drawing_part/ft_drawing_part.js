@@ -288,7 +288,7 @@ frappe.query_reports["FT Drawing Part"] = {
 		// 	});
 		// });
 		// ✅ Save Snapshot Button — FIXED filter
-		
+
 		report.page.add_inner_button("💾 Save Snapshot", function () {
 			let report_data = frappe.query_report.data || [];
 
@@ -853,6 +853,7 @@ frappe.query_reports["FT Drawing Part"] = {
 									<td style="text-align:center;">${total_weight}</td>
 									<td style="${po_qty_style}">${po_req_qty}</td>
 									<td style="${po_wt_style}">${po_wt}</td>
+									<td style="text-align:center;">${d.total_percentage_for_area !== undefined && d.total_percentage_for_area !== "" ? parseFloat(d.total_percentage_for_area).toFixed(3) : ""}</td>
 								</tr>`;
 						});
 
@@ -879,6 +880,7 @@ frappe.query_reports["FT Drawing Part"] = {
 									<td style="text-align:center; font-weight:700; font-size:14px;">${tw}</td>
 									<td style="text-align:center; color:#e65c00; font-weight:700; font-size:14px;">${prq}</td>
 									<td style="text-align:center; color:#1a7abf; font-weight:700; font-size:14px;">${ptw}</td>
+									<td style="text-align:center; font-weight:700; font-size:14px;">${(t.total_percentage_for_area !== undefined && t.total_percentage_for_area !== "") ? parseFloat(t.total_percentage_for_area).toFixed(3) : ""}</td>
 								</tr>`;
 						}
 
@@ -900,6 +902,7 @@ frappe.query_reports["FT Drawing Part"] = {
 								<col style="width:95px;">
 								<col style="width:115px;">
 								<col style="width:105px;">
+								<col style="width:100px;">
 							</colgroup>`;
 
 						let header_row = `
@@ -919,6 +922,7 @@ frappe.query_reports["FT Drawing Part"] = {
 								<th style="text-align:center;">Total Weight</th>
 								<th style="text-align:center; color:#ffd700;">PO Required Qty</th>
 								<th style="text-align:center; color:#7ec8e3;">PO Total Weight</th>
+								<th style="text-align:center; color:#98fb98;">% For Area</th>
 							</tr>`;
 
 						// ✅ Full layout rendered OUTSIDE report.wrapper (report.wrapper.parentElement)
@@ -1039,7 +1043,8 @@ function attach_sticky_total_footer(report) {
 
 	let totals = {
 		item_count: 0, quantity: 0, lenght: 0, width: 0,
-		total_weight: 0, po_required_qty: 0, po_total_weight: 0
+		total_weight: 0, po_required_qty: 0, po_total_weight: 0,
+		total_percentage_for_area: 0
 	};
 
 	data.forEach(d => {
@@ -1050,6 +1055,7 @@ function attach_sticky_total_footer(report) {
 		totals.total_weight += parseFloat(d.total_weight || 0);
 		totals.po_required_qty += parseFloat(d.po_required_qty || 0);
 		totals.po_total_weight += parseFloat(d.po_total_weight || 0);
+		totals.total_percentage_for_area += parseFloat(d.total_percentage_for_area || 0);
 	});
 
 	// ✅ FIX: header cells se width lo, missing ones ke liye fallback
@@ -1080,7 +1086,7 @@ function attach_sticky_total_footer(report) {
 			val = `<span style="font-weight:900; font-size:13px; color:#000;">TOTAL</span>`;
 		} else if (fn && totals[fn] !== undefined) {
 			let v = totals[fn];
-			if (["lenght", "width", "total_weight", "po_total_weight"].includes(fn)) {
+			if (["lenght", "width", "total_weight", "po_total_weight", "total_percentage_for_area"].includes(fn)) {
 				val = v.toLocaleString('en-IN', { minimumFractionDigits: 3, maximumFractionDigits: 3 });
 			} else if (["item_count", "quantity", "po_required_qty"].includes(fn)) {
 				val = v.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 });

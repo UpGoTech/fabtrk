@@ -5,12 +5,13 @@ def execute(filters=None):
     filters = filters or {}
  
     columns = [
-        {"label": "Item",            "fieldname": "item_name",       "width": 400},
-        {"label": "Total Entries",   "fieldname": "item_count",      "fieldtype": "Int",   "width": 140, "align": "center"},
-        {"label": "Total Projects",  "fieldname": "project_count",   "fieldtype": "Int",   "width": 150, "align": "center"},
-        {"label": "PO Required Qty", "fieldname": "po_required_qty", "fieldtype": "Int",   "width": 150, "align": "center"},
-        {"label": "PO Total Weight", "fieldname": "po_total_weight", "fieldtype": "Float", "width": 150, "align": "center"},
-        {"label": "Details",         "fieldname": "view",            "fieldtype": "HTML",  "width": 170, "align": "center"},
+        {"label": "Item",            "fieldname": "item_name",       "width": 380},
+        {"label": "Total Entries",   "fieldname": "item_count",      "fieldtype": "Int",   "width": 120, "align": "center"},
+        {"label": "Total Projects",  "fieldname": "project_count",   "fieldtype": "Int",   "width": 120, "align": "center"},
+        {"label": "PO Required Qty", "fieldname": "po_required_qty", "fieldtype": "Int",   "width": 140, "align": "center"},
+        {"label": "PO Total Weight", "fieldname": "po_total_weight", "fieldtype": "Float", "width": 140, "align": "center"},
+        {"label": "Total % For Area","fieldname": "total_percentage_for_area","fieldtype": "Float", "width": 160, "align": "center"},
+        {"label": "Details",         "fieldname": "view",            "fieldtype": "HTML",  "width": 120, "align": "center"},
     ]
  
     # ---------------- filter CONDITIONS  ----------------
@@ -56,7 +57,8 @@ def execute(filters=None):
         SUM(COALESCE(dp.width, 0)) AS width,
         SUM(COALESCE(dp.total_weight, 0)) AS total_weight,
         SUM(COALESCE(dp.quantity, 0) * COALESCE(pod.required_qty, 0)) AS po_required_qty_raw,
-        SUM(COALESCE(dp.total_weight, 0) * COALESCE(pod.required_qty, 0)) AS po_total_weight_raw
+        SUM(COALESCE(dp.total_weight, 0) * COALESCE(pod.required_qty, 0)) AS po_total_weight_raw,
+        SUM(COALESCE(dp.total_percentage_for_area, 0)) AS total_percentage_for_area_raw
     FROM `tabFT Project` p
     LEFT JOIN `tabFT Add Drawing` ad ON ad.project_number = p.name
     LEFT JOIN `tabFT Drawing Parts` dp ON dp.drawing_number = ad.name
@@ -84,6 +86,7 @@ def execute(filters=None):
         row["item_name"]    = row.get("item_name") or "-"
         row["po_required_qty"] = int(float(row.get("po_required_qty_raw") or 0))
         row["po_total_weight"] = round(float(row.get("po_total_weight_raw") or 0), 3)
+        row["total_percentage_for_area"] = round(float(row.get("total_percentage_for_area_raw") or 0), 3)
  
         row["view"] = f"""
             <div class="d-grid gap-2 col-6 mx-auto">
@@ -417,6 +420,7 @@ def get_item_details(project, item, drawing_numbers=None, project_numbers=None,p
             dp.width,
             dp.single_weight,
             dp.total_weight,
+            dp.total_percentage_for_area,
             COALESCE(pod.required_qty, 0) AS required_qty
         FROM `tabFT Drawing Parts` dp
         LEFT JOIN `tabFT Add Drawing` ad ON ad.name = dp.drawing_number
@@ -442,6 +446,7 @@ def get_item_details(project, item, drawing_numbers=None, project_numbers=None,p
         "width": 0,
         "single_weight": 0,
         "total_weight": 0,
+        "total_percentage_for_area": 0.0,
         "required_qty": 0,
         "po_required_qty": 0,
         "po_item_total_weight": 0.0,
@@ -474,6 +479,7 @@ def get_item_details(project, item, drawing_numbers=None, project_numbers=None,p
         grouped[key]["width"]          = d.get("width")
         grouped[key]["single_weight"]  = d.get("single_weight")
         grouped[key]["total_weight"]   = d.get("total_weight")
+        grouped[key]["total_percentage_for_area"] = round(float(d.get("total_percentage_for_area") or 0), 3)
  
         # ✅ per-row required_qty aur calculation — as-it-is (image mein sahi tha)
         req_qty = int(d.get("required_qty") or 0)
@@ -487,12 +493,13 @@ def get_item_details(project, item, drawing_numbers=None, project_numbers=None,p
  
     rows = list(grouped.values())
  
-    grand_total_weight         = 0
-    grand_total_qty            = 0
-    grand_total_length         = 0
-    grand_total_width          = 0
-    grand_po_required_qty      = 0
-    grand_po_item_total_weight = 0.0
+    grand_total_weight              = 0
+    grand_total_qty                 = 0
+    grand_total_length              = 0
+    grand_total_width               = 0
+    grand_po_required_qty           = 0
+    grand_po_item_total_weight      = 0.0
+    grand_total_percentage_for_area = 0.0
  
     serial_no = 1
     for d in rows:
@@ -502,27 +509,29 @@ def get_item_details(project, item, drawing_numbers=None, project_numbers=None,p
         grand_total_qty            += d.get("quantity") or 0
         grand_total_length         += d.get("lenght") or 0
         grand_total_width          += d.get("width") or 0
-        grand_po_required_qty      += d.get("po_required_qty") or 0
-        grand_po_item_total_weight += d.get("po_item_total_weight") or 0.0
+        grand_po_required_qty           += d.get("po_required_qty") or 0
+        grand_po_item_total_weight      += d.get("po_item_total_weight") or 0.0
+        grand_total_percentage_for_area += float(d.get("total_percentage_for_area") or 0.0)
  
     rows.append({
-        "serial_no":            "",
-        "project_number":       "<b>Total</b>",
-        "po_no":                "",
-        "po_serial_no":         "",
-        "drawing_number":       "",
-        "position_no":          "",
-        "part_no":              "",
-        "entry_count":          "",
-        "quantity":             grand_total_qty,
-        "lenght":               grand_total_length,
-        "width":                grand_total_width,
-        "single_weight":        "",
-        "total_weight":         grand_total_weight,
-        "required_qty":         "",
-        "po_required_qty":      grand_po_required_qty,
-        "po_item_total_weight": round(grand_po_item_total_weight, 3),
-        "_is_total_row":        True,
+        "serial_no":                    "",
+        "project_number":               "<b>Total</b>",
+        "po_no":                        "",
+        "po_serial_no":                 "",
+        "drawing_number":               "",
+        "position_no":                  "",
+        "part_no":                      "",
+        "entry_count":                  "",
+        "quantity":                     grand_total_qty,
+        "lenght":                       grand_total_length,
+        "width":                        grand_total_width,
+        "single_weight":                "",
+        "total_weight":                 grand_total_weight,
+        "total_percentage_for_area":    round(grand_total_percentage_for_area, 3),
+        "required_qty":                 "",
+        "po_required_qty":              grand_po_required_qty,
+        "po_item_total_weight":         round(grand_po_item_total_weight, 3),
+        "_is_total_row":                True,
     })
  
     item_name = frappe.db.get_value("FT Stock RM List", item, "computed_name") or item
@@ -1564,7 +1573,7 @@ def get_nesting_report(item, project):
 # --------------------- GENERATE JSON FOR NESTING CENTER ---------------------
 
 
-# ---------------------- Snapshot Save with drawing number -------------
+# # ---------------------- Snapshot Save with drawing number -------------
 # @frappe.whitelist()
 # def save_row_data(sr_no, project, item_name, item_count, quantity, lenght, width,
 #                   total_weight, po_required_qty=0, po_total_weight=0, drawing_number=None):
@@ -2002,21 +2011,7 @@ def get_nesting_report(item, project):
 #     file_doc = save_file("Compare_Snapshot.xlsx", stream.getvalue(), None, None, is_private=0)
 #     return file_doc.file_url
 
-# # ---------------------- Snapshot Save with drawing number -------------
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+# # # ---------------------- Snapshot Save with drawing number -------------
 
 @frappe.whitelist()
 def save_row_data(sr_no, project, item_name, item_count, quantity, lenght, width,
@@ -2605,6 +2600,7 @@ def compare_row_data(sr_no, project, item_name, item_count, quantity, lenght, wi
 #     wb.save(stream); stream.seek(0)
 #     file_doc = save_file("Compare_Snapshot.xlsx", stream.getvalue(), None, None, is_private=0)
 #     return file_doc.file_url
+
 
 @frappe.whitelist()
 def export_compare_snapshot_excel(snapshot_data):
