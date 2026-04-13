@@ -146,59 +146,8 @@ function calculate_total(frm) {
 // ---------- Painted Surface Area ------------------------------------
 //   Plate  → lenght × width × kg__sqm × painted_surface_percentage / 100
 //   Section→ lenght × surface_area_sqm__mtr × painted_surface_percentage / 100
-// function calculate_painted_area(frm) {
-//     // if item is not selected then skip 
-//     if (!frm.doc.item) {
-//         frm.set_value("total_percentage_for_area", "");
-//         return;
-//     }
-
-//     let lenght = flt(frm.doc.lenght);
-//     let width = flt(frm.doc.width);
-//     let pct = flt(frm.doc.painted_surface_percentage);
-
-//     // Agar percentage 0 ya blank hai to result 0 karo
-//     if (!pct) {
-//         frm.set_value("total_percentage_for_area", "0");
-//         return;
-//     }
-
-//     // ✅ FT Stock RM List se kg__sqm, surface_area_sqm__mtr, section_type fetch karo
-//     frappe.db.get_value(
-//         "FT Stock RM List",
-//         frm.doc.item,
-//         ["section_type", "kg__sqm", "surface_area_sqm__mtr"]
-//     ).then(r => {
-//         if (!r.message) {
-//             frm.set_value("total_percentage_for_area", "");
-//             return;
-//         }
-
-//         let section_type = r.message.section_type || "";
-//         let kg_sqm = flt(r.message.kg__sqm);
-//         let surface_area_sqm_mtr = flt(r.message.surface_area_sqm__mtr);
-//         let result = 0;
-
-//         if (section_type === "Plate") {
-//             // Plate: length × width × kg__sqm × pct%
-//             let length_m = lenght / 1000;
-//             let width_m = width / 1000;
-//             result = length_m * width_m * kg_sqm * (pct / 100);
-
-//         } else {
-//             // Section: length × surface_area_sqm_mtr × pct%
-//             let length_m = lenght / 1000;
-//             result = length_m * surface_area_sqm_mtr * (pct / 100);
-//         }
-//         // Round to 4 decimal places aur string mein store karo (Data field hai)
-//         let formatted = result.toFixed(4);
-//         frm.set_value("total_percentage_for_area", formatted);
-//         frm.refresh_field("total_percentage_for_area");
-//     });
-// }
-// percentage me show hoga value
 function calculate_painted_area(frm) {
-
+    // if item is not selected then skip 
     if (!frm.doc.item) {
         frm.set_value("total_percentage_for_area", "");
         return;
@@ -208,17 +157,17 @@ function calculate_painted_area(frm) {
     let width = flt(frm.doc.width);
     let pct = flt(frm.doc.painted_surface_percentage);
 
-    // Agar sab zero hain to blank rakho
-    if (!lenght && !pct) {
+    // Agar percentage 0 ya blank hai to result 0 karo
+    if (!pct) {
         frm.set_value("total_percentage_for_area", "0");
         return;
     }
 
-    // ✅ FT Stock RM List se section_type aur surface_area_sqm__mtr fetch karo
+    // ✅ FT Stock RM List se kg__sqm, surface_area_sqm__mtr, section_type fetch karo
     frappe.db.get_value(
         "FT Stock RM List",
         frm.doc.item,
-        ["section_type", "surface_area_sqm__mtr"]
+        ["section_type", "kg__sqm", "surface_area_sqm__mtr"]
     ).then(r => {
         if (!r.message) {
             frm.set_value("total_percentage_for_area", "");
@@ -226,31 +175,83 @@ function calculate_painted_area(frm) {
         }
 
         let section_type = r.message.section_type || "";
+        let kg_sqm = flt(r.message.kg__sqm);
         let surface_area_sqm_mtr = flt(r.message.surface_area_sqm__mtr);
-
-        let length_m = lenght / 1000;   // mm → m
-        let area_sqm = 0;
         let result = 0;
 
         if (section_type === "Plate") {
-            // ✅ Plate: Length(m) × Width(m) → Sq.M × pct%
-            let width_m = width / 1000; // mm → m
-            area_sqm = length_m * width_m;
+            // Plate: length × width × kg__sqm × pct%
+            let length_m = lenght / 1000;
+            let width_m = width / 1000;
+            result = length_m * width_m * (pct / 100) * 2;
+            // result = length_m * width_m * kg_sqm * (pct / 100);
 
         } else {
-            // ✅ Section: Length(m) × surface_area_sqm_per_meter → Sq.M × pct%
-            area_sqm = length_m * surface_area_sqm_mtr;
+            // Section: length × surface_area_sqm_mtr × pct%
+            let length_m = lenght / 1000;
+            result = length_m * surface_area_sqm_mtr * (pct / 100);
         }
-
-        // painted area = total area × percentage
-        result = area_sqm * (pct / 100);
-
-        // 4 decimal places, Data field mein string store
+        // Round to 4 decimal places aur string mein store karo (Data field hai)
         let formatted = result.toFixed(4);
         frm.set_value("total_percentage_for_area", formatted);
         frm.refresh_field("total_percentage_for_area");
     });
 }
+// percentage me show hoga value
+// function calculate_painted_area(frm) {
+
+//     if (!frm.doc.item) {
+//         frm.set_value("total_percentage_for_area", "");
+//         return;
+//     }
+
+//     let lenght = flt(frm.doc.lenght);
+//     let width = flt(frm.doc.width);
+//     let pct = flt(frm.doc.painted_surface_percentage);
+
+//     // Agar sab zero hain to blank rakho
+//     if (!lenght && !pct) {
+//         frm.set_value("total_percentage_for_area", "0");
+//         return;
+//     }
+
+//     // ✅ FT Stock RM List se section_type aur surface_area_sqm__mtr fetch karo
+//     frappe.db.get_value(
+//         "FT Stock RM List",
+//         frm.doc.item,
+//         ["section_type", "surface_area_sqm__mtr"]
+//     ).then(r => {
+//         if (!r.message) {
+//             frm.set_value("total_percentage_for_area", "");
+//             return;
+//         }
+
+//         let section_type = r.message.section_type || "";
+//         let surface_area_sqm_mtr = flt(r.message.surface_area_sqm__mtr);
+
+//         let length_m = lenght / 1000;   // mm → m
+//         let area_sqm = 0;
+//         let result = 0;
+
+//         if (section_type === "Plate") {
+//             // ✅ Plate: Length(m) × Width(m) → Sq.M × pct%
+//             let width_m = width / 1000; // mm → m
+//             area_sqm = length_m * width_m;
+
+//         } else {
+//             // ✅ Section: Length(m) × surface_area_sqm_per_meter → Sq.M × pct%
+//             area_sqm = length_m * surface_area_sqm_mtr;
+//         }
+
+//         // painted area = total area × percentage
+//         result = area_sqm * (pct / 100);
+
+//         // 4 decimal places, Data field mein string store
+//         let formatted = result.toFixed(4);
+//         frm.set_value("total_percentage_for_area", formatted);
+//         frm.refresh_field("total_percentage_for_area");
+//     });
+// }
 
 
 
