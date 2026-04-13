@@ -27,7 +27,6 @@
    "fieldname": "unit_weight",
    "fieldtype": "Float",
    "in_list_view": 1,
-   "in_standard_filter": 1,
    "label": "Unit Weight",
    "precision": "3"
   },
@@ -44,7 +43,6 @@
    "fieldname": "total_weight",
    "fieldtype": "Float",
    "in_list_view": 1,
-   "in_standard_filter": 1,
    "label": "Total Weight",
    "precision": "3",
    "read_only": 1
@@ -75,7 +73,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-04-08 14:33:05.293851",
+ "modified": "2026-04-11 18:47:15.723855",
  "modified_by": "Administrator",
  "module": "Fabtrk",
  "name": "FT Po Drawing",

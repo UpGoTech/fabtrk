@@ -301,7 +301,7 @@ def execute(filters=None):
     return columns, data, None, None, report_summary
  
  
- 
+
 # ---------------- PO Number dropdown ──────────────────────────────────────────────────────
 @frappe.whitelist()
 def get_po_numbers(txt="", drawings=None, projects=None, is_active=0):
@@ -2160,7 +2160,7 @@ def save_row_data(sr_no, project, item_name, item_count, quantity, lenght, width
                   total_weight, po_required_qty=0, po_total_weight=0, drawing_number=None):
     import json
     from frappe.utils import now_datetime
-
+ 
     timestamp = now_datetime().strftime("%d/%m/%Y (%H:%M:%S)")
     new_entry = {
         "timestamp":       timestamp,
@@ -2172,7 +2172,6 @@ def save_row_data(sr_no, project, item_name, item_count, quantity, lenght, width
         "po_required_qty": float(po_required_qty  or 0),
         "po_total_weight": float(po_total_weight  or 0),
     }
-
     if project:
         existing_docs = frappe.get_all("FT Store Revision Data",
             filters={"item": item_name, "project_number": project},
@@ -2320,10 +2319,9 @@ def save_row_data(sr_no, project, item_name, item_count, quantity, lenght, width
                 ])
             else:
                 changed = False
-
+ 
             if not changed:
                 return {"status": "success", "msg": "The Data is the same, there has been no change."}
-
             if live_data and live_data[0]:
                 live = live_data[0]
                 new_entry["total_entries"] = float(live.get("total_entries") or 0)
@@ -2331,7 +2329,7 @@ def save_row_data(sr_no, project, item_name, item_count, quantity, lenght, width
                 new_entry["total_length"]  = float(live.get("total_length")  or 0)
                 new_entry["total_width"]   = float(live.get("total_width")   or 0)
                 new_entry["total_weight"]  = float(live.get("total_weight")  or 0)
-
+ 
         revision_log.append(new_entry)
         next_revision = len(existing_docs) + 1
         new_name = f"Revision-{next_revision}-{clean_item}-{str(sr_no).zfill(3)}"
@@ -2346,19 +2344,18 @@ def save_row_data(sr_no, project, item_name, item_count, quantity, lenght, width
                 (%(name)s, %(sr_no)s, %(project_number)s, %(item)s, %(drawing_number)s,
                  %(total_entries)s, %(total_qty)s, %(total_length)s, %(total_width)s, %(total_weight)s,
                  %(revision_log)s, %(owner)s, NOW(), NOW(), %(owner)s, 0)
+            ON DUPLICATE KEY UPDATE
+                total_entries = VALUES(total_entries), total_qty = VALUES(total_qty),
+                total_length = VALUES(total_length), total_width = VALUES(total_width),
+                total_weight = VALUES(total_weight), revision_log = VALUES(revision_log),
+                modified = NOW(), modified_by = VALUES(modified_by)
         """, {
-            "name":           new_name,
-            "sr_no":          sr_no,
-            "project_number": project,
-            "item":           item_name,
-            "drawing_number": drawing_number,
-            "total_entries":  new_entry["total_entries"],
-            "total_qty":      new_entry["total_qty"],
-            "total_length":   new_entry["total_length"],
-            "total_width":    new_entry["total_width"],
-            "total_weight":   new_entry["total_weight"],
-            "revision_log":   json.dumps(revision_log),
-            "owner":          frappe.session.user,
+            "name": new_name, "sr_no": sr_no, "project_number": project,
+            "item": item_name, "drawing_number": drawing_number,
+            "total_entries": new_entry["total_entries"], "total_qty": new_entry["total_qty"],
+            "total_length": new_entry["total_length"], "total_width": new_entry["total_width"],
+            "total_weight": new_entry["total_weight"], "revision_log": json.dumps(revision_log),
+            "owner": frappe.session.user,
         })
 
         # ── Child table rows INSERT ──
@@ -2610,12 +2607,10 @@ def compare_row_data(sr_no, project, item_name, item_count, quantity, lenght, wi
 #     tc = ws1.cell(row=1, column=1, value="Revision History — Grouped by Item")
 #     tc.font = title_font; tc.fill = title_fill; tc.alignment = center
 #     ws1.row_dimensions[1].height = 26
-
 #     headers = ["Projects", "Item", "Drawing Numbers", "Project Count", "Field"]
 #     for i in range(max_revisions):
 #         headers.append(f"Revision {i + 1}")
 #     headers.append("Difference\n(Rev 1 - Rev 2)")
-
 #     for col, h in enumerate(headers, 1):
 #         is_diff = col == total_cols
 #         c = ws1.cell(row=2, column=col, value=h)
@@ -2647,7 +2642,6 @@ def compare_row_data(sr_no, project, item_name, item_count, quantity, lenght, wi
 #             last     = revision_log[-1] if revision_log else None
 #             last_val = float(last.get(f) or 0) if last else None
 #             row_fill = (yellow_fill if (last_val is not None and last_val != float(current.get(f) or 0)) else white_fill)
-
 #             fixed_cols = [
 #                 (project         if fi == 0 else "", Font(bold=True, size=10, color="1F4E79"), center,     row_fill),
 #                 (item_name_val   if fi == 0 else "", Font(size=10),                            left_align, row_fill),

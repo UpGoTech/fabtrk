@@ -29,45 +29,6 @@ frappe.query_reports["FT Drawing Part"] = {
 			window.location.href = "/api/method/fabtrk.fabtrk.report.ft_drawing_part.ft_drawing_part.download_item_excel?" + params.toString();
 		});
 
-		// report.page.add_inner_button("Download Full Report", function () {
-
-		// 	// ✅ Current report ke visible columns lo — dynamic
-		// 	// Jab bhi doctype mein column add/remove ho, yahan automatically reflect hoga
-		// 	let columns = (frappe.query_report.columns || [])
-		// 		.filter(col => col.fieldname && col.fieldname !== "view")
-		// 		.map(col => ({
-		// 			fieldname: col.fieldname,
-		// 			label: col.label,
-		// 			fieldtype: col.fieldtype || "Data"
-		// 		}));
-
-		// 	frappe.call({
-		// 		method: "fabtrk.fabtrk.report.ft_drawing_part.ft_drawing_part.get_all_details_for_export",
-		// 		args: {
-		// 			filters: report.get_values(),
-		// 			columns: JSON.stringify(columns)   // ✅ dynamic columns pass karo
-		// 		},
-		// 		callback: function (r) {
-		// 			if (r.message) {
-		// 				const link = document.createElement("a");
-		// 				link.href = r.message;
-		// 				link.download = "FT_Drawing_Part_Report.xlsx";
-		// 				document.body.appendChild(link);
-		// 				link.click();
-		// 				document.body.removeChild(link);
-		// 			}
-		// 		}
-		// 	});
-		// });
-
-
-		// Save Snapshot button — po_required_qty aur po_total_weight bhi bhejo
-
-		// ================================================================
-		// ✅ SIRF YE BUTTON REPLACE KARO — "Download Full Report" wala
-		// ft_drawing_part.js mein onload() ke andar
-		// ================================================================
-
 		report.page.add_inner_button("Download Full Report", function () {
 
 			// ✅ Current report ke visible columns — dynamic
@@ -99,7 +60,8 @@ frappe.query_reports["FT Drawing Part"] = {
 			});
 		});
 
-		// // Save Snapshot button
+
+		// Save Snapshot button — po_required_qty aur po_total_weight bhi bhejo
 		// report.page.add_inner_button("💾 Save Snapshot", function () {
 		// 	let report_data = frappe.query_report.data || [];
 		// 	let rows_to_save = report_data.filter(d =>
@@ -216,23 +178,23 @@ frappe.query_reports["FT Drawing Part"] = {
 		// 		});
 
 		// 		let html = `
-        //     <div style="overflow-x:auto;">
-        //     <table class="table table-bordered" style="font-size:12px; min-width:1100px;">
-        //         <thead>
-        //             <tr style="background:#1F4E79; color:#fff; text-align:center;">
-        //                 <th style="min-width:160px;">Projects</th>
-        //                 <th style="min-width:190px;">Item</th>
-        //                 <th style="min-width:180px; background:#155a6c;">Drawing Numbers</th>
-        //                 <th style="min-width:80px;">Project Count</th>
-        //                 <th style="min-width:110px;">Field</th>`;
+		//     <div style="overflow-x:auto;">
+		//     <table class="table table-bordered" style="font-size:12px; min-width:1100px;">
+		//         <thead>
+		//             <tr style="background:#1F4E79; color:#fff; text-align:center;">
+		//                 <th style="min-width:160px;">Projects</th>
+		//                 <th style="min-width:190px;">Item</th>
+		//                 <th style="min-width:180px; background:#155a6c;">Drawing Numbers</th>
+		//                 <th style="min-width:80px;">Project Count</th>
+		//                 <th style="min-width:110px;">Field</th>`;
 
 		// 		for (let i = 0; i < max_revisions; i++) {
 		// 			html += `<th style="min-width:130px;">Revision ${i + 1}</th>`;
 		// 		}
 		// 		html += `<th style="min-width:140px; background:#0c5c70;">Current Value</th>
-        //         </tr>
-        //         </thead>
-        //         <tbody>`;
+		//         </tr>
+		//         </thead>
+		//         <tbody>`;
 
 		// 		unique_results.forEach(r => {
 		// 			if (!r.message || r.message.status !== "success") return;
@@ -259,10 +221,10 @@ frappe.query_reports["FT Drawing Part"] = {
 
 		// 				if (fi === 0) {
 		// 					row += `
-        //                 <td rowspan="${fields.length}" style="vertical-align:middle; font-weight:600; text-align:center; font-size:11px; color:#1F4E79;">${project}</td>
-        //                 <td rowspan="${fields.length}" style="vertical-align:middle; font-size:11px;">${item_name}</td>
-        //                 <td rowspan="${fields.length}" style="vertical-align:middle; font-size:10px; color:#155a6c; font-weight:600; text-align:center;">${drawing_numbers || "-"}</td>
-        //                 <td rowspan="${fields.length}" style="vertical-align:middle; text-align:center; font-weight:700; font-size:14px; color:#2F75B5;">${project_count}</td>`;
+		//                 <td rowspan="${fields.length}" style="vertical-align:middle; font-weight:600; text-align:center; font-size:11px; color:#1F4E79;">${project}</td>
+		//                 <td rowspan="${fields.length}" style="vertical-align:middle; font-size:11px;">${item_name}</td>
+		//                 <td rowspan="${fields.length}" style="vertical-align:middle; font-size:10px; color:#155a6c; font-weight:600; text-align:center;">${drawing_numbers || "-"}</td>
+		//                 <td rowspan="${fields.length}" style="vertical-align:middle; text-align:center; font-weight:700; font-size:14px; color:#2F75B5;">${project_count}</td>`;
 		// 				}
 
 		// 				row += `<td style="font-weight:600; text-align:center; ${field_label_style}">${field_labels[f]}</td>`;
@@ -275,9 +237,9 @@ frappe.query_reports["FT Drawing Part"] = {
 		// 						let changed = prev_val !== null && prev_val !== val;
 		// 						let style = changed ? "color:#e65c00; font-weight:bold;" : "color:#333;";
 		// 						row += `<td style="text-align:center; ${style}">
-        //                             ${val}
-        //                             <br><small style="color:#888; font-size:10px;">${rev.timestamp || ""}</small>
-        //                         </td>`;
+		//                             ${val}
+		//                             <br><small style="color:#888; font-size:10px;">${rev.timestamp || ""}</small>
+		//                         </td>`;
 		// 					} else {
 		// 						row += `<td style="text-align:center; color:#ccc;">-</td>`;
 		// 					}
@@ -288,12 +250,12 @@ frappe.query_reports["FT Drawing Part"] = {
 		// 					? "color:#1a7abf; font-weight:bold; background:#e8f4fd;"
 		// 					: "color:#555;";
 		// 				row += `<td style="text-align:center; ${curr_style}">
-        //                     ${curr_val}
-        //                     <br><small style="color:#888; font-size:10px;">${current_timestamp}</small>
-        //                     ${curr_changed
+		//                     ${curr_val}
+		//                     <br><small style="color:#888; font-size:10px;">${current_timestamp}</small>
+		//                     ${curr_changed
 		// 						? '<br><small style="color:green; font-weight:bold;">▲ Changed</small>'
 		// 						: '<br><small style="color:#aaa;">No Change</small>'}
-        //                 </td>`;
+		//                 </td>`;
 
 		// 				row += `</tr>`;
 		// 				html += row;
@@ -301,8 +263,8 @@ frappe.query_reports["FT Drawing Part"] = {
 
 		// 			// ✅ colspan bhi 7 fields ke hisaab se (5 fixed + revisions + 1 current)
 		// 			html += `<tr style="background:#e8edf2; height:6px;">
-        //                 <td colspan="${max_revisions + 5}" style="padding:0;"></td>
-        //              </tr>`;
+		//                 <td colspan="${max_revisions + 5}" style="padding:0;"></td>
+		//              </tr>`;
 		// 		});
 
 		// 		html += `</tbody></table></div>`;
@@ -325,7 +287,8 @@ frappe.query_reports["FT Drawing Part"] = {
 		// 		});
 		// 	});
 		// });
-
+		// ✅ Save Snapshot Button — FIXED filter
+		
 		report.page.add_inner_button("💾 Save Snapshot", function () {
 			let report_data = frappe.query_report.data || [];
 
@@ -496,6 +459,7 @@ frappe.query_reports["FT Drawing Part"] = {
 				});
 			});
 		});
+
 
 		setTimeout(() => { frappe.query_report.refresh(); }, 100);
 	},
@@ -1734,7 +1698,7 @@ $(`<style>
 	text-align:center; 
  }
 
- .report-summary { 
+.report-summary { 
 	background-color:none; 
 	border-radius:0; 
 	border-bottom:0; 
@@ -1778,6 +1742,14 @@ $(`<style>
 #ft-sticky-total-footer > div {
     background-color: #f3f3f3 !important;
 }
+.table-bordered th, .table-bordered td{
+	border: 1px solid #bbbbbbc7;
+}
+
 </style>`).appendTo("head");
+
+
+
+
 
 
