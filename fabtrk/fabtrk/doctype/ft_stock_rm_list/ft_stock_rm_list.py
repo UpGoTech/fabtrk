@@ -357,3 +357,8 @@ def import_with_value(file_url, custom_mapping=None):
         msg += f"\n\n❌/⚠️ {len(errors)} rows mein issue:\n" + "\n".join(errors)
 
     return msg
+
+
+
+
+    
