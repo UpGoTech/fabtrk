@@ -9,17 +9,44 @@ frappe.query_reports["FT Drawing Part"] = {
 		frappe.query_report.set_filter_value("stock_rm_type", []);
 		frappe.query_report.set_filter_value("is_active", 1);
 
-		// ---------- Header Excel Button -----------
+		// ---------- Header Excel Button -----------		
 		report.page.add_inner_button("Download Summary", function () {
 			let filters = report.get_values();
-			let params = new URLSearchParams({ filters: JSON.stringify(filters) });
+
+			// ✅ Dynamic columns — jo report mein dikh rahe hain wohi bhejo
+			let columns = (frappe.query_report.columns || [])
+				.filter(col => col.fieldname && col.fieldname !== "view")
+				.map(col => ({
+					fieldname: col.fieldname,
+					label: col.label,
+					fieldtype: col.fieldtype || "Data"
+				}));
+
+			let params = new URLSearchParams({
+				filters: JSON.stringify(filters),
+				columns: JSON.stringify(columns)
+			});
 			window.location.href = "/api/method/fabtrk.fabtrk.report.ft_drawing_part.ft_drawing_part.download_item_excel?" + params.toString();
 		});
 
 		report.page.add_inner_button("Download Full Report", function () {
+
+			// ✅ Current report ke visible columns — dynamic
+			// Doctype mein column add/remove hone par yahan automatically reflect hoga
+			let columns = (frappe.query_report.columns || [])
+				.filter(col => col.fieldname && col.fieldname !== "view")
+				.map(col => ({
+					fieldname: col.fieldname,
+					label: col.label,
+					fieldtype: col.fieldtype || "Data"
+				}));
+
 			frappe.call({
 				method: "fabtrk.fabtrk.report.ft_drawing_part.ft_drawing_part.get_all_details_for_export",
-				args: { filters: report.get_values() },
+				args: {
+					filters: report.get_values(),
+					columns: JSON.stringify(columns)   // ✅ dynamic columns + filters dono pass
+				},
 				callback: function (r) {
 					if (r.message) {
 						const link = document.createElement("a");
@@ -35,173 +62,370 @@ frappe.query_reports["FT Drawing Part"] = {
 
 
 		// Save Snapshot button — po_required_qty aur po_total_weight bhi bhejo
+		// report.page.add_inner_button("💾 Save Snapshot", function () {
+		// 	let report_data = frappe.query_report.data || [];
+		// 	let rows_to_save = report_data.filter(d =>
+		// 		d.project_name && d.project_name !== "TOTAL" && d.item
+		// 	);
+		// 	if (!rows_to_save.length) {
+		// 		frappe.msgprint("Koi data nahi hai save karne ke liye");
+		// 		return;
+		// 	}
+
+		// 	frappe.confirm(`Kya aap ${rows_to_save.length} rows ka snapshot save karna chahte ho?`, function () {
+		// 		let promises = rows_to_save.map((row, i) => frappe.call({
+		// 			method: "fabtrk.fabtrk.report.ft_drawing_part.ft_drawing_part.save_row_data",
+		// 			args: {
+		// 				sr_no: i + 1,
+		// 				project: row.project_name,
+		// 				item_name: row.item_name,
+		// 				item_count: row.item_count,
+		// 				quantity: row.quantity,
+		// 				lenght: row.lenght,
+		// 				width: row.width,
+		// 				total_weight: row.total_weight,
+		// 				po_required_qty: row.po_required_qty || 0,   // ✅ NEW
+		// 				po_total_weight: row.po_total_weight || 0,   // ✅ NEW
+		// 				drawing_number: row.drawing_number
+		// 			}
+		// 		}));
+
+		// 		Promise.all(promises).then(results => {
+		// 			let saved_count = 0;
+		// 			let no_change_count = 0;
+		// 			results.forEach(r => {
+		// 				if (r.message && r.message.status === "success") {
+		// 					if (r.message.msg && r.message.msg.includes("same")) {
+		// 						no_change_count++;
+		// 					} else {
+		// 						saved_count++;
+		// 					}
+		// 				}
+		// 			});
+
+		// 			if (no_change_count === rows_to_save.length) {
+		// 				frappe.msgprint({
+		// 					title: "No Changes",
+		// 					message: "There is no changes in any data.",
+		// 					indicator: "orange"
+		// 				});
+		// 			} else if (saved_count > 0) {
+		// 				frappe.msgprint({
+		// 					title: "Snapshot Saved",
+		// 					message: `✅ ${saved_count} data mein changes hai, successfully saved.`,
+		// 					indicator: "green"
+		// 				});
+		// 			}
+		// 		});
+		// 	});
+		// });
+
+		// // Compare Snapshot button — HTML table mein PO fields bhi dikhao
+		// report.page.add_inner_button("📊 Compare Snapshot", function () {
+		// 	let report_data = frappe.query_report.data || [];
+		// 	let rows_to_compare = report_data.filter(d =>
+		// 		d.project_name && d.project_name !== "TOTAL" && d.item
+		// 	);
+		// 	if (!rows_to_compare.length) {
+		// 		frappe.msgprint("Koi data nahi hai compare karne ke liye");
+		// 		return;
+		// 	}
+
+		// 	let promises = rows_to_compare.map(row => frappe.call({
+		// 		method: "fabtrk.fabtrk.report.ft_drawing_part.ft_drawing_part.compare_row_data",
+		// 		args: {
+		// 			sr_no: "",
+		// 			project: row.project_name,
+		// 			item_name: row.item_name,
+		// 			item_count: row.item_count,
+		// 			quantity: row.quantity,
+		// 			lenght: row.lenght,
+		// 			width: row.width,
+		// 			total_weight: row.total_weight
+		// 		}
+		// 	}));
+
+		// 	Promise.all(promises).then(results => {
+		// 		// ✅ NEW: po_required_qty aur po_total_weight bhi add kiye
+		// 		let field_labels = {
+		// 			"total_entries": "Total Entries",
+		// 			"total_qty": "Total Qty",
+		// 			"total_length": "Total Length",
+		// 			"total_width": "Total Width",
+		// 			"total_weight": "Total Weight",
+		// 			"po_required_qty": "PO Required Qty",   // ✅ NEW
+		// 			"po_total_weight": "PO Total Weight",    // ✅ NEW
+		// 		};
+		// 		let fields = [
+		// 			"total_entries", "total_qty", "total_length", "total_width", "total_weight",
+		// 			"po_required_qty", "po_total_weight"   // ✅ NEW
+		// 		];
+
+		// 		let seen_items = new Set();
+		// 		let unique_results = [];
+		// 		results.forEach(r => {
+		// 			if (r.message && r.message.status === "success") {
+		// 				if (!seen_items.has(r.message.item_name)) {
+		// 					seen_items.add(r.message.item_name);
+		// 					unique_results.push(r);
+		// 				}
+		// 			}
+		// 		});
+
+		// 		let max_revisions = 0;
+		// 		unique_results.forEach(r => {
+		// 			max_revisions = Math.max(max_revisions, (r.message.revision_log || []).length);
+		// 		});
+
+		// 		let html = `
+		//     <div style="overflow-x:auto;">
+		//     <table class="table table-bordered" style="font-size:12px; min-width:1100px;">
+		//         <thead>
+		//             <tr style="background:#1F4E79; color:#fff; text-align:center;">
+		//                 <th style="min-width:160px;">Projects</th>
+		//                 <th style="min-width:190px;">Item</th>
+		//                 <th style="min-width:180px; background:#155a6c;">Drawing Numbers</th>
+		//                 <th style="min-width:80px;">Project Count</th>
+		//                 <th style="min-width:110px;">Field</th>`;
+
+		// 		for (let i = 0; i < max_revisions; i++) {
+		// 			html += `<th style="min-width:130px;">Revision ${i + 1}</th>`;
+		// 		}
+		// 		html += `<th style="min-width:140px; background:#0c5c70;">Current Value</th>
+		//         </tr>
+		//         </thead>
+		//         <tbody>`;
+
+		// 		unique_results.forEach(r => {
+		// 			if (!r.message || r.message.status !== "success") return;
+
+		// 			let {
+		// 				revision_log, current, current_timestamp,
+		// 				project, project_count, item_name, drawing_numbers
+		// 			} = r.message;
+
+		// 			let last = revision_log.length ? revision_log[revision_log.length - 1] : null;
+
+		// 			fields.forEach((f, fi) => {
+		// 				let last_val = last ? parseFloat(last[f] || 0) : null;
+		// 				let curr_val = parseFloat(current[f] || 0);
+		// 				let field_changed = last_val !== null && last_val !== curr_val;
+		// 				let row_bg = field_changed ? "#fff8e1" : "#fff";
+
+		// 				// ✅ PO fields ke liye special color
+		// 				let field_label_style = "";
+		// 				if (f === "po_required_qty") field_label_style = "color:#e65c00; font-weight:700;";
+		// 				if (f === "po_total_weight") field_label_style = "color:#1a7abf; font-weight:700;";
+
+		// 				let row = `<tr style="background:${row_bg};">`;
+
+		// 				if (fi === 0) {
+		// 					row += `
+		//                 <td rowspan="${fields.length}" style="vertical-align:middle; font-weight:600; text-align:center; font-size:11px; color:#1F4E79;">${project}</td>
+		//                 <td rowspan="${fields.length}" style="vertical-align:middle; font-size:11px;">${item_name}</td>
+		//                 <td rowspan="${fields.length}" style="vertical-align:middle; font-size:10px; color:#155a6c; font-weight:600; text-align:center;">${drawing_numbers || "-"}</td>
+		//                 <td rowspan="${fields.length}" style="vertical-align:middle; text-align:center; font-weight:700; font-size:14px; color:#2F75B5;">${project_count}</td>`;
+		// 				}
+
+		// 				row += `<td style="font-weight:600; text-align:center; ${field_label_style}">${field_labels[f]}</td>`;
+
+		// 				for (let i = 0; i < max_revisions; i++) {
+		// 					let rev = revision_log[i];
+		// 					if (rev) {
+		// 						let val = parseFloat(rev[f] || 0);
+		// 						let prev_val = i > 0 ? parseFloat(revision_log[i - 1][f] || 0) : null;
+		// 						let changed = prev_val !== null && prev_val !== val;
+		// 						let style = changed ? "color:#e65c00; font-weight:bold;" : "color:#333;";
+		// 						row += `<td style="text-align:center; ${style}">
+		//                             ${val}
+		//                             <br><small style="color:#888; font-size:10px;">${rev.timestamp || ""}</small>
+		//                         </td>`;
+		// 					} else {
+		// 						row += `<td style="text-align:center; color:#ccc;">-</td>`;
+		// 					}
+		// 				}
+
+		// 				let curr_changed = last_val !== null && last_val !== curr_val;
+		// 				let curr_style = curr_changed
+		// 					? "color:#1a7abf; font-weight:bold; background:#e8f4fd;"
+		// 					: "color:#555;";
+		// 				row += `<td style="text-align:center; ${curr_style}">
+		//                     ${curr_val}
+		//                     <br><small style="color:#888; font-size:10px;">${current_timestamp}</small>
+		//                     ${curr_changed
+		// 						? '<br><small style="color:green; font-weight:bold;">▲ Changed</small>'
+		// 						: '<br><small style="color:#aaa;">No Change</small>'}
+		//                 </td>`;
+
+		// 				row += `</tr>`;
+		// 				html += row;
+		// 			});
+
+		// 			// ✅ colspan bhi 7 fields ke hisaab se (5 fixed + revisions + 1 current)
+		// 			html += `<tr style="background:#e8edf2; height:6px;">
+		//                 <td colspan="${max_revisions + 5}" style="padding:0;"></td>
+		//              </tr>`;
+		// 		});
+
+		// 		html += `</tbody></table></div>`;
+
+		// 		// Excel Export
+		// 		let export_data = unique_results.map(r => r.message);
+		// 		frappe.call({
+		// 			method: "fabtrk.fabtrk.report.ft_drawing_part.ft_drawing_part.export_compare_snapshot_excel",
+		// 			args: { snapshot_data: JSON.stringify(export_data) },
+		// 			callback: function (res) {
+		// 				if (res.message) {
+		// 					const link = document.createElement("a");
+		// 					link.href = res.message;
+		// 					link.download = "Compare_Snapshot.xlsx";
+		// 					document.body.appendChild(link);
+		// 					link.click();
+		// 					document.body.removeChild(link);
+		// 				}
+		// 			}
+		// 		});
+		// 	});
+		// });
+		// ✅ Save Snapshot Button — FIXED filter
+		
 		report.page.add_inner_button("💾 Save Snapshot", function () {
 			let report_data = frappe.query_report.data || [];
+
+			// ✅ KEY FIX: ab table mein project_name nahi hai
+			// item aur item_name se check karo, TOTAL row skip karo
 			let rows_to_save = report_data.filter(d =>
-				d.project_name && d.project_name !== "TOTAL" && d.item
+				d.item &&
+				d.item_name &&
+				d.item_name !== "TOTAL"
 			);
+
 			if (!rows_to_save.length) {
 				frappe.msgprint("Koi data nahi hai save karne ke liye");
 				return;
 			}
 
 			frappe.confirm(`Kya aap ${rows_to_save.length} rows ka snapshot save karna chahte ho?`, function () {
+
+				// ✅ Project filter se project lo
+				let project_numbers = frappe.query_report.get_filter_value("project_number") || [];
+				let project_val = project_numbers.length === 1 ? project_numbers[0] : "";
+
 				let promises = rows_to_save.map((row, i) => frappe.call({
 					method: "fabtrk.fabtrk.report.ft_drawing_part.ft_drawing_part.save_row_data",
 					args: {
 						sr_no: i + 1,
-						project: row.project_name,
+						project: project_val,
 						item_name: row.item_name,
-						item_count: row.item_count,
-						quantity: row.quantity,
-						lenght: row.lenght,
-						width: row.width,
-						total_weight: row.total_weight,
-						po_required_qty: row.po_required_qty || 0,   // ✅ NEW
-						po_total_weight: row.po_total_weight || 0,   // ✅ NEW
-						drawing_number: row.drawing_number
+						item_count: row.item_count || 0,
+						quantity: row.quantity || 0,
+						lenght: row.lenght || 0,
+						width: row.width || 0,
+						total_weight: row.total_weight || 0,
+						po_required_qty: row.po_required_qty || 0,
+						po_total_weight: row.po_total_weight || 0,
+						drawing_number: row.drawing_number || null
 					}
 				}));
 
 				Promise.all(promises).then(results => {
-					let saved_count = 0;
-					let no_change_count = 0;
+					let saved_count = 0, no_change_count = 0;
 					results.forEach(r => {
 						if (r.message && r.message.status === "success") {
-							if (r.message.msg && r.message.msg.includes("same")) {
-								no_change_count++;
-							} else {
-								saved_count++;
-							}
+							if (r.message.msg && r.message.msg.includes("same")) no_change_count++;
+							else saved_count++;
 						}
 					});
-
 					if (no_change_count === rows_to_save.length) {
-						frappe.msgprint({
-							title: "No Changes",
-							message: "There is no changes in any data.",
-							indicator: "orange"
-						});
+						frappe.msgprint({ title: "No Changes", message: "There is no changes in any data.", indicator: "orange" });
 					} else if (saved_count > 0) {
-						frappe.msgprint({
-							title: "Snapshot Saved",
-							message: `✅ ${saved_count} data mein changes hai, successfully saved.`,
-							indicator: "green"
-						});
+						frappe.msgprint({ title: "Snapshot Saved", message: `✅ ${saved_count} data mein changes hai, successfully saved.`, indicator: "green" });
 					}
 				});
 			});
 		});
 
-		// Compare Snapshot button — HTML table mein PO fields bhi dikhao
+		// ✅ Compare Snapshot Button — FIXED filter
 		report.page.add_inner_button("📊 Compare Snapshot", function () {
 			let report_data = frappe.query_report.data || [];
+
 			let rows_to_compare = report_data.filter(d =>
-				d.project_name && d.project_name !== "TOTAL" && d.item
+				d.item &&
+				d.item_name &&
+				d.item_name !== "TOTAL"
 			);
+
 			if (!rows_to_compare.length) {
 				frappe.msgprint("Koi data nahi hai compare karne ke liye");
 				return;
 			}
 
+			let project_numbers = frappe.query_report.get_filter_value("project_number") || [];
+			let project_val = project_numbers.length === 1 ? project_numbers[0] : "";
+
 			let promises = rows_to_compare.map(row => frappe.call({
 				method: "fabtrk.fabtrk.report.ft_drawing_part.ft_drawing_part.compare_row_data",
 				args: {
 					sr_no: "",
-					project: row.project_name,
+					project: project_val,
 					item_name: row.item_name,
-					item_count: row.item_count,
-					quantity: row.quantity,
-					lenght: row.lenght,
-					width: row.width,
-					total_weight: row.total_weight
+					item_count: row.item_count || 0,
+					quantity: row.quantity || 0,
+					lenght: row.lenght || 0,
+					width: row.width || 0,
+					total_weight: row.total_weight || 0
 				}
 			}));
 
 			Promise.all(promises).then(results => {
-				// ✅ NEW: po_required_qty aur po_total_weight bhi add kiye
 				let field_labels = {
-					"total_entries": "Total Entries",
-					"total_qty": "Total Qty",
-					"total_length": "Total Length",
-					"total_width": "Total Width",
-					"total_weight": "Total Weight",
-					"po_required_qty": "PO Required Qty",   // ✅ NEW
-					"po_total_weight": "PO Total Weight",    // ✅ NEW
+					"total_entries": "Total Entries", "total_qty": "Total Qty",
+					"total_length": "Total Length", "total_width": "Total Width",
+					"total_weight": "Total Weight", "po_required_qty": "PO Required Qty",
+					"po_total_weight": "PO Total Weight",
 				};
-				let fields = [
-					"total_entries", "total_qty", "total_length", "total_width", "total_weight",
-					"po_required_qty", "po_total_weight"   // ✅ NEW
-				];
+				let fields = ["total_entries", "total_qty", "total_length", "total_width", "total_weight", "po_required_qty", "po_total_weight"];
 
-				let seen_items = new Set();
-				let unique_results = [];
+				let seen_items = new Set(), unique_results = [];
 				results.forEach(r => {
-					if (r.message && r.message.status === "success") {
-						if (!seen_items.has(r.message.item_name)) {
-							seen_items.add(r.message.item_name);
-							unique_results.push(r);
-						}
+					if (r.message && r.message.status === "success" && !seen_items.has(r.message.item_name)) {
+						seen_items.add(r.message.item_name); unique_results.push(r);
 					}
 				});
 
 				let max_revisions = 0;
-				unique_results.forEach(r => {
-					max_revisions = Math.max(max_revisions, (r.message.revision_log || []).length);
-				});
+				unique_results.forEach(r => { max_revisions = Math.max(max_revisions, (r.message.revision_log || []).length); });
 
-				let html = `
-            <div style="overflow-x:auto;">
-            <table class="table table-bordered" style="font-size:12px; min-width:1100px;">
-                <thead>
-                    <tr style="background:#1F4E79; color:#fff; text-align:center;">
-                        <th style="min-width:160px;">Projects</th>
-                        <th style="min-width:190px;">Item</th>
-                        <th style="min-width:180px; background:#155a6c;">Drawing Numbers</th>
-                        <th style="min-width:80px;">Project Count</th>
-                        <th style="min-width:110px;">Field</th>`;
-
-				for (let i = 0; i < max_revisions; i++) {
-					html += `<th style="min-width:130px;">Revision ${i + 1}</th>`;
-				}
-				html += `<th style="min-width:140px; background:#0c5c70;">Current Value</th>
-                </tr>
-                </thead>
-                <tbody>`;
+				let html = `<div style="overflow-x:auto;"><table class="table table-bordered" style="font-size:12px; min-width:1100px;">
+					<thead><tr style="background:#1F4E79; color:#fff; text-align:center;">
+						<th style="min-width:160px;">Projects</th>
+						<th style="min-width:190px;">Item</th>
+						<th style="min-width:180px; background:#155a6c;">Drawing Numbers</th>
+						<th style="min-width:80px;">Project Count</th>
+						<th style="min-width:110px;">Field</th>`;
+				for (let i = 0; i < max_revisions; i++) html += `<th style="min-width:130px;">Revision ${i + 1}</th>`;
+				html += `<th style="min-width:140px; background:#0c5c70;">Current Value</th></tr></thead><tbody>`;
 
 				unique_results.forEach(r => {
 					if (!r.message || r.message.status !== "success") return;
-
-					let {
-						revision_log, current, current_timestamp,
-						project, project_count, item_name, drawing_numbers
-					} = r.message;
-
+					let { revision_log, current, current_timestamp, project, project_count, item_name, drawing_numbers } = r.message;
 					let last = revision_log.length ? revision_log[revision_log.length - 1] : null;
-
 					fields.forEach((f, fi) => {
 						let last_val = last ? parseFloat(last[f] || 0) : null;
 						let curr_val = parseFloat(current[f] || 0);
 						let field_changed = last_val !== null && last_val !== curr_val;
 						let row_bg = field_changed ? "#fff8e1" : "#fff";
-
-						// ✅ PO fields ke liye special color
 						let field_label_style = "";
 						if (f === "po_required_qty") field_label_style = "color:#e65c00; font-weight:700;";
 						if (f === "po_total_weight") field_label_style = "color:#1a7abf; font-weight:700;";
-
 						let row = `<tr style="background:${row_bg};">`;
-
 						if (fi === 0) {
-							row += `
-                        <td rowspan="${fields.length}" style="vertical-align:middle; font-weight:600; text-align:center; font-size:11px; color:#1F4E79;">${project}</td>
-                        <td rowspan="${fields.length}" style="vertical-align:middle; font-size:11px;">${item_name}</td>
-                        <td rowspan="${fields.length}" style="vertical-align:middle; font-size:10px; color:#155a6c; font-weight:600; text-align:center;">${drawing_numbers || "-"}</td>
-                        <td rowspan="${fields.length}" style="vertical-align:middle; text-align:center; font-weight:700; font-size:14px; color:#2F75B5;">${project_count}</td>`;
+							row += `<td rowspan="${fields.length}" style="vertical-align:middle; font-weight:600; text-align:center; font-size:11px; color:#1F4E79;">${project}</td>
+								<td rowspan="${fields.length}" style="vertical-align:middle; font-size:11px;">${item_name}</td>
+								<td rowspan="${fields.length}" style="vertical-align:middle; font-size:10px; color:#155a6c; font-weight:600; text-align:center;">${drawing_numbers || "-"}</td>
+								<td rowspan="${fields.length}" style="vertical-align:middle; text-align:center; font-weight:700; font-size:14px; color:#2F75B5;">${project_count}</td>`;
 						}
-
 						row += `<td style="font-weight:600; text-align:center; ${field_label_style}">${field_labels[f]}</td>`;
-
 						for (let i = 0; i < max_revisions; i++) {
 							let rev = revision_log[i];
 							if (rev) {
@@ -209,40 +433,18 @@ frappe.query_reports["FT Drawing Part"] = {
 								let prev_val = i > 0 ? parseFloat(revision_log[i - 1][f] || 0) : null;
 								let changed = prev_val !== null && prev_val !== val;
 								let style = changed ? "color:#e65c00; font-weight:bold;" : "color:#333;";
-								row += `<td style="text-align:center; ${style}">
-                                    ${val}
-                                    <br><small style="color:#888; font-size:10px;">${rev.timestamp || ""}</small>
-                                </td>`;
-							} else {
-								row += `<td style="text-align:center; color:#ccc;">-</td>`;
-							}
+								row += `<td style="text-align:center; ${style}">${val}<br><small style="color:#888; font-size:10px;">${rev.timestamp || ""}</small></td>`;
+							} else { row += `<td style="text-align:center; color:#ccc;">-</td>`; }
 						}
-
 						let curr_changed = last_val !== null && last_val !== curr_val;
-						let curr_style = curr_changed
-							? "color:#1a7abf; font-weight:bold; background:#e8f4fd;"
-							: "color:#555;";
-						row += `<td style="text-align:center; ${curr_style}">
-                            ${curr_val}
-                            <br><small style="color:#888; font-size:10px;">${current_timestamp}</small>
-                            ${curr_changed
-								? '<br><small style="color:green; font-weight:bold;">▲ Changed</small>'
-								: '<br><small style="color:#aaa;">No Change</small>'}
-                        </td>`;
-
-						row += `</tr>`;
+						let curr_style = curr_changed ? "color:#1a7abf; font-weight:bold; background:#e8f4fd;" : "color:#555;";
+						row += `<td style="text-align:center; ${curr_style}">${curr_val}<br><small style="color:#888; font-size:10px;">${current_timestamp}</small>${curr_changed ? '<br><small style="color:green; font-weight:bold;">▲ Changed</small>' : '<br><small style="color:#aaa;">No Change</small>'}</td></tr>`;
 						html += row;
 					});
-
-					// ✅ colspan bhi 7 fields ke hisaab se (5 fixed + revisions + 1 current)
-					html += `<tr style="background:#e8edf2; height:6px;">
-                        <td colspan="${max_revisions + 5}" style="padding:0;"></td>
-                     </tr>`;
+					html += `<tr style="background:#e8edf2; height:6px;"><td colspan="${max_revisions + 5}" style="padding:0;"></td></tr>`;
 				});
-
 				html += `</tbody></table></div>`;
 
-				// Excel Export
 				let export_data = unique_results.map(r => r.message);
 				frappe.call({
 					method: "fabtrk.fabtrk.report.ft_drawing_part.ft_drawing_part.export_compare_snapshot_excel",
@@ -250,16 +452,14 @@ frappe.query_reports["FT Drawing Part"] = {
 					callback: function (res) {
 						if (res.message) {
 							const link = document.createElement("a");
-							link.href = res.message;
-							link.download = "Compare_Snapshot.xlsx";
-							document.body.appendChild(link);
-							link.click();
-							document.body.removeChild(link);
+							link.href = res.message; link.download = "Compare_Snapshot.xlsx";
+							document.body.appendChild(link); link.click(); document.body.removeChild(link);
 						}
 					}
 				});
 			});
 		});
+
 
 		setTimeout(() => { frappe.query_report.refresh(); }, 100);
 	},
@@ -357,17 +557,52 @@ frappe.query_reports["FT Drawing Part"] = {
 
 		// ---------------- PO NUMBER ----------------
 		{
-			fieldname: "po_no", label: "PO Number", fieldtype: "MultiSelectList",
+			fieldname: "po_no",
+			label: "PO Number",
+			fieldtype: "MultiSelectList",
 			get_data: function (txt) {
+
 				let drawings = frappe.query_report.get_filter_value("drawing_number") || [];
 				let projects = frappe.query_report.get_filter_value("project_number") || [];
 				let is_active = frappe.query_report.get_filter_value("is_active");
+
+				// ✅ FIX: agar koi bhi filter select nahi hai → ALL PO show
+				if (!drawings.length && !projects.length && !is_active) {
+
+					let filters = [];
+					if (txt) filters.push(["po_no", "like", "%" + txt + "%"]);
+
+					return frappe.call({
+						method: "frappe.client.get_list",
+						args: {
+							doctype: "FT Drawing Parts",
+							fields: ["po_no"],
+							filters: filters,
+							limit_page_length: 0   // 🔥 IMPORTANT
+						}
+					}).then(r => {
+						let unique = {};
+						(r.message || []).forEach(d => {
+							if (d.po_no && !unique[d.po_no]) unique[d.po_no] = true;
+						});
+
+						return Object.keys(unique).map(po => ({
+							value: po,
+							label: po,
+							description: ""
+						}));
+					});
+				}
 
 				let get_active_projects = () => {
 					if (projects.length) return Promise.resolve(projects);
 					else if (is_active) return frappe.call({
 						method: "frappe.client.get_list",
-						args: { doctype: "FT Project", fields: ["name"], filters: [["is_active", "=", 1]] }
+						args: {
+							doctype: "FT Project",
+							fields: ["name"],
+							filters: [["is_active", "=", 1]]
+						}
 					}).then(r => (r.message || []).map(d => d.name));
 					else return Promise.resolve([]);
 				};
@@ -375,12 +610,20 @@ frappe.query_reports["FT Drawing Part"] = {
 				if (drawings.length) {
 					let filters = [["drawing_number", "in", drawings]];
 					if (txt) filters.push(["po_no", "like", "%" + txt + "%"]);
+
 					return frappe.call({
 						method: "frappe.client.get_list",
-						args: { doctype: "FT Drawing Parts", fields: ["po_no"], filters: filters }
+						args: {
+							doctype: "FT Drawing Parts",
+							fields: ["po_no"],
+							filters: filters,
+							limit_page_length: 0
+						}
 					}).then(r => {
 						let unique = {};
-						(r.message || []).forEach(d => { if (d.po_no && !unique[d.po_no]) unique[d.po_no] = true; });
+						(r.message || []).forEach(d => {
+							if (d.po_no && !unique[d.po_no]) unique[d.po_no] = true;
+						});
 						return Object.keys(unique).map(po => ({ value: po, label: po, description: "" }));
 					});
 				}
@@ -389,23 +632,34 @@ frappe.query_reports["FT Drawing Part"] = {
 					let filters = [];
 					if (txt) filters.push(["po_no", "like", "%" + txt + "%"]);
 					if (project_names.length) filters.push(["project_number", "in", project_names]);
+
 					return frappe.call({
 						method: "frappe.client.get_list",
-						args: { doctype: "FT Drawing Parts", fields: ["po_no"], filters: filters }
+						args: {
+							doctype: "FT Drawing Parts",
+							fields: ["po_no"],
+							filters: filters,
+							limit_page_length: 0
+						}
 					}).then(r => {
 						let unique = {};
-						(r.message || []).forEach(d => { if (d.po_no && !unique[d.po_no]) unique[d.po_no] = true; });
+						(r.message || []).forEach(d => {
+							if (d.po_no && !unique[d.po_no]) unique[d.po_no] = true;
+						});
 						return Object.keys(unique).map(po => ({ value: po, label: po, description: "" }));
 					});
 				});
 			},
-			on_change() { frappe.query_report.refresh(); clear_item_details(); }
+			on_change() {
+				frappe.query_report.refresh();
+				clear_item_details();
+			}
 		},
-		
+
 		// ---------------- ITEM ----------------
 		{
-			fieldname: "item", 
-			label: "Drawing Parts", 
+			fieldname: "item",
+			label: "Drawing Parts",
 			fieldtype: "MultiSelectList",
 			get_data: function (txt) {
 				let projects = frappe.query_report.get_filter_value("project_number") || [];
@@ -417,11 +671,11 @@ frappe.query_reports["FT Drawing Part"] = {
 					if (projects.length) return Promise.resolve(projects);
 					else if (is_active) return frappe.call({
 						method: "frappe.client.get_list",
-						args: { 
-							doctype: "FT Project", 
-							fields: ["name"], 
-							filters: [["is_active", "=", 1]], 
-							limit_page_length: 0 
+						args: {
+							doctype: "FT Project",
+							fields: ["name"],
+							filters: [["is_active", "=", 1]],
+							limit_page_length: 0
 						}
 					}).then(r => (r.message || []).map(d => d.name));
 					else return Promise.resolve([]);
@@ -434,7 +688,7 @@ frappe.query_reports["FT Drawing Part"] = {
 							doctype: "FT Drawing Parts",
 							fields: ["item"],
 							filters: [["drawing_number", "in", drawing_names]],
-							limit_page_length: 0  
+							limit_page_length: 0
 						}
 					}).then(r => {
 						let unique_items = [...new Set((r.message || []).map(d => d.item).filter(Boolean))];
@@ -450,7 +704,7 @@ frappe.query_reports["FT Drawing Part"] = {
 								doctype: "FT Stock RM List",
 								fields: ["name", "computed_name"],
 								filters: filters,
-								limit_page_length: 0  
+								limit_page_length: 0
 							}
 						}).then(res => (res.message || []).map(d => ({
 							value: d.name,
@@ -473,7 +727,7 @@ frappe.query_reports["FT Drawing Part"] = {
 								doctype: "FT Stock RM List",
 								fields: ["name", "computed_name"],
 								filters: filters,
-								limit_page_length: 0   
+								limit_page_length: 0
 							}
 						}).then(r => (r.message || []).map(d => ({
 							value: d.name,
@@ -500,11 +754,20 @@ frappe.query_reports["FT Drawing Part"] = {
 			on_change() { clear_item_details(); frappe.query_report.refresh(); }
 		},
 
+
 		// ---------------- SECTION TYPE ----------------
 		{
-			fieldname: "stock_rm_type", label: "Section Type", fieldtype: "MultiSelectList",
-			get_data: function (txt) { return frappe.db.get_link_options("FT Section Type", txt); },
-			on_change() { frappe.query_report.refresh(); clear_item_details(); }
+			fieldname: "stock_rm_type",
+			label: "Section Type",
+			fieldtype: "MultiSelectList",
+			get_data: function (txt) {
+				return frappe.db.get_link_options("FT Section Type", txt);
+			},
+			on_change() {
+				frappe.query_report.set_filter_value("item", []);
+				frappe.query_report.refresh();
+				clear_item_details();
+			}
 		},
 
 		// ---------------- IS ACTIVE ----------------
@@ -527,113 +790,182 @@ frappe.query_reports["FT Drawing Part"] = {
 				$(".view-btn").removeClass("active-detail");
 				$(this).addClass("active-detail");
 
-				let project = $(this).data("project");
 				let item = $(this).data("item");
-				let drawings = frappe.query_report.get_filter_value("drawing_number") || [];
+				if (!item) { frappe.msgprint("No Data"); return; }
 
-				if (!project || !item) { frappe.msgprint("No Data"); return; }
+				// Report filters se project_numbers aur drawing_numbers lo
+				let project_numbers = frappe.query_report.get_filter_value("project_number") || [];
+				let drawings = frappe.query_report.get_filter_value("drawing_number") || [];
+				let po_numbers = frappe.query_report.get_filter_value("po_no") || [];
 
 				frappe.call({
 					method: "fabtrk.fabtrk.report.ft_drawing_part.ft_drawing_part.get_item_details",
 					args: {
-						project,
-						item,
-						drawing_numbers: drawings.length ? JSON.stringify(drawings) : null
+						project: "",
+						item: item,
+						drawing_numbers: drawings.length ? JSON.stringify(drawings) : null,
+						project_numbers: project_numbers.length ? JSON.stringify(project_numbers) : null,
+						po_numbers: po_numbers.length ? JSON.stringify(po_numbers) : null
 					},
 					callback: function (r) {
 						if (!r.message || !r.message.data || !r.message.data.length) {
 							frappe.msgprint("No Details Found"); return;
 						}
 
+						// Remove old container
 						$("#item-detail-container").remove();
-						let rows = "";
 
-						r.message.data.forEach(d => {
-							let is_total_row = String(d.project_number).toLowerCase().includes("total");
+						let all_rows = r.message.data;
+						let data_rows = all_rows.filter(d => !d._is_total_row);
+						let total_row = all_rows.find(d => d._is_total_row);
 
-							let qty = d.quantity !== undefined && d.quantity !== "" ? String(d.quantity).padStart(2, '0') : "";
-							let length = d.lenght !== undefined && d.lenght !== "" ? String(d.lenght).padStart(2, '0') : "";
-							let width = d.width !== undefined && d.width !== "" ? String(d.width).padStart(2, '0') : "";
-							let single_weight = d.single_weight !== undefined && d.single_weight !== "" ? parseFloat(d.single_weight).toFixed(3) : "";
-							let total_weight = d.total_weight !== undefined && d.total_weight !== "" ? parseFloat(String(d.total_weight).replace(/<[^>]+>/g, '')).toFixed(3) : "";
+						// ── Body rows ────────────────────────────────────────
+						let body_rows_html = "";
+						data_rows.forEach(d => {
+							let qty = (d.quantity !== undefined && d.quantity !== "") ? String(d.quantity).padStart(2, "0") : "";
+							let length = (d.lenght !== undefined && d.lenght !== "") ? String(d.lenght).padStart(2, "0") : "";
+							let width = (d.width !== undefined && d.width !== "") ? String(d.width).padStart(2, "0") : "";
+							let single_weight = (d.single_weight !== undefined && d.single_weight !== "") ? parseFloat(d.single_weight).toFixed(3) : "";
+							let total_weight = (d.total_weight !== undefined && d.total_weight !== "") ? parseFloat(String(d.total_weight).replace(/<[^>]+>/g, "")).toFixed(3) : "";
+							let po_req_qty = (d.po_required_qty !== undefined && d.po_required_qty !== "") ? d.po_required_qty : "";
+							let po_wt = (d.po_item_total_weight !== undefined && d.po_item_total_weight !== "") ? parseFloat(d.po_item_total_weight).toFixed(3) : "";
+							let po_no = d.po_no || "";
 
-							let po_required_qty = (d.po_required_qty !== undefined && d.po_required_qty !== "") ? d.po_required_qty : "";
-							let po_item_total_weight = (d.po_item_total_weight !== undefined && d.po_item_total_weight !== "") ? parseFloat(d.po_item_total_weight).toFixed(3) : "";
+							let po_qty_style = "text-align:center;";
+							let po_wt_style = "text-align:center;";
+							if (po_req_qty && parseInt(po_req_qty) > 0) po_qty_style = "text-align:center; color:#e65c00; font-weight:700;";
+							if (po_wt && parseFloat(po_wt) > 0) po_wt_style = "text-align:center; color:#1a7abf; font-weight:700;";
 
-							let row_style = "";
-							let val_style = "text-align:center;";
-
-							if (is_total_row) {
-								row_style = "background-color:#f0f4ff; font-weight:600;";
-								val_style = "text-align:center; color:#000; font-weight:700; font-size:15px;";
-							}
-
-							let po_qty_style = val_style;
-							if (!is_total_row && po_required_qty && parseInt(po_required_qty) > 0) {
-								po_qty_style = "text-align:center; color:#e65c00; font-weight:700;";
-							}
-							let po_wt_style = val_style;
-							if (!is_total_row && po_item_total_weight && parseFloat(po_item_total_weight) > 0) {
-								po_wt_style = "text-align:center; color:#1a7abf; font-weight:700;";
-							}
-
-							rows += `
-								<tr style="${row_style}">
+							body_rows_html += `
+								<tr>
 									<td style="text-align:center;">${d.serial_no || ""}</td>
 									<td>${d.project_number || ""}</td>
-									<td>${d.po_serial_no || ""}</td>
+									<td style="text-align:center; white-space:nowrap;">${po_no}</td>
+									<td style="white-space:nowrap;">${d.po_serial_no || ""}</td>
 									<td>${d.drawing_number || ""}</td>
 									<td style="text-align:center;">${d.position_no || ""}</td>
 									<td style="text-align:center;">${d.part_no || ""}</td>
 									<td style="text-align:center;">${d.entry_count || ""}</td>
-									<td style="${val_style}">${qty}</td>
-									<td style="${val_style}">${length}</td>
-									<td style="${val_style}">${width}</td>
+									<td style="text-align:center;">${qty}</td>
+									<td style="text-align:center;">${length}</td>
+									<td style="text-align:center;">${width}</td>
 									<td style="text-align:center;">${single_weight}</td>
-									<td style="${val_style}">${total_weight}</td>
-									<td style="${po_qty_style}">${po_required_qty}</td>
-									<td style="${po_wt_style}">${po_item_total_weight}</td>
+									<td style="text-align:center;">${total_weight}</td>
+									<td style="${po_qty_style}">${po_req_qty}</td>
+									<td style="${po_wt_style}">${po_wt}</td>
 								</tr>`;
 						});
 
+						// ── Footer (Total) row ───────────────────────────────
+						let footer_html = "";
+						if (total_row) {
+							let t = total_row;
+							let qty = (t.quantity !== undefined && t.quantity !== "") ? String(t.quantity).padStart(2, "0") : "";
+							let len = (t.lenght !== undefined && t.lenght !== "") ? String(t.lenght).padStart(2, "0") : "";
+							let wid = (t.width !== undefined && t.width !== "") ? String(t.width).padStart(2, "0") : "";
+							let tw = (t.total_weight !== undefined && t.total_weight !== "") ? parseFloat(String(t.total_weight).replace(/<[^>]+>/g, "")).toFixed(3) : "";
+							let prq = (t.po_required_qty !== undefined && t.po_required_qty !== "") ? t.po_required_qty : "";
+							let ptw = (t.po_item_total_weight !== undefined && t.po_item_total_weight !== "") ? parseFloat(t.po_item_total_weight).toFixed(3) : "";
+
+							footer_html = `
+								<tr style="background:#f0f4ff; border-top:2px solid #1F4E79; box-shadow:0 -2px 5px rgba(0,0,0,0.07);">
+									<td></td>
+									<td style="color:#1F4E79; font-weight:700;">Total</td>
+									<td></td><td></td><td></td><td></td><td></td><td></td>
+									<td style="text-align:center; font-weight:700; font-size:14px;">${qty}</td>
+									<td style="text-align:center; font-weight:700; font-size:14px;">${len}</td>
+									<td style="text-align:center; font-weight:700; font-size:14px;">${wid}</td>
+									<td></td>
+									<td style="text-align:center; font-weight:700; font-size:14px;">${tw}</td>
+									<td style="text-align:center; color:#e65c00; font-weight:700; font-size:14px;">${prq}</td>
+									<td style="text-align:center; color:#1a7abf; font-weight:700; font-size:14px;">${ptw}</td>
+								</tr>`;
+						}
+
+						// ── colgroup — 15 columns now (added PO No) ──────────
+						let colgroup = `
+							<colgroup>
+								<col style="width:48px;">
+								<col style="width:85px;">
+								<col style="width:100px;">
+								<col style="width:100px;">
+								<col style="width:150px;">
+								<col style="width:85px;">
+								<col style="width:65px;">
+								<col style="width:72px;">
+								<col style="width:48px;">
+								<col style="width:65px;">
+								<col style="width:52px;">
+								<col style="width:95px;">
+								<col style="width:95px;">
+								<col style="width:115px;">
+								<col style="width:105px;">
+							</colgroup>`;
+
+						let header_row = `
+							<tr style="background:#1F4E79; color:#fff;">
+								<th style="text-align:center;">Sr No</th>
+								<th>Project No</th>
+								<th style="text-align:center; white-space:nowrap;">PO No</th>
+								<th style="white-space:nowrap;">Po Serial No</th>
+								<th>Drawing</th>
+								<th style="text-align:center;">Item No / Position No</th>
+								<th style="text-align:center;">Mark No</th>
+								<th style="text-align:center;">Entry Count</th>
+								<th style="text-align:center;">Qty</th>
+								<th style="text-align:center;">Length</th>
+								<th style="text-align:center;">Width</th>
+								<th style="text-align:center;">Single Weight</th>
+								<th style="text-align:center;">Total Weight</th>
+								<th style="text-align:center; color:#ffd700;">PO Required Qty</th>
+								<th style="text-align:center; color:#7ec8e3;">PO Total Weight</th>
+							</tr>`;
+
+						// ✅ Full layout rendered OUTSIDE report.wrapper (report.wrapper.parentElement)
 						let html = `
-							<div id="item-detail-container" style="margin-top:20px; padding:20px; border:1px solid #ddd;">
-								<div style="display:flex;justify-content:space-between;align-items:center;">
-									<h4>Item Details - ${r.message.item_name}</h4>
-									<div style="display:flex; gap:20px;">
+							<div id="item-detail-container" style="margin-top:24px; padding:16px 20px 20px 20px; border:1px solid #ddd; border-radius:6px; background:#fff;">
+ 
+								<!-- Title + Action buttons -->
+								<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:8px;">
+									<h4 style="margin:0; font-size:15px; color:#1F4E79; font-weight:700;">
+										Item Details &mdash; ${r.message.item_name}
+									</h4>
+									<div style="display:flex; gap:8px; flex-wrap:wrap;">
 										<button class="btn btn-xs btn-primary nesting-export">Nesting data export</button>
 										<button class="btn btn-xs btn-primary nesting-report-btn"
-											data-item="${item}" data-project="${project}"
+											data-item="${item}" data-project=""
 											data-item-name="${r.message.item_name}">Nesting Report</button>
 										<button class="btn btn-xs btn-primary summary-download"
-											data-item="${item}" data-project="${project}">Download List</button>
+											data-item="${item}" data-project="">Download List</button>
 										<button class="btn btn-xs btn-danger close-view">Close</button>
 									</div>
 								</div>
-								<table class="table table-bordered" style="margin-top:15px;">
-									<thead style="background:#f0f4ff;">
-										<tr>
-											<th style="text-align:center;">Sr No</th>
-											<th>Project No</th>
-											<th>Po Serial No</th>
-											<th>Drawing</th>
-											<th style="text-align:center;">Position No</th>
-											<th style="text-align:center;">Part No</th>
-											<th style="text-align:center;">Entry Count</th>
-											<th style="text-align:center;">Qty</th>
-											<th style="text-align:center;">Length</th>
-											<th style="text-align:center;">Width</th>
-											<th style="text-align:center;">Single Weight</th>
-											<th style="text-align:center;">Total Weight</th>
-											<th style="text-align:center; color:#e65c00;">PO Required Qty</th>
-											<th style="text-align:center; color:#1a7abf;">PO Total Weight</th>
-										</tr>
-									</thead>
-									<tbody>${rows}</tbody>
-								</table>
+ 
+								<!-- Table: sticky header + scrollable body + sticky footer -->
+								<div style="border:1px solid #dee2e6; border-radius:4px; overflow:hidden; max-height:480px; overflow-y:auto; overflow-x:auto;">
+									<table class="table table-bordered table-hover" style="margin:0; font-size:12px; table-layout:fixed; width:100%; border-collapse:separate; border-spacing:0;">
+										<!--<table class="table table-bordered table-hover" style="margin:0; font-size:12px; table-layout:auto; width:100%; border-collapse:separate; border-spacing:0;">-->
+										${colgroup}
+										<thead style="position:sticky; top:0; z-index:10;">
+											${header_row}
+										</thead>
+										<tbody>${body_rows_html}</tbody>
+										<tfoot style="position:sticky; bottom:0; z-index:10;">
+											${footer_html}
+										</tfoot>
+									</table>
+								</div>
 							</div>`;
 
-						$(report.wrapper).find(".datatable").after(html);
+						// ✅ report.wrapper ke PARENT mein append karo
+						// — isse default datatable ke sorting/column menu se bilkul alag rahega
+						$(report.wrapper.parentElement || report.wrapper).append(html);
+
+						// Smooth scroll to detail table
+						setTimeout(() => {
+							let el = document.getElementById("item-detail-container");
+							if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+						}, 120);
 
 						$(".close-view").on("click", function () {
 							$("#item-detail-container").remove();
@@ -650,22 +982,17 @@ frappe.query_reports["FT Drawing Part"] = {
 				+ "?filters=" + encodeURIComponent(JSON.stringify({ item: item_name, project: project_name }));
 			window.location.href = url;
 		});
-		
 
-		// In the JS file, update the nesting-export click handler:
-
+		// In the JS file, update the nesting-export click handler:		
 		$(document).off("click", ".nesting-export").on("click", ".nesting-export", function () {
 			let item_name = $(".summary-download").data("item");
 			let project_name = $(".summary-download").data("project");
-
-			// Get current report filters
 			let report_filters = frappe.query_report.get_filter_values();
-
 			let url = "/api/method/fabtrk.fabtrk.report.ft_drawing_part.ft_drawing_part.export_nesting_json"
 				+ "?filters=" + encodeURIComponent(JSON.stringify({
 					item: item_name,
 					project: project_name,
-					report_filters: report_filters  // ← IMPORTANT: current filters bhej rahe hain
+					report_filters: report_filters
 				}));
 			window.location.href = url;
 		});
@@ -677,33 +1004,117 @@ frappe.query_reports["FT Drawing Part"] = {
 			show_nesting_report_modal(item_name, project_name, display_name);
 		});
 
-		setTimeout(() => {
-			$(report.wrapper).find(".datatable .dt-row").each(function () {
-				let project_cell = $(this).find(".dt-cell").eq(1);
-				if (project_cell.text().trim() === "TOTAL") {
-					$(this).find(".dt-cell").eq(0).html("");
-					$(this).css("font-weight", "600");
-				}
-			});
-		}, 100);
+		// setTimeout(() => {
+		// 	$(report.wrapper).find(".datatable .dt-row").each(function () {
+		// 		let first_cell = $(this).find(".dt-cell").first();
+		// 		if (first_cell.text().trim() === "TOTAL") {
+		// 			$(this).css("font-weight", "600");
+		// 		}
+		// 	});
+		// }, 100);
+		// ✅ YAHAN FOOTER CALL KARO — DOM yahan guaranteed ready hota hai
+		attach_sticky_total_footer(report);
 	},
 
 	formatter: function (value, row, column, data, default_formatter) {
-		if (data && data.project_name === "TOTAL") {
-			if (column.id === "_index") return `<span style="visibility:hidden;">0</span>`;
-			value = default_formatter(value, row, column, data);
-			return `<span style="font-weight:bold; background:#f2f2f2;">${value}</span>`;
-		}
 		return default_formatter(value, row, column, data);
 	}
 };
-
 
 function clear_item_details() {
 	$("#item-detail-container").remove();
 	$(".view-btn").removeClass("active-detail");
 }
 
+//------------------ Footer sticky karne ke liye function
+function attach_sticky_total_footer(report) {
+	$(report.wrapper).find("#ft-sticky-total-footer").remove();
+
+	let $wrapper = $(report.wrapper);
+	let $dt_body = $wrapper.find(".dt-scrollable");
+	if (!$dt_body.length) return;
+
+	let data = frappe.query_report.data || [];
+	let columns = frappe.query_report.columns || [];
+
+	let totals = {
+		item_count: 0, quantity: 0, lenght: 0, width: 0,
+		total_weight: 0, po_required_qty: 0, po_total_weight: 0
+	};
+
+	data.forEach(d => {
+		totals.item_count += parseFloat(d.item_count || 0);
+		totals.quantity += parseFloat(d.quantity || 0);
+		totals.lenght += parseFloat(d.lenght || 0);
+		totals.width += parseFloat(d.width || 0);
+		totals.total_weight += parseFloat(d.total_weight || 0);
+		totals.po_required_qty += parseFloat(d.po_required_qty || 0);
+		totals.po_total_weight += parseFloat(d.po_total_weight || 0);
+	});
+
+	// ✅ FIX: header cells se width lo, missing ones ke liye fallback
+	let col_widths = [];
+	$wrapper.find(".dt-header .dt-cell").each(function () {
+		let w = $(this).outerWidth();
+		col_widths.push(w > 0 ? w : 100);
+	});
+
+	if (!col_widths.length) return;
+
+	// --- Remove serial number remove form table default
+	let cells_html = `
+        <div style="
+            width:${col_widths[0]}px; min-width:${col_widths[0]}px;
+            display:inline-flex; align-items:center; justify-content:center;
+            padding:8px 4px; border-right:2px solid #ddd;
+            flex-shrink:0; box-sizing:border-box;
+            font-weight:900; color:#000; font-size:13px;
+        "></div>`;
+
+	columns.forEach(function (col, i) {
+		let w = col_widths[i + 1] || 100;
+		let val = "";
+		let fn = col.fieldname;
+
+		if (fn === "item_name") {
+			val = `<span style="font-weight:900; font-size:13px; color:#000;">TOTAL</span>`;
+		} else if (fn && totals[fn] !== undefined) {
+			let v = totals[fn];
+			if (["lenght", "width", "total_weight", "po_total_weight"].includes(fn)) {
+				val = v.toLocaleString('en-IN', { minimumFractionDigits: 3, maximumFractionDigits: 3 });
+			} else if (["item_count", "quantity", "po_required_qty"].includes(fn)) {
+				val = v.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+			}
+		}
+
+		cells_html += `
+            <div style="
+                width:${w}px; min-width:${w}px; max-width:${w}px;
+                display:inline-flex; align-items:center; justify-content:right;
+                padding:8px 4px; border-right:1px solid #ddd;
+                flex-shrink:0; box-sizing:border-box;
+                font-weight:700; font-size:13px; white-space:nowrap; color:#000;
+            ">${val}</div>`;
+	});
+
+	let $footer = $(`<div id="ft-sticky-total-footer" style="
+        background: #f3f3f3 !important;
+        border-top:3px solid #f3f3f3;
+        overflow:hidden;
+        width:100%;
+    "><div id="ft-footer-inner" style="
+        display:inline-flex;
+        flex-wrap:nowrap;
+        transform:translateX(0px);
+    ">${cells_html}</div></div>`);
+
+	// ✅ FIX: dt-scrollable ke baad lagao (datatable ke baad nahi)
+	$dt_body.after($footer);
+
+	$dt_body.off("scroll.ft_footer").on("scroll.ft_footer", function () {
+		$("#ft-footer-inner").css("transform", `translateX(-${this.scrollLeft}px)`);
+	});
+}
 // -------------- Excel -------------
 function download_item_details(item_name, project_name) {
 	let url = "/api/method/fabtrk.fabtrk.report.ft_drawing_part.ft_drawing_part.download_item_details_excel"
@@ -749,7 +1160,7 @@ if (!window.XLSX) {
 	document.head.appendChild(script);
 }
 
-/**************************************************************** */
+/*******************  Nesting  ********************************** */
 
 // NEW FUNCTION: Nesting Report Modal for nesting button in item details view
 function show_nesting_report_modal(item, project, item_display_name) {
@@ -1287,7 +1698,7 @@ $(`<style>
 	text-align:center; 
  }
 
- .report-summary { 
+.report-summary { 
 	background-color:none; 
 	border-radius:0; 
 	border-bottom:0; 
@@ -1316,9 +1727,29 @@ $(`<style>
 .datatable .dt-cell__content--header-0, .datatable .dt-cell__content--col-0 {
 	padding:0 !important;
 }
+#ft-sticky-total-footer {
+    /* Ye properties ensure karengi ki footer bottom par stick kare */
+    position: sticky !important;
+    bottom: 0 !important;
+    z-index: 50 !important;
+    background-color: #f3f3f3 !important;
+    border-top: 3px solid #f3f3f3 !important;
+    width: 100% !important;
+    display: flex !important;
+}
 
-// .dt-cell__content>div{
-// 	text-align: center !important;
-// }
+/* Agar footer ka background transparent ho gaya toh text overlap hoga, isliye background fix karein */
+#ft-sticky-total-footer > div {
+    background-color: #f3f3f3 !important;
+}
+.table-bordered th, .table-bordered td{
+	border: 1px solid #bbbbbbc7;
+}
+
 </style>`).appendTo("head");
+
+
+
+
+
 
