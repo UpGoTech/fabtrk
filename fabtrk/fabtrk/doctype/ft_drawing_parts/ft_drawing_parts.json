@@ -17,7 +17,8 @@
   "single_weight",
   "total_weight",
   "painted_surface_percentage",
-  "total_percentage_for_area"
+  "single_unit_surface_area",
+  "total_surface_area"
  ],
  "fields": [
   {
@@ -49,7 +50,8 @@
    "fieldname": "total_weight",
    "fieldtype": "Float",
    "in_list_view": 1,
-   "label": "Total Weight"
+   "label": "Total Weight",
+   "read_only": 1
   },
   {
    "fieldname": "project_number",
@@ -100,14 +102,21 @@
    "options": "FT Stock RM List"
   },
   {
-   "fieldname": "total_percentage_for_area",
+   "fieldname": "total_surface_area",
    "fieldtype": "Data",
-   "label": "Total percentage for Area"
+   "label": "Total Surface Area ",
+   "read_only": 1
+  },
+  {
+   "fieldname": "single_unit_surface_area",
+   "fieldtype": "Data",
+   "label": "Single Unit Surface Area",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-04-11 19:06:23.960311",
+ "modified": "2026-04-14 12:43:51.912511",
  "modified_by": "Administrator",
  "module": "Fabtrk",
  "name": "FT Drawing Parts",

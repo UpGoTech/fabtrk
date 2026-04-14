@@ -1,12 +1,12 @@
-# Copyright (c) 2026, UpGo Technologies and contributors
-# For license information, please see license.txt
+# #### Copyright (c) 2026, UpGo Technologies and contributors
+# #### For license information, please see license.txt
 
-# import frappe
-# from frappe.model.document import Document
+# ## import frappe
+# ## from frappe.model.document import Document
 
 
-# class FTDrawingParts(Document):
-# 	pass
+# ## class FTDrawingParts(Document):
+# ## 	pass
 
 
 # import frappe
@@ -16,14 +16,10 @@
 # import json
 # from frappe.model.document import Document
 
-
 # class FTDrawingParts(Document):
 #     pass
 
-
-# # ─────────────────────────────────────────
 # # EXPORT
-# # ─────────────────────────────────────────
 # @frappe.whitelist()
 # def export_with_value():
 #     import io
@@ -107,10 +103,7 @@
 #     frappe.local.response.filecontent = output.getvalue()
 #     frappe.local.response.type        = "binary"
 
-
-# # ─────────────────────────────────────────
 # # GET FILE HEADERS — for mapping dialog
-# # ─────────────────────────────────────────
 # # @frappe.whitelist()
 # # def get_file_headers(file_url):
 
@@ -222,10 +215,7 @@
 # #         "all_fields": all_fields
 # #     }
  
-
-# # ─────────────────────────────────────────
 # # IMPORT
-# # ─────────────────────────────────────────
 # @frappe.whitelist()
 # def import_with_value(file_url, custom_mapping=None):
 
@@ -352,6 +342,7 @@
 #             msg += f"\n... aur {len(errors) - 10} errors"
 
 #     return msg
+
 
 
 import frappe
