@@ -451,6 +451,7 @@ def get_item_details(project, item, drawing_numbers=None, project_numbers=None,p
         "single_unit_surface_area": 0.0,
         "total_surface_area": 0.0,
         "required_qty": 0,
+        "po_existing_qty": 0,
         "po_required_qty": 0,
         "po_item_total_weight": 0.0,
         "entry_count": 0
@@ -491,6 +492,7 @@ def get_item_details(project, item, drawing_numbers=None, project_numbers=None,p
         tw      = float(d.get("total_weight") or 0.0)
         
         grouped[key]["required_qty"]         = req_qty
+        grouped[key]["po_existing_qty"]      = req_qty   
         grouped[key]["po_required_qty"]      = qty * req_qty
         grouped[key]["po_item_total_weight"] = round(tw * req_qty, 3)
         grouped[key]["entry_count"] += 1
@@ -501,6 +503,7 @@ def get_item_details(project, item, drawing_numbers=None, project_numbers=None,p
     grand_total_qty                 = 0
     grand_total_length              = 0
     grand_total_width               = 0
+    grand_po_existing_qty = 0 
     grand_po_required_qty           = 0
     grand_po_item_total_weight      = 0.0
     grand_single_unit_surface_area = 0.0
@@ -514,6 +517,7 @@ def get_item_details(project, item, drawing_numbers=None, project_numbers=None,p
         grand_total_qty            += d.get("quantity") or 0
         grand_total_length         += d.get("lenght") or 0
         grand_total_width          += d.get("width") or 0
+        grand_po_existing_qty += d.get("po_existing_qty") or 0
         grand_po_required_qty           += d.get("po_required_qty") or 0
         grand_po_item_total_weight      += d.get("po_item_total_weight") or 0.0
         grand_single_unit_surface_area += float(d.get("single_unit_surface_area") or 0.0)
@@ -536,6 +540,7 @@ def get_item_details(project, item, drawing_numbers=None, project_numbers=None,p
         "single_unit_surface_area":     round(grand_single_unit_surface_area, 3),
         "total_surface_area":           round(grand_total_surface_area, 3),
         "required_qty":                 "",
+        "po_existing_qty": grand_po_existing_qty,  # ← po_required_qty se pehle
         "po_required_qty":              grand_po_required_qty,
         "po_item_total_weight":         round(grand_po_item_total_weight, 3),
         "_is_total_row":                True,
@@ -1598,7 +1603,6 @@ def save_row_data(sr_no, project, item_name, item_count, quantity, lenght, width
         "po_required_qty": float(po_required_qty  or 0),
         "po_total_weight": float(po_total_weight  or 0),
     }
- 
     if project:
         existing_docs = frappe.get_all("FT Store Revision Data",
             filters={"item": item_name, "project_number": project},
@@ -1607,37 +1611,134 @@ def save_row_data(sr_no, project, item_name, item_count, quantity, lenght, width
         existing_docs = frappe.get_all("FT Store Revision Data",
             filters={"item": item_name},
             fields=["name"], order_by="creation asc")
- 
+
     clean_item = item_name.replace(" ", "-").replace("/", "-")
- 
+
+    # ── Drawing-wise current data DB se fetch karo ──────────────
+    def fetch_drawing_wise_data(project, item_name):
+        sql_conditions = ""
+        sql_values = {"item_name": item_name}
+
+        if project:
+            sql_conditions = "AND ad.project_number = %(project)s"
+            sql_values["project"] = project
+
+        rows = frappe.db.sql(f"""
+            SELECT
+                p.name                                                       AS project_number,
+                dp.po_no                                                     AS po_no,
+                pod.po_serial_no                                             AS po_serial_no,
+                ad.drawing_number                                            AS drawing_number,
+                dp.position_no                                               AS position_no,
+                dp.part_no                                                   AS part_no,
+                dp.quantity                                                  AS quantity,
+                dp.lenght                                                    AS lenght,
+                dp.width                                                     AS width,
+                dp.single_weight                                             AS single_weight,
+                dp.total_weight                                              AS total_weight,
+                COALESCE(pod.required_qty, 0)                                AS required_qty,
+                COALESCE(pod.required_qty, 0) * COALESCE(dp.quantity, 0)     AS po_required_qty,
+                COALESCE(pod.required_qty, 0) * COALESCE(dp.total_weight, 0) AS po_item_total_weight
+            FROM `tabFT Drawing Parts` dp
+            LEFT JOIN `tabFT Add Drawing` ad ON ad.name  = dp.drawing_number
+            LEFT JOIN `tabFT Project` p      ON p.name   = ad.project_number
+            LEFT JOIN `tabFT Po Drawing` pod
+                ON pod.project_number  = p.name
+                AND pod.drawing_number = ad.name
+            WHERE dp.item = (
+                SELECT name FROM `tabFT Stock RM List`
+                WHERE computed_name = %(item_name)s LIMIT 1
+            )
+            {sql_conditions}
+            ORDER BY ad.drawing_number ASC, dp.po_no ASC
+        """, sql_values, as_dict=True)
+
+        return rows or []
+
+    # ── Child table rows fast INSERT karo ────────────────────────
+    def insert_child_rows(parent_name, drawing_rows):
+        if not drawing_rows:
+            return
+
+        for idx, r in enumerate(drawing_rows, 1):
+            child_name = f"{parent_name}-DD-{str(idx).zfill(4)}"
+            frappe.db.sql("""
+                INSERT INTO `tabFT Revision Drawing Detail`
+                    (name, parent, parenttype, parentfield, idx,
+                     project_number,
+                     drawing_number, po_no, po_serial_no,
+                     position_no, part_no,
+                     quantity, lenght, width, single_weight, total_weight,
+                     po_required_qty, po_item_total_weight,
+                     owner, creation, modified, modified_by, docstatus)
+                VALUES
+                    (%(name)s, %(parent)s, 'FT Store Revision Data', 'drawing_details', %(idx)s,
+                     %(project_number)s,
+                     %(drawing_number)s, %(po_no)s, %(po_serial_no)s,
+                     %(position_no)s, %(part_no)s,
+                     %(quantity)s, %(lenght)s, %(width)s, %(single_weight)s, %(total_weight)s,
+                     %(po_required_qty)s, %(po_item_total_weight)s,
+                     %(owner)s, NOW(), NOW(), %(owner)s, 0)
+            """, {
+                "name":                 child_name,
+                "parent":               parent_name,
+                "idx":                  idx,
+                "project_number":       r.get("project_number") or "",
+                "drawing_number":       r.get("drawing_number") or "",
+                "po_no":                str(r.get("po_no") or ""),
+                "po_serial_no":         str(r.get("po_serial_no") or ""),
+                "position_no":          str(r.get("position_no") or ""),
+                "part_no":              str(r.get("part_no") or ""),
+                "quantity":             int(r.get("quantity") or 0),
+                "lenght":               round(float(r.get("lenght") or 0), 3),
+                "width":                round(float(r.get("width") or 0), 3),
+                "single_weight":        round(float(r.get("single_weight") or 0), 3),
+                "total_weight":         round(float(r.get("total_weight") or 0), 3),
+                "po_required_qty":      int(r.get("po_required_qty") or 0),
+                "po_item_total_weight": round(float(r.get("po_item_total_weight") or 0), 3),
+                "owner":                frappe.session.user,
+            })
+
     if existing_docs:
         last_doc_name = existing_docs[-1].name
         doc = frappe.get_doc("FT Store Revision Data", last_doc_name)
-        try: revision_log = json.loads(doc.revision_log or "[]")
-        except: revision_log = []
- 
+        try:
+            revision_log = json.loads(doc.revision_log or "[]")
+        except:
+            revision_log = []
+
         if revision_log:
             last = revision_log[-1]
             if project:
                 live_data = frappe.db.sql("""
-                    SELECT COUNT(dp.name) AS total_entries, SUM(COALESCE(dp.quantity,0)) AS total_qty,
-                        SUM(COALESCE(dp.lenght,0)) AS total_length, SUM(COALESCE(dp.width,0)) AS total_width,
+                    SELECT COUNT(dp.name) AS total_entries,
+                        SUM(COALESCE(dp.quantity,0))     AS total_qty,
+                        SUM(COALESCE(dp.lenght,0))       AS total_length,
+                        SUM(COALESCE(dp.width,0))        AS total_width,
                         SUM(COALESCE(dp.total_weight,0)) AS total_weight
                     FROM `tabFT Drawing Parts` dp
                     LEFT JOIN `tabFT Add Drawing` ad ON ad.name = dp.drawing_number
                     WHERE ad.project_number = %(project)s
-                      AND dp.item = (SELECT name FROM `tabFT Stock RM List` WHERE computed_name = %(item_name)s LIMIT 1)
+                      AND dp.item = (
+                          SELECT name FROM `tabFT Stock RM List`
+                          WHERE computed_name = %(item_name)s LIMIT 1
+                      )
                 """, {"project": project, "item_name": item_name}, as_dict=True)
             else:
                 live_data = frappe.db.sql("""
-                    SELECT COUNT(dp.name) AS total_entries, SUM(COALESCE(dp.quantity,0)) AS total_qty,
-                        SUM(COALESCE(dp.lenght,0)) AS total_length, SUM(COALESCE(dp.width,0)) AS total_width,
+                    SELECT COUNT(dp.name) AS total_entries,
+                        SUM(COALESCE(dp.quantity,0))     AS total_qty,
+                        SUM(COALESCE(dp.lenght,0))       AS total_length,
+                        SUM(COALESCE(dp.width,0))        AS total_width,
                         SUM(COALESCE(dp.total_weight,0)) AS total_weight
                     FROM `tabFT Drawing Parts` dp
                     LEFT JOIN `tabFT Add Drawing` ad ON ad.name = dp.drawing_number
-                    WHERE dp.item = (SELECT name FROM `tabFT Stock RM List` WHERE computed_name = %(item_name)s LIMIT 1)
+                    WHERE dp.item = (
+                        SELECT name FROM `tabFT Stock RM List`
+                        WHERE computed_name = %(item_name)s LIMIT 1
+                    )
                 """, {"item_name": item_name}, as_dict=True)
- 
+
             if live_data and live_data[0]:
                 live = live_data[0]
                 changed = any([
@@ -1652,7 +1753,6 @@ def save_row_data(sr_no, project, item_name, item_count, quantity, lenght, width
  
             if not changed:
                 return {"status": "success", "msg": "The Data is the same, there has been no change."}
- 
             if live_data and live_data[0]:
                 live = live_data[0]
                 new_entry["total_entries"] = float(live.get("total_entries") or 0)
@@ -1664,47 +1764,8 @@ def save_row_data(sr_no, project, item_name, item_count, quantity, lenght, width
         revision_log.append(new_entry)
         next_revision = len(existing_docs) + 1
         new_name = f"Revision-{next_revision}-{clean_item}-{str(sr_no).zfill(3)}"
-        new_doc = frappe.get_doc({
-            "doctype": "FT Store Revision Data", "name": new_name, "sr_no": sr_no,
-            "project_number": project, "item": item_name, "drawing_number": drawing_number,
-            "total_entries": new_entry["total_entries"], "total_qty": new_entry["total_qty"],
-            "total_length": new_entry["total_length"], "total_width": new_entry["total_width"],
-            "total_weight": new_entry["total_weight"], "revision_log": json.dumps(revision_log)
-        })
-        new_doc.insert(ignore_permissions=True)
-        frappe.rename_doc("FT Store Revision Data", new_doc.name, new_name, force=True)
- 
-    else:
-        if project:
-            live_data = frappe.db.sql("""
-                SELECT COUNT(dp.name) AS total_entries, SUM(COALESCE(dp.quantity,0)) AS total_qty,
-                    SUM(COALESCE(dp.lenght,0)) AS total_length, SUM(COALESCE(dp.width,0)) AS total_width,
-                    SUM(COALESCE(dp.total_weight,0)) AS total_weight
-                FROM `tabFT Drawing Parts` dp
-                LEFT JOIN `tabFT Add Drawing` ad ON ad.name = dp.drawing_number
-                WHERE ad.project_number = %(project)s
-                  AND dp.item = (SELECT name FROM `tabFT Stock RM List` WHERE computed_name = %(item_name)s LIMIT 1)
-            """, {"project": project, "item_name": item_name}, as_dict=True)
-        else:
-            live_data = frappe.db.sql("""
-                SELECT COUNT(dp.name) AS total_entries, SUM(COALESCE(dp.quantity,0)) AS total_qty,
-                    SUM(COALESCE(dp.lenght,0)) AS total_length, SUM(COALESCE(dp.width,0)) AS total_width,
-                    SUM(COALESCE(dp.total_weight,0)) AS total_weight
-                FROM `tabFT Drawing Parts` dp
-                LEFT JOIN `tabFT Add Drawing` ad ON ad.name = dp.drawing_number
-                WHERE dp.item = (SELECT name FROM `tabFT Stock RM List` WHERE computed_name = %(item_name)s LIMIT 1)
-            """, {"item_name": item_name}, as_dict=True)
- 
-        if live_data and live_data[0]:
-            live = live_data[0]
-            new_entry["total_entries"] = float(live.get("total_entries") or 0)
-            new_entry["total_qty"]     = float(live.get("total_qty")     or 0)
-            new_entry["total_length"]  = float(live.get("total_length")  or 0)
-            new_entry["total_width"]   = float(live.get("total_width")   or 0)
-            new_entry["total_weight"]  = float(live.get("total_weight")  or 0)
- 
-        revision_log = [new_entry]
-        new_name = f"Revision-1-{clean_item}-{str(sr_no).zfill(3)}"
+
+        # ── Parent doc fast INSERT ──
         frappe.db.sql("""
             INSERT INTO `tabFT Store Revision Data`
                 (name, sr_no, project_number, item, drawing_number,
@@ -1727,10 +1788,94 @@ def save_row_data(sr_no, project, item_name, item_count, quantity, lenght, width
             "total_weight": new_entry["total_weight"], "revision_log": json.dumps(revision_log),
             "owner": frappe.session.user,
         })
- 
+
+        # ── Child table rows INSERT ──
+        drawing_rows = fetch_drawing_wise_data(project, item_name)
+        insert_child_rows(new_name, drawing_rows)
+
+    else:
+        if project:
+            live_data = frappe.db.sql("""
+                SELECT COUNT(dp.name) AS total_entries,
+                    SUM(COALESCE(dp.quantity,0))     AS total_qty,
+                    SUM(COALESCE(dp.lenght,0))       AS total_length,
+                    SUM(COALESCE(dp.width,0))        AS total_width,
+                    SUM(COALESCE(dp.total_weight,0)) AS total_weight
+                FROM `tabFT Drawing Parts` dp
+                LEFT JOIN `tabFT Add Drawing` ad ON ad.name = dp.drawing_number
+                WHERE ad.project_number = %(project)s
+                  AND dp.item = (
+                      SELECT name FROM `tabFT Stock RM List`
+                      WHERE computed_name = %(item_name)s LIMIT 1
+                  )
+            """, {"project": project, "item_name": item_name}, as_dict=True)
+        else:
+            live_data = frappe.db.sql("""
+                SELECT COUNT(dp.name) AS total_entries,
+                    SUM(COALESCE(dp.quantity,0))     AS total_qty,
+                    SUM(COALESCE(dp.lenght,0))       AS total_length,
+                    SUM(COALESCE(dp.width,0))        AS total_width,
+                    SUM(COALESCE(dp.total_weight,0)) AS total_weight
+                FROM `tabFT Drawing Parts` dp
+                LEFT JOIN `tabFT Add Drawing` ad ON ad.name = dp.drawing_number
+                WHERE dp.item = (
+                    SELECT name FROM `tabFT Stock RM List`
+                    WHERE computed_name = %(item_name)s LIMIT 1
+                )
+            """, {"item_name": item_name}, as_dict=True)
+
+        if live_data and live_data[0]:
+            live = live_data[0]
+            new_entry["total_entries"] = float(live.get("total_entries") or 0)
+            new_entry["total_qty"]     = float(live.get("total_qty")     or 0)
+            new_entry["total_length"]  = float(live.get("total_length")  or 0)
+            new_entry["total_width"]   = float(live.get("total_width")   or 0)
+            new_entry["total_weight"]  = float(live.get("total_weight")  or 0)
+
+        revision_log = [new_entry]
+        new_name = f"Revision-1-{clean_item}-{str(sr_no).zfill(3)}"
+
+        # ── Parent doc fast INSERT ──
+        frappe.db.sql("""
+            INSERT INTO `tabFT Store Revision Data`
+                (name, sr_no, project_number, item, drawing_number,
+                 total_entries, total_qty, total_length, total_width, total_weight,
+                 revision_log, owner, creation, modified, modified_by, docstatus)
+            VALUES
+                (%(name)s, %(sr_no)s, %(project_number)s, %(item)s, %(drawing_number)s,
+                 %(total_entries)s, %(total_qty)s, %(total_length)s, %(total_width)s, %(total_weight)s,
+                 %(revision_log)s, %(owner)s, NOW(), NOW(), %(owner)s, 0)
+            ON DUPLICATE KEY UPDATE
+                total_entries = VALUES(total_entries),
+                total_qty     = VALUES(total_qty),
+                total_length  = VALUES(total_length),
+                total_width   = VALUES(total_width),
+                total_weight  = VALUES(total_weight),
+                revision_log  = VALUES(revision_log),
+                modified      = NOW(),
+                modified_by   = VALUES(modified_by)
+        """, {
+            "name":           new_name,
+            "sr_no":          sr_no,
+            "project_number": project,
+            "item":           item_name,
+            "drawing_number": drawing_number,
+            "total_entries":  new_entry["total_entries"],
+            "total_qty":      new_entry["total_qty"],
+            "total_length":   new_entry["total_length"],
+            "total_width":    new_entry["total_width"],
+            "total_weight":   new_entry["total_weight"],
+            "revision_log":   json.dumps(revision_log),
+            "owner":          frappe.session.user,
+        })
+
+        # ── Child table rows INSERT ──
+        drawing_rows = fetch_drawing_wise_data(project, item_name)
+        insert_child_rows(new_name, drawing_rows)
+
     frappe.db.commit()
-    return {"status": "success", "msg": "✅ Data saved successfully!"}
- 
+    return {"status": "success", "msg": "✅ Data saved successfully!"} 
+
  
 @frappe.whitelist()
 def compare_row_data(sr_no, project, item_name, item_count, quantity, lenght, width, total_weight):
@@ -1834,10 +1979,10 @@ def export_compare_snapshot_excel(snapshot_data):
     from frappe.utils.file_manager import save_file
     from openpyxl.styles import Font, PatternFill, Border, Side, Alignment
     from openpyxl.utils import get_column_letter
-    from openpyxl.comments import Comment
 
     snapshot_data = frappe.parse_json(snapshot_data)
 
+    # ── Summary-level fields (Sheet 1) ───────────────────────────
     fields = ["total_entries", "total_qty", "total_length", "total_width", "total_weight",
               "po_required_qty", "po_total_weight"]
     field_labels = {
@@ -1850,44 +1995,57 @@ def export_compare_snapshot_excel(snapshot_data):
         "po_total_weight": "PO Total Weight",
     }
 
+    # ── Row-level compare fields (Sheet 2 & 3) ───────────────────
+    row_compare_fields = [
+        "quantity", "lenght", "width", "single_weight",
+        "total_weight", "po_required_qty", "po_item_total_weight"
+    ]
+    row_field_labels = {
+        "quantity":             "Qty",
+        "lenght":               "Length",
+        "width":                "Width",
+        "single_weight":        "Single Weight",
+        "total_weight":         "Total Weight",
+        "po_required_qty":      "PO Required Qty",
+        "po_item_total_weight": "PO Total Weight",
+    }
+
     max_revisions = 0
     for item_data in snapshot_data:
         max_revisions = max(max_revisions, len(item_data.get("revision_log") or []))
 
     wb = openpyxl.Workbook()
 
-    # ── Common styles ──────────────────────────────────────────────
-    thin             = Side(style="thin")
-    border           = Border(left=thin, right=thin, top=thin, bottom=thin)
-    center           = Alignment(horizontal="center", vertical="center", wrap_text=True)
-    left_align       = Alignment(horizontal="left",   vertical="center", wrap_text=True)
-    num3             = "#,##0.000"
+    # ── Common styles ─────────────────────────────────────────────
+    thin          = Side(style="thin")
+    border        = Border(left=thin, right=thin, top=thin, bottom=thin)
+    center        = Alignment(horizontal="center", vertical="center", wrap_text=True)
+    left_align    = Alignment(horizontal="left",   vertical="center", wrap_text=True)
+    num3          = "#,##0.000"
 
-    title_font       = Font(bold=True, size=14, color="FFFFFF")
-    title_fill       = PatternFill("solid", fgColor="1F4E79")
-    header_font      = Font(bold=True, size=11, color="FFFFFF")
-    header_fill      = PatternFill("solid", fgColor="2F75B5")
-    diff_hfill       = PatternFill("solid", fgColor="7B2D8B")
-    diff_hfont       = Font(bold=True, size=11, color="FFFFFF")
+    title_font    = Font(bold=True, size=14, color="FFFFFF")
+    title_fill    = PatternFill("solid", fgColor="1F4E79")
+    header_font   = Font(bold=True, size=11, color="FFFFFF")
+    header_fill   = PatternFill("solid", fgColor="2F75B5")
+    diff_hfill    = PatternFill("solid", fgColor="7B2D8B")
+    diff_hfont    = Font(bold=True, size=11, color="FFFFFF")
 
-    changed_font     = Font(bold=True, color="C55A11")
-    normal_font      = Font(size=11, color="333333")
-    diff_pos_font    = Font(bold=True, color="1A7ABF")
-    diff_neg_font    = Font(bold=True, color="C00000")
-    diff_zero_font   = Font(size=11, color="888888")
+    changed_font  = Font(bold=True, color="C55A11")
+    normal_font   = Font(size=11, color="333333")
+    diff_pos_font = Font(bold=True, color="1A7ABF")
+    diff_neg_font = Font(bold=True, color="C00000")
+    diff_zero_font = Font(size=11, color="888888")
 
-    yellow_fill      = PatternFill("solid", fgColor="FFF8E1")
-    diff_pos_fill    = PatternFill("solid", fgColor="E8F4FD")
-    diff_neg_fill    = PatternFill("solid", fgColor="FFE8E8")
-    white_fill       = PatternFill("solid", fgColor="FFFFFF")
-    changed_row_fill = PatternFill("solid", fgColor="FFF3E0")
+    yellow_fill   = PatternFill("solid", fgColor="FFF8E1")
+    diff_pos_fill = PatternFill("solid", fgColor="E8F4FD")
+    diff_neg_fill = PatternFill("solid", fgColor="FFE8E8")
+    white_fill    = PatternFill("solid", fgColor="FFFFFF")
 
-    # ══════════════════════════════════════════════════════════════
-    # SHEET 1: Compare Snapshot — BILKUL PEHLE JAISI (koi change nahi)
-    # ══════════════════════════════════════════════════════════════
+    # ════════════════════════════════════════════════════════════
+    # SHEET 1: Compare Snapshot — Summary level (unchanged)
+    # ════════════════════════════════════════════════════════════
     ws1 = wb.active
     ws1.title = "Compare Snapshot"
-
     total_cols = 5 + max_revisions + 1
 
     ws1.merge_cells(start_row=1, start_column=1, end_row=1, end_column=total_cols)
@@ -1909,7 +2067,6 @@ def export_compare_snapshot_excel(snapshot_data):
     ws1.row_dimensions[2].height = 30
 
     data_row = 3
-
     for item_data in snapshot_data:
         if item_data.get("status") != "success": continue
         project         = item_data.get("project", "")
@@ -1982,231 +2139,323 @@ def export_compare_snapshot_excel(snapshot_data):
         ws1.column_dimensions[get_column_letter(i)].width = w
     ws1.freeze_panes = "A3"
 
-    # ══════════════════════════════════════════════════════════════
-    # SHEET 2: Drawing Wise Detail
-    # — Changed drawing rows highlighted
-    # — "Changed?" cell mein click karne pe previous vs new values comment mein
-    # ══════════════════════════════════════════════════════════════
-    ws2 = wb.create_sheet("Drawing Wise Detail")
+    # ════════════════════════════════════════════════════════════
+    # Collect row-level changes from tabFT Revision Drawing Detail
+    # Compare last 2 saved revisions per item
+    # ════════════════════════════════════════════════════════════
 
-    # -- Changed item names collect karo --
-    changed_item_names = []
+    def make_row_key(r):
+        return (
+            str(r.get("drawing_number") or ""),
+            str(r.get("position_no") or ""),
+            str(r.get("part_no") or ""),
+        )
+
+    def get_detail_rows(doc_name):
+        return frappe.db.sql("""
+            SELECT drawing_number, position_no, part_no, project_number,
+                   po_no, po_serial_no,
+                   quantity, lenght, width, single_weight, total_weight,
+                   po_required_qty, po_item_total_weight
+            FROM `tabFT Revision Drawing Detail`
+            WHERE parent = %(parent)s
+            ORDER BY idx ASC
+        """, {"parent": doc_name}, as_dict=True) or []
+
+    all_changed_rows = []   # [{item_name, prev, curr, changed_fields}]
+
     for item_data in snapshot_data:
         if item_data.get("status") != "success": continue
-        rl = item_data.get("revision_log") or []
-        if len(rl) < 2: continue
-        r1 = rl[0]; rL = rl[-1]
-        if any(float(r1.get(f, 0) or 0) != float(rL.get(f, 0) or 0) for f in fields):
-            changed_item_names.append(item_data.get("item_name", ""))
+        item_name = item_data.get("item_name", "")
 
-    # Item → revision map
-    item_revision_map = {}
-    for item_data in snapshot_data:
-        if item_data.get("status") != "success": continue
-        iname = item_data.get("item_name", "")
-        rl    = item_data.get("revision_log") or []
-        item_revision_map[iname] = {
-            "rev1":      rl[0]  if rl else {},
-            "rev_last":  rl[-1] if rl else {},
-            "rev_count": len(rl),
-            "project":   item_data.get("project", ""),
-            "all_revs":  rl,
-        }
+        rev_docs = frappe.get_all(
+            "FT Store Revision Data",
+            filters={"item": item_name},
+            fields=["name", "creation"],
+            order_by="creation desc",
+            limit=2
+        )
+        if len(rev_docs) < 2:
+            continue
 
-    # DB se drawing-level data
-    detail_rows = []
-    if changed_item_names:
-        item_ids = {}
-        for iname in changed_item_names:
-            iid = frappe.db.get_value("FT Stock RM List", {"computed_name": iname}, "name")
-            if iid: item_ids[iname] = iid
+        curr_rows = get_detail_rows(rev_docs[0].name)   # latest revision
+        prev_rows = get_detail_rows(rev_docs[1].name)   # previous revision
 
-        if item_ids:
-            detail_rows = frappe.db.sql(f"""
-                SELECT
-                    rm.computed_name                              AS item_name,
-                    p.name                                        AS project_number,
-                    dp.po_no                                      AS po_no,
-                    pod.po_serial_no                              AS po_serial_no,
-                    ad.drawing_number                             AS drawing_number,
-                    dp.position_no                                AS position_no,
-                    dp.part_no                                    AS part_no,
-                    COUNT(dp.name)                                AS entry_count,
-                    SUM(COALESCE(dp.quantity, 0))                 AS quantity,
-                    SUM(COALESCE(dp.lenght, 0))                   AS lenght,
-                    SUM(COALESCE(dp.width, 0))                    AS width,
-                    AVG(COALESCE(dp.single_weight, 0))            AS single_weight,
-                    SUM(COALESCE(dp.total_weight, 0))             AS total_weight,
-                    COALESCE(pod.required_qty, 0)                 AS required_qty,
-                    COALESCE(pod.required_qty, 0) * SUM(COALESCE(dp.quantity, 0))     AS po_required_qty,
-                    COALESCE(pod.required_qty, 0) * SUM(COALESCE(dp.total_weight, 0)) AS po_item_total_weight
-                FROM `tabFT Drawing Parts` dp
-                LEFT JOIN `tabFT Add Drawing` ad    ON ad.name  = dp.drawing_number
-                LEFT JOIN `tabFT Project` p         ON p.name   = ad.project_number
-                LEFT JOIN `tabFT Stock RM List` rm  ON rm.name  = dp.item
-                LEFT JOIN `tabFT Po Drawing` pod
-                    ON pod.project_number  = p.name
-                    AND pod.drawing_number = ad.name
-                WHERE dp.item IN %(item_ids)s
-                GROUP BY rm.computed_name, p.name, dp.po_no, pod.po_serial_no,
-                         ad.drawing_number, dp.position_no, dp.part_no, pod.required_qty
-                ORDER BY rm.computed_name ASC, p.name ASC, ad.drawing_number ASC, dp.po_no ASC
-            """, {"item_ids": tuple(item_ids.values())}, as_dict=True) or []
+        prev_map = {make_row_key(r): r for r in prev_rows}
+        curr_map = {make_row_key(r): r for r in curr_rows}
 
-    # Sheet 2 headers
-    detail_headers_s2 = [
-        "Sr No", "Item", "Project", "Drawing", "PO No", "Po Serial No",
-        "Position No", "Mark No", "Entry Count",
+        for key, curr_row in curr_map.items():
+            prev_row = prev_map.get(key, {})
+            changed_fields = [
+                f for f in row_compare_fields
+                if round(float(prev_row.get(f) or 0), 3) != round(float(curr_row.get(f) or 0), 3)
+            ]
+            if changed_fields:
+                all_changed_rows.append({
+                    "item_name":      item_name,
+                    "prev":           prev_row,
+                    "curr":           curr_row,
+                    "changed_fields": changed_fields,
+                })
+
+    # ════════════════════════════════════════════════════════════
+    # SHEET 2: Sirf Changed Rows — changed fields orange me highlight
+    #          Last column = "🔍 View Change" hyperlink → Sheet 3
+    # ════════════════════════════════════════════════════════════
+    ws2 = wb.create_sheet("Changed Rows")
+
+    # Field col map: Excel column index → field name (for highlighting)
+    FIELD_COL_MAP = {
+        7:  "quantity",
+        8:  "lenght",
+        9:  "width",
+        10: "single_weight",
+        11: "total_weight",
+        12: "po_required_qty",
+        13: "po_item_total_weight",
+    }
+
+    s2_headers = [
+        "Sr No", "Item", "Project", "Drawing", "Position No", "Mark No",
         "Qty", "Length", "Width", "Single Weight", "Total Weight",
         "PO Required Qty", "PO Total Weight",
-        "Rev 1 — Entries", "Rev 1 — Weight",
-        "Rev Last — Entries", "Rev Last — Weight",
-        "Changed?"
+        "🔍 View Change",
     ]
-    N2 = len(detail_headers_s2)
+    N2 = len(s2_headers)
 
+    # Title
     ws2.merge_cells(start_row=1, start_column=1, end_row=1, end_column=N2)
-    tc2 = ws2.cell(row=1, column=1, value="Drawing Wise Detail — Changed Items Only")
+    tc2 = ws2.cell(row=1, column=1,
+                   value="Changed Drawing Rows — Orange = Changed Field   |   Click '🔍 View Change' for Before & After")
     tc2.font = title_font; tc2.fill = title_fill; tc2.alignment = center
+    ws2.row_dimensions[1].height = 28
 
-    detail_hfill2 = PatternFill("solid", fgColor="1F4E79")
-    for col, h in enumerate(detail_headers_s2, 1):
+    # Header row
+    for col, h in enumerate(s2_headers, 1):
         c = ws2.cell(row=2, column=col, value=h)
-        c.fill = detail_hfill2; c.border = border; c.alignment = center
-        if col == 15:         c.font = Font(bold=True, color="FFD700")
-        elif col == 16:       c.font = Font(bold=True, color="7EC8E3")
-        elif col in [17, 18]: c.font = Font(bold=True, color="AADDFF")
-        elif col in [19, 20]: c.font = Font(bold=True, color="FFCC88")
-        elif col == 21:       c.font = Font(bold=True, color="90EE90")
-        else:                 c.font = header_font
-
+        c.fill = PatternFill("solid", fgColor="1F4E79")
+        c.border = border; c.alignment = center
+        if col == N2:
+            c.font = Font(bold=True, size=11, color="FFD700")
+        else:
+            c.font = header_font
+    ws2.row_dimensions[2].height = 24
     ws2.freeze_panes = "A3"
-    rn2 = 3; sr2 = 1
 
-    for d in detail_rows:
-        iname    = d.get("item_name", "")
-        rev_info = item_revision_map.get(iname, {})
-        rev1     = rev_info.get("rev1", {})
-        rev_last = rev_info.get("rev_last", {})
-        all_revs = rev_info.get("all_revs", [])
+    # ════════════════════════════════════════════════════════════
+    # SHEET 3: Before & After Detail — one block per changed row
+    # ════════════════════════════════════════════════════════════
+    ws3 = wb.create_sheet("Change Detail")
 
-        rev1_entries = float(rev1.get("total_entries", 0) or 0)
-        rev1_weight  = float(rev1.get("total_weight",  0) or 0)
-        revL_entries = float(rev_last.get("total_entries", 0) or 0)
-        revL_weight  = float(rev_last.get("total_weight",  0) or 0)
+    ws3.merge_cells(start_row=1, start_column=1, end_row=1, end_column=6)
+    tc3 = ws3.cell(row=1, column=1,
+                   value="Before & After — Row Level Change Detail")
+    tc3.font = title_font; tc3.fill = title_fill; tc3.alignment = center
+    ws3.row_dimensions[1].height = 28
 
-        # ── Row-level change check ──
-        row_changed = (rev1_entries != revL_entries or rev1_weight != revL_weight)
+    # Shared fills for Sheet 2 & 3
+    row_base_fill   = PatternFill("solid", fgColor="FFF9F0")   # row background
+    chg_cell_fill   = PatternFill("solid", fgColor="FFE0B2")   # orange — changed field in S2
+    chg_cell_font   = Font(bold=True, size=11, color="BF360C") # dark orange text
+    normal_cell_fill = PatternFill("solid", fgColor="FAFAFA")
+    normal_cell_font = Font(size=11, color="333333")
 
-        # ── Row background ──
-        # Changed → light orange, Unchanged → white
-        row_bg = PatternFill("solid", fgColor="FFF3E0") if row_changed else PatternFill("solid", fgColor="FFFFFF")
+    # Sheet 3 fills
+    before_fill  = PatternFill("solid", fgColor="FFCCBC")
+    after_fill   = PatternFill("solid", fgColor="C8E6C9")
+    no_chg_fill  = PatternFill("solid", fgColor="F5F5F5")
+    sep_fill     = PatternFill("solid", fgColor="CFD8DC")
+    before_hfill = PatternFill("solid", fgColor="BF360C")
+    after_hfill  = PatternFill("solid", fgColor="1B5E20")
 
-        qty    = int(d.get("quantity") or 0)
-        lenght = round(float(d.get("lenght") or 0), 3)
-        width  = round(float(d.get("width") or 0), 3)
-        s_wt   = round(float(d.get("single_weight") or 0), 3)
-        t_wt   = round(float(d.get("total_weight") or 0), 3)
-        po_req = int(d.get("po_required_qty") or 0)
-        po_wt  = round(float(d.get("po_item_total_weight") or 0), 3)
+    # ── Populate Sheet 2 + Sheet 3 together ──────────────────────
+    s2_row = 3
+    s3_row = 2   # Sheet 3 starts at row 2 (after title)
 
-        # ── "Changed?" label — sirf changed rows mein ──
-        changed_label = "🔴 Changed" if row_changed else ""
+    for idx, cr in enumerate(all_changed_rows, 1):
+        item_name    = cr["item_name"]
+        prev         = cr["prev"]
+        curr         = cr["curr"]
+        chg_fields   = cr["changed_fields"]
+        s3_anchor    = s3_row   # This row in Sheet 3 is the hyperlink target
 
-        row_vals = [
-            sr2, iname,
-            d.get("project_number", ""),
-            d.get("drawing_number", ""),
-            d.get("po_no", ""),
-            d.get("po_serial_no", ""),
-            d.get("position_no", ""),
-            d.get("part_no", ""),
-            int(d.get("entry_count") or 0),
-            qty, lenght, width, s_wt, t_wt, po_req, po_wt,
-            rev1_entries, rev1_weight,
-            revL_entries, revL_weight,
-            changed_label,
+        # ── Sheet 2 row ──────────────────────────────────────────
+        curr_vals = [
+            idx,
+            item_name,
+            curr.get("project_number", ""),
+            curr.get("drawing_number", ""),
+            curr.get("position_no", ""),
+            curr.get("part_no", ""),
+            int(curr.get("quantity") or 0),
+            round(float(curr.get("lenght") or 0), 3),
+            round(float(curr.get("width") or 0), 3),
+            round(float(curr.get("single_weight") or 0), 3),
+            round(float(curr.get("total_weight") or 0), 3),
+            int(curr.get("po_required_qty") or 0),
+            round(float(curr.get("po_item_total_weight") or 0), 3),
+            "🔍 View Change",
         ]
 
-        for col, val in enumerate(row_vals, 1):
-            c = ws2.cell(row=rn2, column=col, value=val)
+        for col, val in enumerate(curr_vals, 1):
+            c = ws2.cell(row=s2_row, column=col, value=val)
             c.border    = border
-            c.fill      = row_bg
             c.alignment = left_align if col in [2, 3, 4] else center
 
-            if col in [11, 12, 13, 14, 16, 18, 20]:
+            fn = FIELD_COL_MAP.get(col)
+
+            if col == N2:
+                # ── Hyperlink button ──
+                c.hyperlink = f"#'Change Detail'!A{s3_anchor}"
+                c.font = Font(bold=True, size=11, color="1565C0", underline="single")
+                c.fill = PatternFill("solid", fgColor="E3F2FD")
+            elif fn and fn in chg_fields:
+                # ── Changed field — orange highlight ──
+                c.fill = chg_cell_fill
+                c.font = chg_cell_font
+            else:
+                c.fill = row_base_fill
+                c.font = Font(size=11, color="444444")
+
+            if col in [8, 9, 10, 11, 13]:
                 c.number_format = num3
 
-            if col == 15 and po_req > 0:
-                c.font = Font(color="C55A11", bold=True)
-            elif col == 16 and po_wt > 0:
-                c.font = Font(color="1A7ABF", bold=True)
-            elif col == 19 and revL_entries != rev1_entries:
-                c.font = Font(bold=True, color="E65C00")
-                c.fill = PatternFill("solid", fgColor="FFF9C4")
-            elif col == 20 and revL_weight != rev1_weight:
-                c.font = Font(bold=True, color="1A7ABF")
-                c.fill = PatternFill("solid", fgColor="FFF9C4")
+        ws2.row_dimensions[s2_row].height = 22
+        s2_row += 1
 
-            # ── "Changed?" column — cell + comment ──
-            elif col == 21 and row_changed:
-                c.font = Font(bold=True, color="C62828", size=11)
-                c.fill = PatternFill("solid", fgColor="FFEBEE")  # light red background
+        # ── Sheet 3 block ─────────────────────────────────────────
+        # Block title row (this is the anchor)
+        block_title = (
+            f"#{idx}   {item_name}   |   "
+            f"Drawing: {curr.get('drawing_number','')}   |   "
+            f"Position: {curr.get('position_no','')}   |   "
+            f"Mark: {curr.get('part_no','')}"
+        )
+        ws3.merge_cells(start_row=s3_row, start_column=1, end_row=s3_row, end_column=6)
+        bh = ws3.cell(row=s3_row, column=1, value=block_title)
+        bh.font = Font(bold=True, size=12, color="FFFFFF")
+        bh.fill = PatternFill("solid", fgColor="263238")
+        bh.alignment = center; bh.border = border
+        ws3.row_dimensions[s3_row].height = 24
+        s3_row += 1
 
-                # ── Comment — previous vs new values ──
-                comment_lines = ["📋 CHANGE DETAILS\n"]
-                comment_lines.append(f"Item: {iname}")
-                comment_lines.append(f"Drawing: {d.get('drawing_number', '')}\n")
+        # Sub-header: Field | Before | After | Change | % Change | Status
+        sub_headers = ["Field", "Before\n(Previous)", "After\n(Current)", "Change", "% Change", "Status"]
+        sub_fills   = [
+            PatternFill("solid", fgColor="455A64"),
+            before_hfill,
+            after_hfill,
+            PatternFill("solid", fgColor="4A148C"),
+            PatternFill("solid", fgColor="0D47A1"),
+            PatternFill("solid", fgColor="212121"),
+        ]
+        for col, (h, fil) in enumerate(zip(sub_headers, sub_fills), 1):
+            c = ws3.cell(row=s3_row, column=col, value=h)
+            c.font = Font(bold=True, size=11, color="FFFFFF")
+            c.fill = fil; c.border = border; c.alignment = center
+        ws3.row_dimensions[s3_row].height = 26
+        s3_row += 1
 
-                for f in fields:
-                    r1_val = float(rev1.get(f, 0) or 0)
-                    rL_val = float(rev_last.get(f, 0) or 0)
-                    if r1_val != rL_val:
-                        diff = rL_val - r1_val
-                        arrow = "▲" if diff > 0 else "▼"
-                        comment_lines.append(
-                            f"{field_labels[f]}:\n"
-                            f"  Previous (Rev 1): {r1_val}\n"
-                            f"  Current  (Last):  {rL_val}\n"
-                            f"  Change: {arrow} {abs(diff):.3f}\n"
-                        )
+        # Field rows
+        for f in row_compare_fields:
+            pv = round(float(prev.get(f) or 0), 3)
+            cv = round(float(curr.get(f) or 0), 3)
+            is_int_field = f in ("quantity", "po_required_qty")
+            pv_disp = int(pv) if is_int_field else pv
+            cv_disp = int(cv) if is_int_field else cv
+            diff    = round(cv - pv, 3)
+            diff_disp = int(diff) if is_int_field else diff
 
-                # Revision history bhi add karo (compact)
-                if len(all_revs) > 1:
-                    comment_lines.append("\n📅 Revision Timeline:")
-                    for ri, rev in enumerate(all_revs):
-                        ts = rev.get("timestamp", "")
-                        tw = float(rev.get("total_weight", 0) or 0)
-                        tq = float(rev.get("total_qty", 0) or 0)
-                        comment_lines.append(
-                            f"  Rev {ri+1} [{ts}]: Weight={tw}, Qty={tq}"
-                        )
+            field_changed = f in chg_fields
 
-                comment_text = "\n".join(comment_lines)
-                comment = Comment(comment_text, "FabTrk")
-                comment.width  = 320
-                comment.height = 200
-                c.comment = comment
+            if field_changed:
+                pct = round((diff / pv * 100), 2) if pv != 0 else 100.0
+                status_txt  = f"{'▲' if diff > 0 else '▼'} {'Increased' if diff > 0 else 'Decreased'}"
+                diff_color  = "1B5E20" if diff > 0 else "B71C1C"
+                b_fill      = before_fill
+                a_fill      = after_fill
+                b_font      = Font(bold=True, size=11, color="BF360C")
+                a_font      = Font(bold=True, size=11, color="1B5E20")
+                d_font      = Font(bold=True, size=11, color=diff_color)
+                p_font      = Font(bold=True, size=10, color=diff_color)
+                s_font      = Font(bold=True, size=11, color=diff_color)
+                s_fill      = PatternFill("solid", fgColor="E8F5E9") if diff > 0 else PatternFill("solid", fgColor="FFEBEE")
+                diff_prefix = "+" if diff > 0 else ""
+            else:
+                pct = 0.0
+                status_txt = "— No Change"
+                b_fill = no_chg_fill; a_fill = no_chg_fill
+                b_font = Font(size=11, color="9E9E9E")
+                a_font = Font(size=11, color="9E9E9E")
+                d_font = Font(size=11, color="BDBDBD")
+                p_font = Font(size=10, color="BDBDBD")
+                s_font = Font(size=11, color="BDBDBD")
+                s_fill = no_chg_fill
+                diff_prefix = ""
 
-            elif col == 21 and not row_changed:
-                c.font = Font(color="DDDDDD")
+            row_data = [
+                (row_field_labels.get(f, f), Font(bold=True, size=11, color="37474F"),
+                    PatternFill("solid", fgColor="ECEFF1")),
+                (pv_disp, b_font, b_fill),
+                (cv_disp, a_font, a_fill),
+                (f"{diff_prefix}{diff_disp}" if field_changed else "—", d_font,
+                    PatternFill("solid", fgColor="F3E5F5") if field_changed else no_chg_fill),
+                (f"{pct:+.1f}%" if field_changed else "—", p_font,
+                    PatternFill("solid", fgColor="E8EAF6") if field_changed else no_chg_fill),
+                (status_txt, s_font, s_fill),
+            ]
 
-        rn2 += 1; sr2 += 1
+            for col, (val, fnt, fil) in enumerate(row_data, 1):
+                c = ws3.cell(row=s3_row, column=col, value=val)
+                c.font = fnt; c.fill = fil; c.border = border; c.alignment = center
+                if col in [2, 3, 4] and not is_int_field and field_changed:
+                    c.number_format = num3
 
-    if not detail_rows:
+            ws3.row_dimensions[s3_row].height = 20
+            s3_row += 1
+
+        # Separator between blocks
+        for col in range(1, 7):
+            c = ws3.cell(row=s3_row, column=col, value="")
+            c.fill = sep_fill
+        ws3.row_dimensions[s3_row].height = 10
+        s3_row += 1
+
+    # ── No changes case ──────────────────────────────────────────
+    if not all_changed_rows:
         ws2.merge_cells(start_row=3, start_column=1, end_row=3, end_column=N2)
-        c = ws2.cell(row=3, column=1, value="No changed items found in this snapshot.")
+        c = ws2.cell(row=3, column=1, value="✅  No row-level changes found between the last two revisions.")
+        c.font = Font(italic=True, size=12, color="2E7D32")
+        c.fill = PatternFill("solid", fgColor="E8F5E9"); c.alignment = center
+
+        ws3.merge_cells(start_row=2, start_column=1, end_row=2, end_column=6)
+        c = ws3.cell(row=2, column=1, value="✅  No changes to display.")
         c.font = Font(italic=True, color="888888"); c.alignment = center
 
-    s2_widths = [7, 42, 18, 28, 12, 14, 18, 14, 14, 10, 18, 16, 18, 18, 18, 18, 18, 18, 18, 18, 14]
+    # ── Column widths Sheet 2 ─────────────────────────────────────
+    s2_widths = [7, 42, 18, 28, 18, 14, 10, 16, 14, 18, 18, 18, 18, 18]
     for i, w in enumerate(s2_widths, 1):
         ws2.column_dimensions[get_column_letter(i)].width = w
 
-    ws2.row_dimensions[1].height = 26
-    ws2.row_dimensions[2].height = 36
+    # ── Column widths Sheet 3 ─────────────────────────────────────
+    s3_widths = [22, 18, 18, 16, 14, 18]
+    for i, w in enumerate(s3_widths, 1):
+        ws3.column_dimensions[get_column_letter(i)].width = w
 
+    ws3.freeze_panes = "A2"
+
+    # ── Save & return ─────────────────────────────────────────────
     stream = BytesIO()
     wb.save(stream); stream.seek(0)
-    file_doc = save_file("Compare_Snapshot.xlsx", stream.getvalue(), None, None, is_private=0)
+    file_doc = save_file(
+        "Compare_Snapshot.xlsx",
+        stream.getvalue(),
+        None, None,
+        is_private=0
+    )
     return file_doc.file_url
+
+
+
+    
 

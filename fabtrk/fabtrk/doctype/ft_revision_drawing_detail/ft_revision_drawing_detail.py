@@ -5,5 +5,5 @@
 from frappe.model.document import Document
 
 
-class FTProject(Document):
+class FTRevisionDrawingDetail(Document):
 	pass

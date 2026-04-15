@@ -167,7 +167,7 @@ function calculate_total_surface_area(frm) {
 // ---  Plate  → lenght × width × kg__sqm × painted_surface_percentage / 100
 // ---  Section→ lenght × surface_area_sqm__mtr × painted_surface_percentage / 100
 function calculate_painted_area(frm) {
-    //-- if item is not selected then skip 
+
     if (!frm.doc.item) {
         frm.set_value("single_unit_surface_area", "");
         frm.set_value("total_surface_area", "");
@@ -178,106 +178,54 @@ function calculate_painted_area(frm) {
     let width = flt(frm.doc.width);
     let pct = flt(frm.doc.painted_surface_percentage);
 
-    //------- Agar percentage 0 ya blank hai to result 0 karo
     if (!pct) {
         frm.set_value("single_unit_surface_area", "0");
+        frm.set_value("total_surface_area", "0");
+        frm.refresh_field("total_surface_area");
         return;
     }
 
-    // ✅ FT Stock RM List se kg__sqm, surface_area_sqm__mtr, section_type fetch karo
     frappe.db.get_value(
         "FT Stock RM List",
         frm.doc.item,
-        ["section_type", "kg__sqm", "surface_area_sqm__mtr"]
+        ["section_type", "surface_area_sqm__mtr"]
     ).then(r => {
         if (!r.message) {
             frm.set_value("single_unit_surface_area", "");
+            frm.set_value("total_surface_area", "");
             return;
         }
 
         let section_type = r.message.section_type || "";
-        let kg_sqm = flt(r.message.kg__sqm);
         let surface_area_sqm_mtr = flt(r.message.surface_area_sqm__mtr);
-        let result = 0;
+
+        let length_m = lenght / 1000;   // mm → meters
+        let area_sqm = 0;
 
         if (section_type === "Plate") {
-            //-------- Plate: length × width × kg__sqm × pct%
-            let length_m = lenght / 1000;
+            // Both sides (× 2)
             let width_m = width / 1000;
-            result = length_m * width_m * (pct / 100) * 2;
-
+            area_sqm = length_m * width_m * 2;
         } else {
-            //-------- Section: length × surface_area_sqm_mtr × pct%
-            let length_m = lenght / 1000;
-            result = length_m * surface_area_sqm_mtr * (pct / 100);
+            // Section: length × surface area per meter
+            area_sqm = length_m * surface_area_sqm_mtr;
         }
-        // Round to 4 decimal places aur string mein store karo (Data field hai)
-        let formatted = result.toFixed(4);
-        frm.set_value("single_unit_surface_area", formatted);
+
+        // single unit painted surface area
+        let single_result = area_sqm * (pct / 100);
+        let single_fmt = single_result.toFixed(4);
+
+        frm.set_value("single_unit_surface_area", single_fmt);
         frm.refresh_field("single_unit_surface_area");
+
+        // ✅ single_unit_surface_area set hone ke BAAD total_surface_area calculate karo
+        // (async set_value ke baad directly calculate karo — frm.doc se value lo)
+        let quantity = flt(frm.doc.quantity);
+        let total_area = single_result * quantity;
+        frm.set_value("total_surface_area", total_area.toFixed(4));
+        frm.refresh_field("total_surface_area");
     });
 }
-
-// function calculate_painted_area(frm) {
-
-//     if (!frm.doc.item) {
-//         frm.set_value("single_unit_surface_area", "");
-//         frm.set_value("total_surface_area", "");
-//         return;
-//     }
-
-//     let lenght = flt(frm.doc.lenght);
-//     let width = flt(frm.doc.width);
-//     let pct = flt(frm.doc.painted_surface_percentage);
-
-//     if (!pct) {
-//         frm.set_value("single_unit_surface_area", "0");
-//         frm.set_value("total_surface_area", "0");
-//         frm.refresh_field("total_surface_area");
-//         return;
-//     }
-
-//     frappe.db.get_value(
-//         "FT Stock RM List",
-//         frm.doc.item,
-//         ["section_type", "surface_area_sqm__mtr"]
-//     ).then(r => {
-//         if (!r.message) {
-//             frm.set_value("single_unit_surface_area", "");
-//             frm.set_value("total_surface_area", "");
-//             return;
-//         }
-
-//         let section_type = r.message.section_type || "";
-//         let surface_area_sqm_mtr = flt(r.message.surface_area_sqm__mtr);
-
-//         let length_m = lenght / 1000;   // mm → meters
-//         let area_sqm = 0;
-
-//         if (section_type === "Plate") {
-//             // Both sides (× 2)
-//             let width_m = width / 1000;
-//             area_sqm = length_m * width_m * 2;
-//         } else {
-//             // Section: length × surface area per meter
-//             area_sqm = length_m * surface_area_sqm_mtr;
-//         }
-
-//         // single unit painted surface area
-//         let single_result = area_sqm * (pct / 100);
-//         let single_fmt = single_result.toFixed(4);
-
-//         frm.set_value("single_unit_surface_area", single_fmt);
-//         frm.refresh_field("single_unit_surface_area");
-
-//         // ✅ single_unit_surface_area set hone ke BAAD total_surface_area calculate karo
-//         // (async set_value ke baad directly calculate karo — frm.doc se value lo)
-//         let quantity = flt(frm.doc.quantity);
-//         let total_area = single_result * quantity;
-//         frm.set_value("total_surface_area", total_area.toFixed(4));
-//         frm.refresh_field("total_surface_area");
-//     });
-// }
 
 
 

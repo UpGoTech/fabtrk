@@ -601,6 +601,7 @@ frappe.query_reports["FT Drawing Part"] = {
 							let width = (d.width !== undefined && d.width !== "") ? String(d.width).padStart(2, "0") : "";
 							let single_weight = (d.single_weight !== undefined && d.single_weight !== "") ? parseFloat(d.single_weight).toFixed(3) : "";
 							let total_weight = (d.total_weight !== undefined && d.total_weight !== "") ? parseFloat(String(d.total_weight).replace(/<[^>]+>/g, "")).toFixed(3) : "";
+							let po_existing_qty = (d.po_existing_qty !== undefined && d.po_existing_qty !== "") ? d.po_existing_qty : "";
 							let po_req_qty = (d.po_required_qty !== undefined && d.po_required_qty !== "") ? d.po_required_qty : "";
 							let po_wt = (d.po_item_total_weight !== undefined && d.po_item_total_weight !== "") ? parseFloat(d.po_item_total_weight).toFixed(3) : "";
 							let po_no = d.po_no || "";
@@ -625,6 +626,7 @@ frappe.query_reports["FT Drawing Part"] = {
 									<td style="text-align:center;">${width}</td>
 									<td style="text-align:center;">${single_weight}</td>
 									<td style="text-align:center;">${total_weight}</td>
+									<td style="text-align:center;">${po_existing_qty}</td>
 									<td style="${po_qty_style}">${po_req_qty}</td>
 									<td style="${po_wt_style}">${po_wt}</td>
 									<td style="text-align:center;">${d.single_unit_surface_area !== undefined && d.single_unit_surface_area !== "" ? parseFloat(d.single_unit_surface_area).toFixed(3) : ""}</td>
@@ -640,6 +642,7 @@ frappe.query_reports["FT Drawing Part"] = {
 							let len = (t.lenght !== undefined && t.lenght !== "") ? String(t.lenght).padStart(2, "0") : "";
 							let wid = (t.width !== undefined && t.width !== "") ? String(t.width).padStart(2, "0") : "";
 							let tw = (t.total_weight !== undefined && t.total_weight !== "") ? parseFloat(String(t.total_weight).replace(/<[^>]+>/g, "")).toFixed(3) : "";
+							let peq = (t.po_existing_qty !== undefined && t.po_existing_qty !== "") ? t.po_existing_qty : "";
 							let prq = (t.po_required_qty !== undefined && t.po_required_qty !== "") ? t.po_required_qty : "";
 							let ptw = (t.po_item_total_weight !== undefined && t.po_item_total_weight !== "") ? parseFloat(t.po_item_total_weight).toFixed(3) : "";
 
@@ -677,6 +680,7 @@ frappe.query_reports["FT Drawing Part"] = {
 								<col style="width:95px;">
 								<col style="width:95px;">
 								<col style="width:115px;">
+								<col style="width:115px;">
 								<col style="width:105px;">
 								<col style="width:100px;">
 								<col style="width:100px;">
@@ -697,6 +701,7 @@ frappe.query_reports["FT Drawing Part"] = {
 								<th style="text-align:center;">Width</th>
 								<th style="text-align:center;">Single Weight</th>
 								<th style="text-align:center;">Total Weight</th>
+								<th style="text-align:center; color:#ffd700;">Requried Qty</th>
 								<th style="text-align:center; color:#ffd700;">PO Required Qty</th>
 								<th style="text-align:center; color:#7ec8e3;">PO Total Weight</th>
 								<th style="text-align:center; color:#98fb98;">Single unit Surface Area</th>
