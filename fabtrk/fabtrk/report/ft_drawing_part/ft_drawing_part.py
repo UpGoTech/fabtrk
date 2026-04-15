@@ -5,13 +5,12 @@ def execute(filters=None):
     filters = filters or {}
  
     columns = [
-        {"label": "Item",            "fieldname": "item_name",       "width": 330},
+        {"label": "Item",            "fieldname": "item_name",       "width": 400},
         {"label": "Total Entries",   "fieldname": "item_count",      "fieldtype": "Int",   "width": 110, "align": "center"},
-        {"label": "Total Projects",  "fieldname": "project_count",   "fieldtype": "Int",   "width": 110, "align": "center"},
-        {"label": "PO Required Qty", "fieldname": "po_required_qty", "fieldtype": "Int",   "width": 130, "align": "center"},
-        {"label": "PO Total Weight", "fieldname": "po_total_weight", "fieldtype": "Float", "width": 130, "align": "center"},
-        {"label": "Single Unit Surface A","fieldname": "single_unit_surface_area","fieldtype": "Data", "width": 160, },
-        {"label": "Total Surface A","fieldname": "total_surface_area","fieldtype": "Data", "width": 120, },
+        {"label": "Total Projects",  "fieldname": "project_count",   "fieldtype": "Int",   "width": 130, "align": "center"},
+        {"label": "PO Required Qty", "fieldname": "po_required_qty", "fieldtype": "Int",   "width": 150, "align": "center"},
+        {"label": "PO Total Weight", "fieldname": "po_total_weight", "fieldtype": "Float", "width": 150, "align": "center"},
+        {"label": "Total Surface A","fieldname": "total_surface_area","fieldtype": "Data", "width": 150, },
         {"label": "Details",         "fieldname": "view",            "fieldtype": "HTML",  "width": 100, "align": "center"},
     ]
  
