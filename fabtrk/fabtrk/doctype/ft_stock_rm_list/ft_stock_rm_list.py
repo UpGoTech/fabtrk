@@ -286,8 +286,12 @@ def import_with_value(file_url, custom_mapping=None):
                         val = float(val) if val not in [None, ""] else None
                     except:
                         val = None
+
                 elif fieldname in check_fields:
-                    val = 1 if val in [True, 1, "1", "True", "true"] else 0
+                    # ✅ FIX: THK / Thk / thk — teeno accept karo (case-insensitive)
+                    val_str = str(val).strip().lower() if val not in [None, ""] else ""
+                    val = 1 if val_str in ["1", "true", "thk"] else 0
+
                 elif fieldname in string_fields:
                     val = str(val).strip() if val not in [None, ""] else None
 
