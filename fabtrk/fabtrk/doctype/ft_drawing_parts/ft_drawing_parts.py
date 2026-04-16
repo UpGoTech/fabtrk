@@ -74,10 +74,6 @@ class FTDrawingParts(Document):
         self.total_surface_area = "{:.4f}".format(single_result * quantity)
         
         
-        
-        
-        
-        
 
 
 # ------------- EXPORT -----------------
