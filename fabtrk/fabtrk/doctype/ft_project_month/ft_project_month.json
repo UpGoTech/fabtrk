@@ -7,7 +7,8 @@
  "field_order": [
   "month",
   "months",
-  "year"
+  "year",
+  "dummy"
  ],
  "fields": [
   {
@@ -28,11 +29,16 @@
    "fieldtype": "Link",
    "label": "months",
    "options": "FT Month"
+  },
+  {
+   "fieldname": "dummy",
+   "fieldtype": "Data",
+   "label": "dummy"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-01-14 14:21:33.449909",
+ "modified": "2026-04-16 12:09:46.296408",
  "modified_by": "Administrator",
  "module": "Fabtrk",
  "name": "FT Project Month",

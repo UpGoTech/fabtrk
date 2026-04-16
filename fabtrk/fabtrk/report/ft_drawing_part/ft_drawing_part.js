@@ -9,7 +9,7 @@ frappe.query_reports["FT Drawing Part"] = {
 		frappe.query_report.set_filter_value("stock_rm_type", []);
 		frappe.query_report.set_filter_value("is_active", 1);
 
-		// ---------- Header Excel Button -----------		
+		// -------------- Header Excel Button -----------		
 		report.page.add_inner_button("Download Summary", function () {
 			let filters = report.get_values();
 
@@ -61,7 +61,7 @@ frappe.query_reports["FT Drawing Part"] = {
 		});
 
 
-		//---------- Save Snapshot button 
+		//--------------- Save Snapshot button  -------------------------
 		// ✅ Save Snapshot Button — FIXED filter
 		report.page.add_inner_button("💾 Save Snapshot", function () {
 			let report_data = frappe.query_report.data || [];
@@ -233,7 +233,6 @@ frappe.query_reports["FT Drawing Part"] = {
 				});
 			});
 		});
-
 
 		setTimeout(() => { frappe.query_report.refresh(); }, 100);
 	},
@@ -527,7 +526,6 @@ frappe.query_reports["FT Drawing Part"] = {
 			},
 			on_change() { clear_item_details(); frappe.query_report.refresh(); }
 		},
-
 
 		// ---------------- SECTION TYPE ----------------
 		{
@@ -1035,7 +1033,7 @@ function clear_item_details() {
 	$(".view-btn").removeClass("active-detail");
 }
 
-//------------------ Footer sticky karne ke liye function
+//------------------ Footer sticky karne ke liye function ----------------
 function attach_sticky_total_footer(report) {
 	$(report.wrapper).find("#ft-sticky-total-footer").remove();
 
@@ -1128,6 +1126,8 @@ function attach_sticky_total_footer(report) {
 		$("#ft-footer-inner").css("transform", `translateX(-${this.scrollLeft}px)`);
 	});
 }
+
+
 // -------------- Excel -------------
 function download_item_details(item_name, project_name) {
 	let url = "/api/method/fabtrk.fabtrk.report.ft_drawing_part.ft_drawing_part.download_item_details_excel"
@@ -1174,7 +1174,6 @@ if (!window.XLSX) {
 }
 
 /*******************  Nesting  ********************************** */
-
 // NEW FUNCTION: Nesting Report Modal for nesting button in item details view
 function show_nesting_report_modal(item, project, item_display_name) {
 
@@ -1514,6 +1513,7 @@ function show_nesting_report_modal(item, project, item_display_name) {
 		}
 	});
 }
+
 // HELPER: Stats ko Frappe backend mein save karo
 function save_nesting_stats_to_backend(item, project, sheets, nested_parts, scrap, pdf_url, save_btn) {
 	frappe.call({
@@ -1555,6 +1555,7 @@ function save_nesting_stats_to_backend(item, project, sheets, nested_parts, scra
 		}
 	});
 }
+
 // NEW FUNCTION: Nesting Center result JSON parser multiple output formats handle karta hai
 function parse_nesting_result_json(json) {
 
@@ -1624,8 +1625,6 @@ function parse_nesting_result_json(json) {
 
 	frappe.show_alert({ message: "Nesting results parse ho gaye!", indicator: "green" });
 }
-
-/**************************************************************** */
 
 $(`<style>
 .datatable .dt-scrollable{ 
@@ -1764,9 +1763,4 @@ $(`<style>
 max-width:100% !important
 }
 </style>`).appendTo("head");
-
-
-
-
-
 

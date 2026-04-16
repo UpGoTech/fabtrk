@@ -6,30 +6,36 @@ frappe.ui.form.on("FT Drawing Parts", {
         calculate_painted_area(frm);
         refresh_calculation_fields(frm);
     },
+
     lenght(frm) {
         calculate_total(frm);
         calculate_painted_area(frm);
         refresh_calculation_fields(frm);
     },
+
     width(frm) {
         calculate_total(frm);
         calculate_painted_area(frm);
         refresh_calculation_fields(frm);
     },
+
     single_weight(frm) {
         calculate_total(frm);
         refresh_calculation_fields(frm);
     },
+
     // Sirf painted area recalculate karo
     painted_surface_percentage(frm) {
         calculate_painted_area(frm);
         refresh_calculation_fields(frm);
     },
+
     refresh(frm) {
         toggle_dimension_fields(frm);
         calculate_total(frm);
         calculate_painted_area(frm);
     },
+
     project_number(frm) {
         // Project change hote hi Drawing clear karo
         frm.set_value("drawing_number", "");
@@ -55,6 +61,7 @@ frappe.ui.form.on("FT Drawing Parts", {
         toggle_dimension_fields(frm);
         calculate_total(frm);
     },
+
     drawing_number(frm) {
         frm.set_value("item", "");
         frm.set_value("lenght", 0);
@@ -69,6 +76,7 @@ frappe.ui.form.on("FT Drawing Parts", {
         toggle_dimension_fields(frm);
         calculate_total(frm);
     },
+    
     item(frm) {
         if (!frm.doc.item) return;
 
@@ -130,7 +138,7 @@ function refresh_calculation_fields(frm) {
     frm.refresh_fields(fields);
 }
 
-// ---Total
+// -------- Total Weight ---------------
 function calculate_total(frm) {
     let quantity = flt(frm.doc.quantity);
     let width = flt(frm.doc.width || 1);
@@ -165,7 +173,7 @@ function calculate_total_surface_area(frm) {
 
 // ---------- Painted Surface Area ------------------------------------
 // ---  Plate  → lenght × width × kg__sqm × painted_surface_percentage / 100
-// ---  Section→ lenght × surface_area_sqm__mtr × painted_surface_percentage / 100
+// ---  Section → lenght × surface_area_sqm__mtr × painted_surface_percentage / 100
 function calculate_painted_area(frm) {
 
     if (!frm.doc.item) {
@@ -227,11 +235,8 @@ function calculate_painted_area(frm) {
     });
 }
 
-
-
+//-------- length/width hide if Item select then this filed show  ----------
 function toggle_dimension_fields(frm) {
-
-    // Item select hone tak dono hide
     frm.toggle_display("lenght", false);
     frm.toggle_display("width", false);
 
@@ -282,6 +287,9 @@ function get_existing_items(frm) {
 
     return items;
 }
+
+
+
 
 
 

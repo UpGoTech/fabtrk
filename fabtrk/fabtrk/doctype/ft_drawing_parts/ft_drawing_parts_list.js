@@ -540,7 +540,6 @@ frappe.listview_settings["FT Drawing Parts"] = {
 
 
 // PORTAL-BASED DROPDOWN — Opens in <body>, never clipped by dialog overflow
-
 // Global portal element — ek hi baar banao
 let $dp_portal = null;
 let dp_active_dd = null;   // currently open .dp-custom-dd element
@@ -703,7 +702,6 @@ function open_portal($dd, all_fields) {
 
     dp_active_dd = $dd[0];
 }
-
 
 // BUILD MAPPING DROPDOWN TRIGGER — only trigger HTML, list is in portal
 function build_mapping_dropdown(all_fields, excel_col) {
@@ -904,15 +902,5 @@ function run_import(file_url, custom_mapping, btn, listview, dialog) {
         }
     });
 }
-
-
-
-
-
-
-
-
-
-
 
 
