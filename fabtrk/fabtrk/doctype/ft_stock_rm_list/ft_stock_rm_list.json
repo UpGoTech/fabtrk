@@ -90,6 +90,7 @@
   {
    "fieldname": "naming_series",
    "fieldtype": "Select",
+   "hidden": 1,
    "label": "Series ",
    "options": "FT-S-"
   },
@@ -102,7 +103,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-04-11 18:55:23.323754",
+ "modified": "2026-04-15 15:57:15.742869",
  "modified_by": "Administrator",
  "module": "Fabtrk",
  "name": "FT Stock RM List",
