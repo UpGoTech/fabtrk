@@ -558,14 +558,15 @@ def download_item_excel(filters, columns=None):
     filters = frappe.parse_json(filters)
     columns = frappe.parse_json(columns) if columns else []
 
-    # ── Agar columns empty hain to default use karo ──
+    # ── Default columns ──
     if not columns:
         columns = [
-            {"fieldname": "item_name",       "label": "Item",            "fieldtype": "Data"},
-            {"fieldname": "item_count",       "label": "Total Entries",   "fieldtype": "Int"},
-            {"fieldname": "project_count",    "label": "Total Projects",  "fieldtype": "Int"},
-            {"fieldname": "po_required_qty",  "label": "PO Required Qty", "fieldtype": "Int"},
-            {"fieldname": "po_total_weight",  "label": "PO Total Weight", "fieldtype": "Float"},
+            {"fieldname": "item_name",        "label": "Item",               "fieldtype": "Data"},
+            {"fieldname": "item_count",        "label": "Total Entries",      "fieldtype": "Int"},
+            {"fieldname": "project_count",     "label": "Total Projects",     "fieldtype": "Int"},
+            {"fieldname": "po_required_qty",   "label": "PO Required Qty",    "fieldtype": "Int"},
+            {"fieldname": "po_total_weight",   "label": "PO Total Weight",    "fieldtype": "Float"},
+            {"fieldname": "total_surface_area","label": "Total Surface Area", "fieldtype": "Float"},
         ]
 
     conditions = ""
@@ -595,7 +596,7 @@ def download_item_excel(filters, columns=None):
     if filters.get("is_active"):
         conditions += " AND p.is_active = 1"
 
-    # ── Main data query ──
+    # ── Main data query — FIX: total_surface_area_raw added ──
     data = frappe.db.sql(f"""
         SELECT
             dp.item AS item,
@@ -606,8 +607,9 @@ def download_item_excel(filters, columns=None):
             SUM(COALESCE(dp.lenght, 0)) AS lenght,
             SUM(COALESCE(dp.width, 0)) AS width,
             SUM(COALESCE(dp.total_weight, 0)) AS total_weight,
-            SUM(COALESCE(dp.quantity, 0) * COALESCE(pod.required_qty, 0)) AS po_required_qty_raw,
-            SUM(COALESCE(dp.total_weight, 0) * COALESCE(pod.required_qty, 0)) AS po_total_weight_raw
+            SUM(COALESCE(dp.quantity, 0) * COALESCE(pod.required_qty, 0))     AS po_required_qty_raw,
+            SUM(COALESCE(dp.total_weight, 0) * COALESCE(pod.required_qty, 0)) AS po_total_weight_raw,
+            SUM(COALESCE(dp.total_surface_area, 0))                            AS total_surface_area_raw
         FROM `tabFT Project` p
         LEFT JOIN `tabFT Add Drawing` ad ON ad.project_number = p.name
         LEFT JOIN `tabFT Drawing Parts` dp ON dp.drawing_number = ad.name
@@ -622,17 +624,18 @@ def download_item_excel(filters, columns=None):
         ORDER BY rm.computed_name ASC
     """, values, as_dict=True) or []
 
-    # ── Field value normalize karo ──
+    # ── Field value normalize — FIX: total_surface_area row set added ──
     for row in data:
-        row["item_count"]      = int(row.get("item_count") or 0)
-        row["project_count"]   = int(row.get("project_count") or 0)
-        row["quantity"]        = int(row.get("quantity") or 0)
-        row["lenght"]          = round(float(row.get("lenght") or 0), 3)
-        row["width"]           = round(float(row.get("width") or 0), 3)
-        row["total_weight"]    = round(float(row.get("total_weight") or 0), 3)
-        row["item_name"]       = row.get("item_name") or "-"
-        row["po_required_qty"] = int(float(row.get("po_required_qty_raw") or 0))
-        row["po_total_weight"] = round(float(row.get("po_total_weight_raw") or 0), 3)
+        row["item_count"]         = int(row.get("item_count") or 0)
+        row["project_count"]      = int(row.get("project_count") or 0)
+        row["quantity"]           = int(row.get("quantity") or 0)
+        row["lenght"]             = round(float(row.get("lenght") or 0), 3)
+        row["width"]              = round(float(row.get("width") or 0), 3)
+        row["total_weight"]       = round(float(row.get("total_weight") or 0), 3)
+        row["item_name"]          = row.get("item_name") or "-"
+        row["po_required_qty"]    = int(float(row.get("po_required_qty_raw") or 0))
+        row["po_total_weight"]    = round(float(row.get("po_total_weight_raw") or 0), 3)
+        row["total_surface_area"] = round(float(row.get("total_surface_area_raw") or 0), 3)  # ← FIX
 
     # ── Excel banana ──
     wb = openpyxl.Workbook()
@@ -702,7 +705,6 @@ def download_item_excel(filters, columns=None):
             if fn in float_fieldnames:
                 cell.number_format = '#,##0.000'
 
-            # Grand total accumulate karo (numeric fields ke liye)
             if isinstance(val, (int, float)):
                 grand_totals[fn] = grand_totals.get(fn, 0) + val
 
@@ -734,8 +736,8 @@ def download_item_excel(filters, columns=None):
         fn = col.get("fieldname", "")
         if fn == "item_name":
             w = 50
-        elif fn in ["po_total_weight", "total_weight"]:
-            w = 18
+        elif fn in ["po_total_weight", "total_weight", "total_surface_area"]:
+            w = 20
         else:
             w = 16
         from openpyxl.utils import get_column_letter
@@ -770,11 +772,12 @@ def get_all_details_for_export(filters, columns=None):
         summary_columns = frappe.parse_json(columns) if isinstance(columns, str) else columns
     else:
         summary_columns = [
-            {"fieldname": "item_name",       "label": "Item",            "fieldtype": "Data"},
-            {"fieldname": "item_count",      "label": "Total Entries",   "fieldtype": "Int"},
-            {"fieldname": "project_count",   "label": "Total Projects",  "fieldtype": "Int"},
-            {"fieldname": "po_required_qty", "label": "PO Required Qty", "fieldtype": "Int"},
-            {"fieldname": "po_total_weight", "label": "PO Total Weight", "fieldtype": "Float"},
+            {"fieldname": "item_name",        "label": "Item",               "fieldtype": "Data"},
+            {"fieldname": "item_count",        "label": "Total Entries",      "fieldtype": "Int"},
+            {"fieldname": "project_count",     "label": "Total Projects",     "fieldtype": "Int"},
+            {"fieldname": "po_required_qty",   "label": "PO Required Qty",    "fieldtype": "Int"},
+            {"fieldname": "po_total_weight",   "label": "PO Total Weight",    "fieldtype": "Float"},
+            {"fieldname": "total_surface_area","label": "Total Surface Area", "fieldtype": "Float"},
         ]
 
     SKIP_TOTAL_FIELDNAMES = {"project_count", "item_name", "view"}
@@ -806,7 +809,7 @@ def get_all_details_for_export(filters, columns=None):
     if filters.get("is_active"):
         conditions += " AND p.is_active = 1"
 
-    # ── Sheet 2: Summary data ──────────────────────────────────────
+    # ── Sheet 2: Summary data — FIX: total_surface_area_raw added ──
     summary_data = frappe.db.sql(f"""
         SELECT
             dp.item AS item,
@@ -820,7 +823,8 @@ def get_all_details_for_export(filters, columns=None):
             SUM(COALESCE(dp.width, 0))                             AS width,
             SUM(COALESCE(dp.total_weight, 0))                      AS total_weight,
             SUM(COALESCE(dp.quantity, 0) * COALESCE(pod.required_qty, 0))     AS po_required_qty_raw,
-            SUM(COALESCE(dp.total_weight, 0) * COALESCE(pod.required_qty, 0)) AS po_total_weight_raw
+            SUM(COALESCE(dp.total_weight, 0) * COALESCE(pod.required_qty, 0)) AS po_total_weight_raw,
+            SUM(COALESCE(dp.total_surface_area, 0))                            AS total_surface_area_raw
         FROM `tabFT Project` p
         LEFT JOIN `tabFT Add Drawing` ad ON ad.project_number = p.name
         LEFT JOIN `tabFT Drawing Parts` dp ON dp.drawing_number = ad.name
@@ -836,36 +840,36 @@ def get_all_details_for_export(filters, columns=None):
     """, values, as_dict=True) or []
 
     for row in summary_data:
-        row["item_count"]      = int(row.get("item_count") or 0)
-        row["project_count"]   = int(row.get("project_count") or 0)
-        row["quantity"]        = int(row.get("quantity") or 0)
-        row["lenght"]          = round(float(row.get("lenght") or 0), 3)
-        row["width"]           = round(float(row.get("width") or 0), 3)
-        row["total_weight"]    = round(float(row.get("total_weight") or 0), 3)
-        row["item_name"]       = row.get("item_name") or "-"
-        row["po_required_qty"] = int(float(row.get("po_required_qty_raw") or 0))
-        row["po_total_weight"] = round(float(row.get("po_total_weight_raw") or 0), 3)
+        row["item_count"]         = int(row.get("item_count") or 0)
+        row["project_count"]      = int(row.get("project_count") or 0)
+        row["quantity"]           = int(row.get("quantity") or 0)
+        row["lenght"]             = round(float(row.get("lenght") or 0), 3)
+        row["width"]              = round(float(row.get("width") or 0), 3)
+        row["total_weight"]       = round(float(row.get("total_weight") or 0), 3)
+        row["item_name"]          = row.get("item_name") or "-"
+        row["po_required_qty"]    = int(float(row.get("po_required_qty_raw") or 0))
+        row["po_total_weight"]    = round(float(row.get("po_total_weight_raw") or 0), 3)
+        row["total_surface_area"] = round(float(row.get("total_surface_area_raw") or 0), 3)  # ← FIX
 
-    # ── Sheet 3: Detail data ───────────────────────────────────────
-    # ✅ FIX: po_item_total_weight = SUM(total_weight) × required_qty
-    #         (UI ke get_item_details se match — total_weight × req_qty)
+    # ── Sheet 3: Detail data — FIX: total_surface_area added ──────
     detail_data = frappe.db.sql(f"""
         SELECT
-            COALESCE(p.name, 'No Project')     AS project,
-            rm.computed_name                    AS item_name,
-            dp.po_no                            AS po_no,
-            pod.po_serial_no                    AS po_serial_no,
-            ad.drawing_number                   AS drawing_number,
-            dp.position_no                      AS position_no,
-            dp.part_no                          AS part_no,
-            COUNT(dp.name)                      AS entry_count,
-            IFNULL(SUM(dp.quantity),  0)        AS quantity,
-            IFNULL(SUM(dp.lenght),    0)        AS lenght,
-            IFNULL(SUM(dp.width),     0)        AS width,
-            IFNULL(AVG(dp.single_weight), 0)    AS single_weight,
-            IFNULL(SUM(dp.total_weight),  0)    AS total_weight,
-            COALESCE(pod.required_qty, 0)       AS required_qty,
-            COALESCE(pod.required_qty, 0) * IFNULL(SUM(dp.total_weight), 0)  AS po_item_total_weight
+            COALESCE(p.name, 'No Project')                                    AS project,
+            rm.computed_name                                                   AS item_name,
+            dp.po_no                                                           AS po_no,
+            pod.po_serial_no                                                   AS po_serial_no,
+            ad.drawing_number                                                  AS drawing_number,
+            dp.position_no                                                     AS position_no,
+            dp.part_no                                                         AS part_no,
+            COUNT(dp.name)                                                     AS entry_count,
+            IFNULL(SUM(dp.quantity),  0)                                       AS quantity,
+            IFNULL(SUM(dp.lenght),    0)                                       AS lenght,
+            IFNULL(SUM(dp.width),     0)                                       AS width,
+            IFNULL(AVG(dp.single_weight), 0)                                   AS single_weight,
+            IFNULL(SUM(dp.total_weight),  0)                                   AS total_weight,
+            COALESCE(pod.required_qty, 0)                                      AS required_qty,
+            COALESCE(pod.required_qty, 0) * IFNULL(SUM(dp.total_weight), 0)   AS po_item_total_weight,
+            IFNULL(SUM(dp.total_surface_area), 0)                              AS total_surface_area
         FROM `tabFT Drawing Parts` dp
         LEFT JOIN `tabFT Add Drawing` ad ON ad.name = dp.drawing_number
         LEFT JOIN `tabFT Project` p ON p.name = ad.project_number
@@ -1030,41 +1034,61 @@ def get_all_details_for_export(filters, columns=None):
     ws2.column_dimensions["A"].width = 8
     for col_idx, col in enumerate(summary_columns, 2):
         fn = col.get("fieldname", "")
-        w  = 50 if fn == "item_name" else (20 if "weight" in fn.lower() else 16)
+        if fn == "item_name":
+            w = 50
+        elif "weight" in fn.lower() or "surface" in fn.lower():
+            w = 22
+        else:
+            w = 16
         ws2.column_dimensions[get_column_letter(col_idx)].width = w
 
     # ════════════════════════════════════════════
     # SHEET 3: Details
-    # ✅ FIX: po_item_total_weight = total_weight × required_qty
     # ════════════════════════════════════════════
     ws3 = wb.create_sheet("Details")
 
     detail_headers = [
-        "Sr No", "Project No", "PO No", "Po Serial No", "Drawing",
-        "Item No / Position No", "Mark No", "Entry Count",
-        "Qty", "Length", "Width", "Single Weight", "Total Weight",
-        "PO Required Qty", "PO Total Weight",
+        "Sr No",                  # 1
+        "Project No",             # 2
+        "PO No",                  # 3
+        "Po Serial No",           # 4
+        "Drawing",                # 5
+        "Item No / Position No",  # 6
+        "Mark No",                # 7
+        "Entry Count",            # 8
+        "Qty",                    # 9
+        "Length",                 # 10
+        "Width",                  # 11
+        "Single Weight",          # 12
+        "Total Weight",           # 13
+        "Required Qty",           # 14 ← NEW
+        "PO Required Qty",        # 15
+        "PO Total Weight",        # 16
+        "Total Surface Area",     # 17 ← NEW
     ]
-    N3 = len(detail_headers)
+    N3 = len(detail_headers)  # 17
 
     ws3.merge_cells(start_row=1, start_column=1, end_row=1, end_column=N3)
     t = ws3.cell(row=1, column=1, value="Item Wise Detail Report")
     t.font = title_font; t.fill = title_fill; t.alignment = center
 
-    detail_hfill = PatternFill("solid", fgColor="1F4E79")
-    po_req_hfont = Font(bold=True, color="FFD700")
-    po_wt_hfont  = Font(bold=True, color="7EC8E3")
+    detail_hfill  = PatternFill("solid", fgColor="1F4E79")
+    po_req_hfont  = Font(bold=True, color="FFD700")   # PO Required Qty — gold
+    po_wt_hfont   = Font(bold=True, color="7EC8E3")   # PO Total Weight — light blue
+    sa_hfont      = Font(bold=True, color="90EE90")   # Total Surface Area — light green
 
     for col, h in enumerate(detail_headers, 1):
         c = ws3.cell(row=3, column=col, value=h)
-        if col == 14:   c.font = po_req_hfont
-        elif col == 15: c.font = po_wt_hfont
-        else:           c.font = header_font
+        if col == 15:        c.font = po_req_hfont   # PO Required Qty
+        elif col == 16:      c.font = po_wt_hfont    # PO Total Weight
+        elif col == 17:      c.font = sa_hfont        # Total Surface Area
+        else:                c.font = header_font
         c.fill = detail_hfill; c.border = border; c.alignment = center
 
     ws3.freeze_panes = "A4"
     rn = 4; sr = 1
-    t_qty = t_len = t_wid = t_swt = t_twt = t_po_req = t_po_wt = 0
+    t_qty = t_len = t_wid = t_swt = t_twt = 0
+    t_req_qty = t_po_req = t_po_wt = t_sa = 0.0
 
     for d in detail_data:
         po_no    = d.get("po_no") or ""
@@ -1073,49 +1097,87 @@ def get_all_details_for_export(filters, columns=None):
         width    = round(float(d.get("width") or 0), 3)
         s_wt     = round(float(d.get("single_weight") or 0), 3)
         t_wt_val = round(float(d.get("total_weight") or 0), 3)
-        req_qty  = int(d.get("required_qty") or 0)
-        # ✅ FIX: SQL se aaya po_item_total_weight = total_weight × required_qty
+        req_qty  = int(d.get("required_qty") or 0)               # Required Qty (from pod)
         po_wt    = round(float(d.get("po_item_total_weight") or 0), 3)
-        # ✅ FIX: po_req = qty × required_qty (UI se same)
-        po_req   = qty * req_qty
+        po_req   = qty * req_qty                                   # PO Required Qty
+        sa       = round(float(d.get("total_surface_area") or 0), 3)  # Total Surface Area
 
         vals = [
-            sr, d.get("project"), po_no, d.get("po_serial_no"),
-            d.get("drawing_number"), d.get("position_no"), d.get("part_no"),
-            int(d.get("entry_count") or 0),
-            qty, lenght, width, s_wt, t_wt_val, po_req, po_wt,
+            sr,                          # 1
+            d.get("project"),            # 2
+            po_no,                       # 3
+            d.get("po_serial_no"),       # 4
+            d.get("drawing_number"),     # 5
+            d.get("position_no"),        # 6
+            d.get("part_no"),            # 7
+            int(d.get("entry_count") or 0),  # 8
+            qty,                         # 9
+            lenght,                      # 10
+            width,                       # 11
+            s_wt,                        # 12
+            t_wt_val,                    # 13
+            req_qty,                     # 14 ← Required Qty
+            po_req,                      # 15 ← PO Required Qty
+            po_wt,                       # 16 ← PO Total Weight
+            sa,                          # 17 ← Total Surface Area
         ]
 
         for col, val in enumerate(vals, 1):
             c = ws3.cell(row=rn, column=col, value=val)
             c.border    = border
             c.alignment = left_align if col in [2, 5] else center
-            if col in [10, 11, 12, 13, 15]:
+            # Float format: Length, Width, Single Weight, Total Weight, PO Total Weight, Total Surface Area
+            if col in [10, 11, 12, 13, 16, 17]:
                 c.number_format = num3
-            if col == 14 and val and val > 0:
+            # PO Required Qty — orange bold
+            if col == 15 and val and val > 0:
                 c.font = Font(color="C55A11", bold=True)
-            elif col == 15 and val and val > 0:
+            # PO Total Weight — blue bold
+            elif col == 16 and val and val > 0:
                 c.font = Font(color="1A7ABF", bold=True)
+            # Total Surface Area — green bold
+            elif col == 17 and val and val > 0:
+                c.font = Font(color="2E7D32", bold=True)
 
-        t_qty    += qty;      t_len    += lenght
-        t_wid    += width;    t_swt    += s_wt
-        t_twt    += t_wt_val; t_po_req += po_req
+        t_qty    += qty
+        t_len    += lenght
+        t_wid    += width
+        t_swt    += s_wt
+        t_twt    += t_wt_val
+        t_req_qty += req_qty
+        t_po_req += po_req
         t_po_wt  += po_wt
+        t_sa     += sa
         rn += 1; sr += 1
 
     total_vals = [
-        "Total", "", "", "", "", "", "", "",
-        t_qty, round(t_len,3), round(t_wid,3),
-        round(t_swt,3), round(t_twt,3), t_po_req, round(t_po_wt,3),
+        "Total", "", "", "", "", "", "", "",  # 1–8
+        t_qty,                                # 9
+        round(t_len, 3),                      # 10
+        round(t_wid, 3),                      # 11
+        round(t_swt, 3),                      # 12
+        round(t_twt, 3),                      # 13
+        int(t_req_qty),                       # 14 Required Qty total
+        int(t_po_req),                        # 15 PO Required Qty total
+        round(t_po_wt, 3),                    # 16 PO Total Weight total
+        round(t_sa, 3),                       # 17 Total Surface Area total
     ]
     for col, val in enumerate(total_vals, 1):
         c = ws3.cell(row=rn, column=col, value=val)
         c.font = total_font; c.fill = total_fill
         c.border = border; c.alignment = center
-        if col in [10, 11, 12, 13, 15]:
+        if col in [10, 11, 12, 13, 16, 17]:
             c.number_format = num3
+        # Keep special color on total row headers too
+        if col == 15:        c.font = Font(bold=True, color="FFD700")
+        elif col == 16:      c.font = Font(bold=True, color="7EC8E3")
+        elif col == 17:      c.font = Font(bold=True, color="90EE90")
 
-    detail_widths = [7, 18, 14, 14, 28, 22, 12, 14, 10, 22, 22, 22, 18, 18, 18]
+    # Col widths: 17 columns
+    # 1:Sr 2:Proj 3:PONo 4:PoSerial 5:Drawing 6:PosNo 7:MarkNo
+    # 8:Entry 9:Qty 10:Len 11:Width 12:SWt 13:TWt
+    # 14:ReqQty 15:POReqQty 16:POTotWt 17:TotSA
+    detail_widths = [7, 18, 14, 14, 28, 22, 12, 14, 10, 22, 22, 22, 18, 14, 18, 18, 20]
     for i, w in enumerate(detail_widths, 1):
         ws3.column_dimensions[get_column_letter(i)].width = w
 
@@ -1156,7 +1218,6 @@ def download_item_details_excel(filters):
         sql_values["project"] = project
 
     # ── Data query ────────────────────────────────────────────────
-    # ✅ FIX: po_total_wt_calc = total_weight × required_qty  (UI se same)
     data = frappe.db.sql(f"""
         SELECT
             p.name            AS project_number,
@@ -1170,9 +1231,11 @@ def download_item_details_excel(filters):
             dp.width,
             dp.single_weight,
             dp.total_weight,
-            COALESCE(pod.required_qty, 0)                                              AS po_required_qty,
-            COALESCE(pod.required_qty, 0) * COALESCE(dp.quantity,      0)             AS po_req_qty_calc,
-            COALESCE(pod.required_qty, 0) * COALESCE(dp.total_weight,  0)             AS po_total_wt_calc
+            dp.single_unit_surface_area,
+            dp.total_surface_area,
+            COALESCE(pod.required_qty, 0)                                  AS po_required_qty,
+            COALESCE(pod.required_qty, 0) * COALESCE(dp.quantity,     0)  AS po_req_qty_calc,
+            COALESCE(pod.required_qty, 0) * COALESCE(dp.total_weight, 0)  AS po_total_wt_calc
         FROM `tabFT Drawing Parts` dp
         LEFT JOIN `tabFT Add Drawing` ad  ON ad.name  = dp.drawing_number
         LEFT JOIN `tabFT Project` p       ON p.name   = ad.project_number
@@ -1190,7 +1253,9 @@ def download_item_details_excel(filters):
         "project_number": "", "po_no": "", "po_serial_no": "", "drawing": "",
         "position_no": "", "part_no": "", "quantity": 0,
         "lenght": 0, "width": 0, "single_weight": 0, "total_weight": 0,
-        "po_required_qty": 0, "po_item_total_weight": 0.0, "entry_count": 0
+        "single_unit_surface_area": 0.0, "total_surface_area": 0.0,
+        "po_required_qty": 0, "po_req_qty_calc": 0,
+        "po_item_total_weight": 0.0, "entry_count": 0
     })
 
     for d in data:
@@ -1201,24 +1266,26 @@ def download_item_details_excel(filters):
             d.get("single_weight"), d.get("total_weight"),
         )
         g = grouped[key]
-        g["project_number"]  = d.get("project_number")
-        g["po_no"]           = d.get("po_no") or ""
-        g["po_serial_no"]    = d.get("po_serial_no")
-        g["drawing"]         = d.get("drawing")
-        g["position_no"]     = d.get("position_no")
-        g["part_no"]         = d.get("part_no")
-        g["quantity"]        = d.get("quantity")
-        g["lenght"]          = d.get("lenght")
-        g["width"]           = d.get("width")
-        g["single_weight"]   = d.get("single_weight")
-        g["total_weight"]    = d.get("total_weight")
-
-        # ✅ FIX: po_req_qty_calc aur po_total_wt_calc use karo
-        g["po_required_qty"]      = max(g["po_required_qty"],
-                                        int(d.get("po_req_qty_calc") or 0))
-        g["po_item_total_weight"] = max(g["po_item_total_weight"],
-                                        float(d.get("po_total_wt_calc") or 0))
-        g["entry_count"] += 1
+        g["project_number"]           = d.get("project_number")
+        g["po_no"]                    = d.get("po_no") or ""
+        g["po_serial_no"]             = d.get("po_serial_no")
+        g["drawing"]                  = d.get("drawing")
+        g["position_no"]              = d.get("position_no")
+        g["part_no"]                  = d.get("part_no")
+        g["quantity"]                 = d.get("quantity")
+        g["lenght"]                   = d.get("lenght")
+        g["width"]                    = d.get("width")
+        g["single_weight"]            = d.get("single_weight")
+        g["total_weight"]             = d.get("total_weight")
+        g["single_unit_surface_area"] = round(float(d.get("single_unit_surface_area") or 0), 3)
+        g["total_surface_area"]       = round(float(d.get("total_surface_area") or 0), 3)
+        g["po_required_qty"]          = max(g["po_required_qty"],
+                                            int(d.get("po_required_qty") or 0))
+        g["po_req_qty_calc"]          = max(g["po_req_qty_calc"],
+                                            int(d.get("po_req_qty_calc") or 0))
+        g["po_item_total_weight"]     = max(g["po_item_total_weight"],
+                                            float(d.get("po_total_wt_calc") or 0))
+        g["entry_count"]             += 1
 
     data = list(grouped.values())
 
@@ -1235,14 +1302,21 @@ def download_item_details_excel(filters):
 
     hdr_fill     = PatternFill(start_color="1F4E79", end_color="1F4E79", fill_type="solid")
     hdr_font     = Font(bold=True, size=12, color="FFFFFF")
-    po_req_hfont = Font(bold=True, size=12, color="FFD700")
-    po_wt_hfont  = Font(bold=True, size=12, color="7EC8E3")
+    po_req_hfont = Font(bold=True, size=12, color="FFD700")   # PO Required Qty header
+    po_wt_hfont  = Font(bold=True, size=12, color="7EC8E3")   # PO Total Weight header
+    sa_hfont     = Font(bold=True, size=12, color="90EE90")   # Total Surface Area header (light green)
     data_font    = Font(size=11)
     total_font   = Font(bold=True, size=12, color="FFFFFF")
     total_fill   = PatternFill(start_color="1F4E79", end_color="1F4E79", fill_type="solid")
 
     # ── Title ─────────────────────────────────────────────────────
-    TOTAL_COLS = 15
+    # Columns: Sr No(1), Project No(2), PO No(3), Po Serial No(4),
+    #          Drawing(5), Position No(6), Mark No(7), Entry Count(8),
+    #          Qty(9), Length(10), Width(11), Single Weight(12),
+    #          Total Weight(13), Required Qty(14), PO Required Qty(15),
+    #          PO Total Weight(16), Total Surface Area(17)
+    TOTAL_COLS = 17
+
     ws.merge_cells(start_row=1, start_column=1, end_row=1, end_column=TOTAL_COLS)
     tc           = ws.cell(row=1, column=1, value=f"Item Details - {item_name}")
     tc.font      = Font(bold=True, size=14)
@@ -1250,10 +1324,23 @@ def download_item_details_excel(filters):
 
     # ── Headers ───────────────────────────────────────────────────
     headers = [
-        "Sr No", "Project No", "PO No", "Po Serial No", "Drawing",
-        "Item No / Position No", "Mark No", "Entry Count",
-        "Qty", "Length", "Width", "Single Weight", "Total Weight",
-        "PO Required Qty", "PO Total Weight",
+        "Sr No",                  # 1
+        "Project No",             # 2
+        "PO No",                  # 3
+        "Po Serial No",           # 4
+        "Drawing",                # 5
+        "Item No / Position No",  # 6
+        "Mark No",                # 7
+        "Entry Count",            # 8
+        "Qty",                    # 9
+        "Length",                 # 10
+        "Width",                  # 11
+        "Single Weight",          # 12
+        "Total Weight",           # 13
+        "Required Qty",           # 14  ← NEW
+        "PO Required Qty",        # 15
+        "PO Total Weight",        # 16
+        "Total Surface Area",     # 17  ← NEW
     ]
 
     for col, h in enumerate(headers, 1):
@@ -1261,31 +1348,49 @@ def download_item_details_excel(filters):
         c.fill      = hdr_fill
         c.border    = full_border
         c.alignment = center
-        if col == 14:   c.font = po_req_hfont
-        elif col == 15: c.font = po_wt_hfont
-        else:           c.font = hdr_font
+        if col == 15:        c.font = po_req_hfont   # PO Required Qty — gold
+        elif col == 16:      c.font = po_wt_hfont    # PO Total Weight — light blue
+        elif col == 17:      c.font = sa_hfont        # Total Surface Area — light green
+        else:                c.font = hdr_font
 
     ws.freeze_panes = "A3"
 
     # ── Data rows ─────────────────────────────────────────────────
     row_no    = 3
     serial_no = 1
-    t_qty = t_len = t_wid = t_swt = t_twt = t_po_req = t_po_wt = 0
+    t_qty = t_len = t_wid = t_swt = t_twt = 0
+    t_req_qty = t_po_req = t_po_wt = t_sa = 0.0
 
     for d in data:
-        qty    = int(d.get("quantity")              or 0)
-        lenght = round(float(d.get("lenght")        or 0), 3)
-        width  = round(float(d.get("width")         or 0), 3)
-        s_wt   = round(float(d.get("single_weight") or 0), 3)
-        t_wt   = round(float(d.get("total_weight")  or 0), 3)
-        po_req = int(d.get("po_required_qty")       or 0)
-        po_wt  = round(float(d.get("po_item_total_weight") or 0), 3)
-        ec     = int(d.get("entry_count")           or 0)
+        qty      = int(d.get("quantity")                    or 0)
+        lenght   = round(float(d.get("lenght")              or 0), 3)
+        width    = round(float(d.get("width")               or 0), 3)
+        s_wt     = round(float(d.get("single_weight")       or 0), 3)
+        t_wt     = round(float(d.get("total_weight")        or 0), 3)
+        req_qty  = int(d.get("po_required_qty")             or 0)   # Required Qty (from pod)
+        po_req   = int(d.get("po_req_qty_calc")             or 0)   # PO Required Qty = qty × req_qty
+        po_wt    = round(float(d.get("po_item_total_weight") or 0), 3)
+        sa       = round(float(d.get("total_surface_area")  or 0), 3)
+        ec       = int(d.get("entry_count")                 or 0)
 
         row_vals = [
-            serial_no, d.get("project_number"), d.get("po_no"),
-            d.get("po_serial_no"), d.get("drawing"), d.get("position_no"),
-            d.get("part_no"), ec, qty, lenght, width, s_wt, t_wt, po_req, po_wt,
+            serial_no,                  # 1
+            d.get("project_number"),    # 2
+            d.get("po_no"),             # 3
+            d.get("po_serial_no"),      # 4
+            d.get("drawing"),           # 5
+            d.get("position_no"),       # 6
+            d.get("part_no"),           # 7
+            ec,                         # 8
+            qty,                        # 9
+            lenght,                     # 10
+            width,                      # 11
+            s_wt,                       # 12
+            t_wt,                       # 13
+            req_qty,                    # 14 Required Qty
+            po_req,                     # 15 PO Required Qty
+            po_wt,                      # 16 PO Total Weight
+            sa,                         # 17 Total Surface Area
         ]
 
         for col, val in enumerate(row_vals, 1):
@@ -1293,37 +1398,62 @@ def download_item_details_excel(filters):
             c.font      = data_font
             c.border    = full_border
             c.alignment = left_align if col in [2, 5] else center
-            if col in [10, 11, 12, 13, 15]:
+            # Float format columns
+            if col in [10, 11, 12, 13, 16, 17]:
                 c.number_format = num3
-            if col == 14 and po_req > 0:
+            # PO Required Qty — orange bold
+            if col == 15 and po_req > 0:
                 c.font = Font(size=11, color="C55A11", bold=True)
-            elif col == 15 and po_wt > 0:
+            # PO Total Weight — blue bold
+            elif col == 16 and po_wt > 0:
                 c.font = Font(size=11, color="1A7ABF", bold=True)
+            # Total Surface Area — green bold if > 0
+            elif col == 17 and sa > 0:
+                c.font = Font(size=11, color="2E7D32", bold=True)
 
-        t_qty    += qty;    t_len    += lenght
-        t_wid    += width;  t_swt    += s_wt
-        t_twt    += t_wt;   t_po_req += po_req
-        t_po_wt  += po_wt
-        row_no   += 1;      serial_no += 1
+        t_qty     += qty
+        t_len     += lenght
+        t_wid     += width
+        t_swt     += s_wt
+        t_twt     += t_wt
+        t_req_qty += req_qty
+        t_po_req  += po_req
+        t_po_wt   += po_wt
+        t_sa      += sa
+        row_no    += 1
+        serial_no += 1
 
     # ── Total row ─────────────────────────────────────────────────
     total_vals = [
-        "Total", "", "", "", "", "", "", "",
-        t_qty, round(t_len,3), round(t_wid,3),
-        round(t_swt,3), round(t_twt,3), t_po_req, round(t_po_wt,3),
+        "Total", "", "", "", "", "", "", "",  # 1-8
+        t_qty,                                # 9
+        round(t_len, 3),                      # 10
+        round(t_wid, 3),                      # 11
+        round(t_swt, 3),                      # 12
+        round(t_twt, 3),                      # 13
+        int(t_req_qty),                       # 14 Required Qty total
+        int(t_po_req),                        # 15 PO Required Qty total
+        round(t_po_wt, 3),                    # 16 PO Total Weight total
+        round(t_sa, 3),                       # 17 Total Surface Area total
     ]
+
     for col, val in enumerate(total_vals, 1):
         c           = ws.cell(row=row_no, column=col, value=val)
         c.fill      = total_fill
         c.border    = full_border
         c.alignment = center
-        if col in [10, 11, 12, 13, 15]: c.number_format = num3
-        if col == 14:   c.font = Font(bold=True, size=12, color="FFD700")
-        elif col == 15: c.font = Font(bold=True, size=12, color="7EC8E3")
-        else:           c.font = total_font
+        if col in [10, 11, 12, 13, 16, 17]:
+            c.number_format = num3
+        if col == 15:        c.font = Font(bold=True, size=12, color="FFD700")
+        elif col == 16:      c.font = Font(bold=True, size=12, color="7EC8E3")
+        elif col == 17:      c.font = Font(bold=True, size=12, color="90EE90")
+        else:                c.font = total_font
 
     # ── Column widths ─────────────────────────────────────────────
-    col_widths = [7, 18, 16, 14, 28, 22, 12, 14, 10, 20, 18, 20, 18, 18, 18]
+    # 1:Sr, 2:Proj, 3:PONo, 4:PoSerial, 5:Drawing, 6:PosNo, 7:MarkNo,
+    # 8:EntryCount, 9:Qty, 10:Len, 11:Width, 12:SWt, 13:TWt,
+    # 14:ReqQty, 15:POReqQty, 16:POTotWt, 17:TotalSA
+    col_widths = [7, 18, 16, 14, 28, 22, 12, 14, 10, 20, 18, 20, 18, 14, 18, 18, 20]
     for i, w in enumerate(col_widths, 1):
         ws.column_dimensions[get_column_letter(i)].width = w
 
@@ -1580,7 +1710,7 @@ def get_nesting_report(item, project):
 # --------------------- GENERATE JSON FOR NESTING CENTER ---------------------
 
 
-# ---------------------- Snapshot Save with drawing number -------------
+# # ---------------------- Snapshot Save with drawing number -------------
 @frappe.whitelist()
 def save_row_data(sr_no, project, item_name, item_count, quantity, lenght, width,
                   total_weight, po_required_qty=0, po_total_weight=0, drawing_number=None):
@@ -1957,6 +2087,7 @@ def compare_row_data(sr_no, project, item_name, item_count, quantity, lenght, wi
         "project": ", ".join(all_projects), "project_count": len(all_projects),
         "item_name": item_name, "drawing_numbers": drawing_str,
     }
+ 
 
 @frappe.whitelist()
 def export_compare_snapshot_excel(snapshot_data):
@@ -2488,7 +2619,6 @@ def export_compare_snapshot_excel(snapshot_data):
     wb.save(stream); stream.seek(0)
     file_doc = save_file("Compare_Snapshot.xlsx", stream.getvalue(), None, None, is_private=0)
     return file_doc.file_url
-    
 # ---------------------- Snapshot Save with drawing number -------------
 
 

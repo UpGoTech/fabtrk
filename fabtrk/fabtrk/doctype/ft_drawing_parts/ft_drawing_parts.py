@@ -1,12 +1,12 @@
-# #### Copyright (c) 2026, UpGo Technologies and contributors
-# #### For license information, please see license.txt
+# Copyright (c) 2026, UpGo Technologies and contributors
+# For license information, please see license.txt
 
-# ## import frappe
-# ## from frappe.model.document import Document
+# import frappe
+# from frappe.model.document import Document
 
 
-# ## class FTDrawingParts(Document):
-# ## 	pass
+# class FTDrawingParts(Document):
+# 	pass
 
 import frappe
 import openpyxl
@@ -17,9 +17,70 @@ from frappe.model.document import Document
 
 
 class FTDrawingParts(Document):
-    pass
+    # pass
+    def before_save(self):
+        self.calculate_total_weight()
+        self.calculate_surface_areas()
 
-#---------- EXPORT --------------
+    def calculate_total_weight(self):
+        quantity = float(self.quantity or 0)
+        single_weight = float(self.single_weight or 0)
+        self.total_weight = quantity * single_weight
+
+    def calculate_surface_areas(self):
+        if not self.item:
+            self.single_unit_surface_area = "0"
+            self.total_surface_area = "0"
+            return
+
+        pct = float(self.painted_surface_percentage or 0)
+        if not pct:
+            self.single_unit_surface_area = "0"
+            self.total_surface_area = "0"
+            return
+
+        # FT Stock RM List se section_type aur surface_area fetch karo
+        item_data = frappe.db.get_value(
+            "FT Stock RM List",
+            self.item,
+            ["section_type", "surface_area_sqm__mtr"],
+            as_dict=True
+        )
+
+        if not item_data:
+            self.single_unit_surface_area = "0"
+            self.total_surface_area = "0"
+            return
+
+        section_type = item_data.get("section_type") or ""
+        surface_area_sqm_mtr = float(item_data.get("surface_area_sqm__mtr") or 0)
+
+        lenght = float(self.lenght or 0)
+        width = float(self.width or 0)
+        quantity = float(self.quantity or 0)
+
+        length_m = lenght / 1000  # mm → meters
+        area_sqm = 0.0
+
+        if section_type == "Plate":
+            width_m = width / 1000  # mm → meters
+            area_sqm = length_m * width_m * 2  # both sides
+        else:
+            area_sqm = length_m * surface_area_sqm_mtr
+
+        single_result = area_sqm * (pct / 100)
+
+        self.single_unit_surface_area = "{:.4f}".format(single_result)
+        self.total_surface_area = "{:.4f}".format(single_result * quantity)
+        
+        
+        
+        
+        
+        
+
+
+# ------------- EXPORT -----------------
 @frappe.whitelist()
 def export_with_value():
     import io
@@ -105,7 +166,7 @@ def export_with_value():
     frappe.local.response.type        = "binary"
 
 
-# GET FILE HEADERS
+#------------- GET FILE HEADERS ---------------- 
 @frappe.whitelist()
 def get_file_headers(file_url):
 
@@ -162,7 +223,7 @@ def get_file_headers(file_url):
     }
 
 
-#---------------- IMPORT — 100% DYNAMIC — zero hardcoded lists
+# IMPORT — 100% DYNAMIC — zero hardcoded lists
 @frappe.whitelist()
 def import_with_value(file_url, custom_mapping=None):
 
@@ -325,7 +386,7 @@ def import_with_value(file_url, custom_mapping=None):
 
     frappe.db.commit()
 
-    msg = f"✅ {success} records successfully import ho gaye.\n"
+    msg = f"✅ {success} records successfully import.\n"
     msg += f"\n📋 Matched fields ({len(matched)}): {', '.join(matched)}\n"
     if unmatched:
         msg += f"\n⚠️ Skip hue fields ({len(unmatched)}): {', '.join(unmatched)}\n"
