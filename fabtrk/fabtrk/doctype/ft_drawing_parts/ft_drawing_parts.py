@@ -8,9 +8,6 @@
 # ## class FTDrawingParts(Document):
 # ## 	pass
 
-
-
-
 import frappe
 import openpyxl
 import csv
@@ -22,8 +19,7 @@ from frappe.model.document import Document
 class FTDrawingParts(Document):
     pass
 
-
-# ------------- EXPORT -----------------
+#---------- EXPORT --------------
 @frappe.whitelist()
 def export_with_value():
     import io
@@ -109,7 +105,7 @@ def export_with_value():
     frappe.local.response.type        = "binary"
 
 
-#------------- GET FILE HEADERS ---------------- 
+# GET FILE HEADERS
 @frappe.whitelist()
 def get_file_headers(file_url):
 
@@ -166,7 +162,7 @@ def get_file_headers(file_url):
     }
 
 
-# ------------- IMPORT --------------------- 
+#---------------- IMPORT — 100% DYNAMIC — zero hardcoded lists
 @frappe.whitelist()
 def import_with_value(file_url, custom_mapping=None):
 
