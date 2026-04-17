@@ -10,7 +10,7 @@ def execute(filters=None):
         {"label": "Total Projects",  "fieldname": "project_count",   "fieldtype": "Int",   "width": 130, "align": "center"},
         {"label": "PO Required Qty", "fieldname": "po_required_qty", "fieldtype": "Int",   "width": 150, "align": "center"},
         {"label": "PO Total Weight", "fieldname": "po_total_weight", "fieldtype": "Float", "width": 150, "align": "center"},
-        {"label": "Total Surface A","fieldname": "total_surface_area","fieldtype": "Data", "width": 150, },
+        {"label": "Total Surface Area","fieldname": "total_surface_area","fieldtype": "Data", "width": 150, },
         {"label": "Details",         "fieldname": "view",            "fieldtype": "HTML",  "width": 100, "align": "center"},
     ]
  
