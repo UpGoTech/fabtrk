@@ -359,16 +359,202 @@ def get_po_numbers(txt="", drawings=None, projects=None, is_active=0):
  
  
 # ----------------- Details button ──────────────────────────────────────────────────────────
+# rounded value show hora hai Total Surface Area
+# @frappe.whitelist()
+# def get_item_details(project, item, drawing_numbers=None, project_numbers=None,po_numbers=None):
+#     from collections import defaultdict
+#     import json
+
+#     # ✅ Base condition — sirf item filter
+#     conditions = " WHERE dp.item = %s "
+#     values = [item]
+
+#     # ✅ project_numbers — report filter se aaye multiple projects
+#     if project_numbers:
+#         if isinstance(project_numbers, str):
+#             try:
+#                 project_numbers = json.loads(project_numbers)
+#             except:
+#                 project_numbers = []
+#         if project_numbers:
+#             conditions += f" AND p.name IN %s "
+#             values.append(tuple(project_numbers))
+#     elif project:
+#         # single project (backward compat)
+#         conditions += " AND p.name = %s "
+#         values.append(project)
+        
+        
+#     # ✅ drawing_numbers filter
+#     if drawing_numbers:
+#         drawing_numbers = frappe.parse_json(drawing_numbers)
+#         if drawing_numbers:
+#             conditions += " AND ad.name IN %s "
+#             values.append(tuple(drawing_numbers))
+ 
+#     # ✅ po_numbers filter
+#     if po_numbers:
+#         if isinstance(po_numbers, str):
+#             try:
+#                 parsed_po = json.loads(po_numbers)
+#             except:
+#                 parsed_po = []
+#         else:
+#             parsed_po = list(po_numbers)
+#         if parsed_po:
+#             conditions += " AND dp.po_no IN %s "
+#             values.append(tuple(int(p) for p in parsed_po))
+            
+            
+#     rows = frappe.db.sql(f"""
+#         SELECT
+#             p.name AS project_number,
+#             dp.po_no AS po_no,
+#             pod.po_serial_no AS po_serial_no,
+#             ad.drawing_number AS drawing_number,
+#             dp.position_no AS position_no,
+#             dp.part_no AS part_no,
+#             dp.quantity,
+#             dp.lenght,
+#             dp.width,
+#             dp.single_weight,
+#             dp.total_weight,
+#             dp.single_unit_surface_area,
+#             dp.total_surface_area,
+#             COALESCE(pod.required_qty, 0) AS required_qty
+#         FROM `tabFT Drawing Parts` dp
+#         LEFT JOIN `tabFT Add Drawing` ad ON ad.name = dp.drawing_number
+#         LEFT JOIN `tabFT Project` p ON p.name = ad.project_number
+#         LEFT JOIN `tabFT Po Drawing` pod
+#             ON pod.project_number = p.name
+#             AND pod.drawing_number = ad.name
+#         {conditions}
+#         ORDER BY
+#             COALESCE(CAST(pod.po_serial_no AS UNSIGNED), 0) ASC,
+#             ad.drawing_number ASC
+#     """, tuple(values), as_dict=True)
+ 
+#     grouped = defaultdict(lambda: {
+#         "project_number": "",
+#         "po_no": "",
+#         "po_serial_no": "",
+#         "drawing_number": "",
+#         "position_no": "",
+#         "part_no": "",
+#         "quantity": 0,
+#         "lenght": 0,
+#         "width": 0,
+#         "single_weight": 0,
+#         "total_weight": 0,
+#         "single_unit_surface_area": 0.0,
+#         "total_surface_area": 0.0,
+#         "required_qty": 0,
+#         "po_existing_qty": 0,
+#         "po_required_qty": 0,
+#         "po_item_total_weight": 0.0,
+#         "entry_count": 0
+#     })
+ 
+#     for d in rows:
+#         key = (
+#             d.get("project_number"),
+#             d.get("po_no"),
+#             d.get("po_serial_no"),
+#             d.get("drawing_number"),
+#             d.get("position_no"),
+#             d.get("part_no"),
+#             d.get("quantity"),
+#             d.get("lenght"),
+#             d.get("width"),
+#             d.get("single_weight"),
+#             d.get("total_weight"),
+#         )
+ 
+#         grouped[key]["project_number"] = d.get("project_number")
+#         grouped[key]["po_no"]          = d.get("po_no") or ""
+#         grouped[key]["po_serial_no"]   = d.get("po_serial_no")
+#         grouped[key]["drawing_number"] = d.get("drawing_number")
+#         grouped[key]["position_no"]    = d.get("position_no")
+#         grouped[key]["part_no"]        = d.get("part_no")
+#         grouped[key]["quantity"]       = d.get("quantity")
+#         grouped[key]["lenght"]         = d.get("lenght")
+#         grouped[key]["width"]          = d.get("width")
+#         grouped[key]["single_weight"]  = d.get("single_weight")
+#         grouped[key]["total_weight"]   = d.get("total_weight")
+#         grouped[key]["single_unit_surface_area"] = round(float(d.get("single_unit_surface_area") or 0), 3)
+#         grouped[key]["total_surface_area"] = round(float(d.get("total_surface_area") or 0), 3)
+ 
+#         # ✅ per-row required_qty aur calculation — as-it-is (image mein sahi tha)
+#         req_qty = int(d.get("required_qty") or 0)
+#         qty     = int(d.get("quantity") or 0)
+#         tw      = float(d.get("total_weight") or 0.0)
+        
+#         grouped[key]["required_qty"]         = req_qty
+#         grouped[key]["po_existing_qty"]      = req_qty   
+#         grouped[key]["po_required_qty"]      = qty * req_qty
+#         grouped[key]["po_item_total_weight"] = round(tw * req_qty, 3)
+#         grouped[key]["entry_count"] += 1
+ 
+#     rows = list(grouped.values())
+ 
+#     grand_total_weight              = 0
+#     grand_total_qty                 = 0
+#     grand_total_length              = 0
+#     grand_total_width               = 0
+#     grand_po_existing_qty = 0 
+#     grand_po_required_qty           = 0
+#     grand_po_item_total_weight      = 0.0
+#     grand_single_unit_surface_area = 0.0
+#     grand_total_surface_area = 0.0
+ 
+#     serial_no = 1
+#     for d in rows:
+#         d["serial_no"] = serial_no
+#         serial_no += 1
+#         grand_total_weight         += d.get("total_weight") or 0
+#         grand_total_qty            += d.get("quantity") or 0
+#         grand_total_length         += d.get("lenght") or 0
+#         grand_total_width          += d.get("width") or 0
+#         grand_po_existing_qty += d.get("po_existing_qty") or 0
+#         grand_po_required_qty           += d.get("po_required_qty") or 0
+#         grand_po_item_total_weight      += d.get("po_item_total_weight") or 0.0
+#         grand_single_unit_surface_area += float(d.get("single_unit_surface_area") or 0.0)
+#         grand_total_surface_area += float(d.get("total_surface_area") or 0.0)
+ 
+#     rows.append({
+#         "serial_no":                    "",
+#         "project_number":               "<b>Total</b>",
+#         "po_no":                        "",
+#         "po_serial_no":                 "",
+#         "drawing_number":               "",
+#         "position_no":                  "",
+#         "part_no":                      "",
+#         "entry_count":                  "",
+#         "quantity":                     grand_total_qty,
+#         "lenght":                       grand_total_length,
+#         "width":                        grand_total_width,
+#         "single_weight":                "",
+#         "total_weight":                 grand_total_weight,
+#         "single_unit_surface_area":     round(grand_single_unit_surface_area, 3),
+#         "total_surface_area":           round(grand_total_surface_area, 3),
+#         "required_qty":                 "",
+#         "po_existing_qty": grand_po_existing_qty,  # ← po_required_qty se pehle
+#         "po_required_qty":              grand_po_required_qty,
+#         "po_item_total_weight":         round(grand_po_item_total_weight, 3),
+#         "_is_total_row":                True,
+#     })
+ 
+#     item_name = frappe.db.get_value("FT Stock RM List", item, "computed_name") or item
+#     return {"item_name": item_name, "data": rows}
+
 @frappe.whitelist()
-def get_item_details(project, item, drawing_numbers=None, project_numbers=None,po_numbers=None):
+def get_item_details(project, item, drawing_numbers=None, project_numbers=None, po_numbers=None):
     from collections import defaultdict
     import json
 
-    # ✅ Base condition — sirf item filter
     conditions = " WHERE dp.item = %s "
     values = [item]
 
-    # ✅ project_numbers — report filter se aaye multiple projects
     if project_numbers:
         if isinstance(project_numbers, str):
             try:
@@ -379,19 +565,15 @@ def get_item_details(project, item, drawing_numbers=None, project_numbers=None,p
             conditions += f" AND p.name IN %s "
             values.append(tuple(project_numbers))
     elif project:
-        # single project (backward compat)
         conditions += " AND p.name = %s "
         values.append(project)
-        
-        
-    # ✅ drawing_numbers filter
+
     if drawing_numbers:
         drawing_numbers = frappe.parse_json(drawing_numbers)
         if drawing_numbers:
             conditions += " AND ad.name IN %s "
             values.append(tuple(drawing_numbers))
- 
-    # ✅ po_numbers filter
+
     if po_numbers:
         if isinstance(po_numbers, str):
             try:
@@ -403,8 +585,7 @@ def get_item_details(project, item, drawing_numbers=None, project_numbers=None,p
         if parsed_po:
             conditions += " AND dp.po_no IN %s "
             values.append(tuple(int(p) for p in parsed_po))
-            
-            
+
     rows = frappe.db.sql(f"""
         SELECT
             p.name AS project_number,
@@ -432,7 +613,7 @@ def get_item_details(project, item, drawing_numbers=None, project_numbers=None,p
             COALESCE(CAST(pod.po_serial_no AS UNSIGNED), 0) ASC,
             ad.drawing_number ASC
     """, tuple(values), as_dict=True)
- 
+
     grouped = defaultdict(lambda: {
         "project_number": "",
         "po_no": "",
@@ -447,13 +628,15 @@ def get_item_details(project, item, drawing_numbers=None, project_numbers=None,p
         "total_weight": 0,
         "single_unit_surface_area": 0.0,
         "total_surface_area": 0.0,
+        # ✅ raw values for accurate grand total
+        "_raw_total_surface_area": 0.0,
         "required_qty": 0,
         "po_existing_qty": 0,
         "po_required_qty": 0,
         "po_item_total_weight": 0.0,
         "entry_count": 0
     })
- 
+
     for d in rows:
         key = (
             d.get("project_number"),
@@ -468,7 +651,7 @@ def get_item_details(project, item, drawing_numbers=None, project_numbers=None,p
             d.get("single_weight"),
             d.get("total_weight"),
         )
- 
+
         grouped[key]["project_number"] = d.get("project_number")
         grouped[key]["po_no"]          = d.get("po_no") or ""
         grouped[key]["po_serial_no"]   = d.get("po_serial_no")
@@ -480,69 +663,78 @@ def get_item_details(project, item, drawing_numbers=None, project_numbers=None,p
         grouped[key]["width"]          = d.get("width")
         grouped[key]["single_weight"]  = d.get("single_weight")
         grouped[key]["total_weight"]   = d.get("total_weight")
-        grouped[key]["single_unit_surface_area"] = round(float(d.get("single_unit_surface_area") or 0), 3)
-        grouped[key]["total_surface_area"] = round(float(d.get("total_surface_area") or 0), 3)
- 
-        # ✅ per-row required_qty aur calculation — as-it-is (image mein sahi tha)
+
+        raw_sa = float(d.get("total_surface_area") or 0)
+        grouped[key]["total_surface_area"]      = round(raw_sa, 3)
+        # ✅ raw value store karo — grand total ke liye
+        grouped[key]["_raw_total_surface_area"] = raw_sa
+
+        grouped[key]["single_unit_surface_area"] = round(
+            float(d.get("single_unit_surface_area") or 0), 3
+        )
+
         req_qty = int(d.get("required_qty") or 0)
         qty     = int(d.get("quantity") or 0)
         tw      = float(d.get("total_weight") or 0.0)
-        
+
         grouped[key]["required_qty"]         = req_qty
-        grouped[key]["po_existing_qty"]      = req_qty   
+        grouped[key]["po_existing_qty"]      = req_qty
         grouped[key]["po_required_qty"]      = qty * req_qty
         grouped[key]["po_item_total_weight"] = round(tw * req_qty, 3)
         grouped[key]["entry_count"] += 1
- 
+
     rows = list(grouped.values())
- 
-    grand_total_weight              = 0
-    grand_total_qty                 = 0
-    grand_total_length              = 0
-    grand_total_width               = 0
-    grand_po_existing_qty = 0 
-    grand_po_required_qty           = 0
-    grand_po_item_total_weight      = 0.0
+
+    grand_total_weight             = 0
+    grand_total_qty                = 0
+    grand_total_length             = 0
+    grand_total_width              = 0
+    grand_po_existing_qty          = 0
+    grand_po_required_qty          = 0
+    grand_po_item_total_weight     = 0.0
     grand_single_unit_surface_area = 0.0
-    grand_total_surface_area = 0.0
- 
+    # ✅ raw accumulators — rounding error avoid karne ke liye
+    grand_total_surface_area_raw   = 0.0
+
     serial_no = 1
     for d in rows:
         d["serial_no"] = serial_no
         serial_no += 1
-        grand_total_weight         += d.get("total_weight") or 0
-        grand_total_qty            += d.get("quantity") or 0
-        grand_total_length         += d.get("lenght") or 0
-        grand_total_width          += d.get("width") or 0
-        grand_po_existing_qty += d.get("po_existing_qty") or 0
-        grand_po_required_qty           += d.get("po_required_qty") or 0
-        grand_po_item_total_weight      += d.get("po_item_total_weight") or 0.0
+        grand_total_weight             += d.get("total_weight") or 0
+        grand_total_qty                += d.get("quantity") or 0
+        grand_total_length             += d.get("lenght") or 0
+        grand_total_width              += d.get("width") or 0
+        grand_po_existing_qty          += d.get("po_existing_qty") or 0
+        grand_po_required_qty          += d.get("po_required_qty") or 0
+        grand_po_item_total_weight     += d.get("po_item_total_weight") or 0.0
         grand_single_unit_surface_area += float(d.get("single_unit_surface_area") or 0.0)
-        grand_total_surface_area += float(d.get("total_surface_area") or 0.0)
- 
+        # ✅ raw value se add karo — display value se nahi
+        grand_total_surface_area_raw   += d.get("_raw_total_surface_area") or 0.0
+
     rows.append({
-        "serial_no":                    "",
-        "project_number":               "<b>Total</b>",
-        "po_no":                        "",
-        "po_serial_no":                 "",
-        "drawing_number":               "",
-        "position_no":                  "",
-        "part_no":                      "",
-        "entry_count":                  "",
-        "quantity":                     grand_total_qty,
-        "lenght":                       grand_total_length,
-        "width":                        grand_total_width,
-        "single_weight":                "",
-        "total_weight":                 grand_total_weight,
-        "single_unit_surface_area":     round(grand_single_unit_surface_area, 3),
-        "total_surface_area":           round(grand_total_surface_area, 3),
-        "required_qty":                 "",
-        "po_existing_qty": grand_po_existing_qty,  # ← po_required_qty se pehle
-        "po_required_qty":              grand_po_required_qty,
-        "po_item_total_weight":         round(grand_po_item_total_weight, 3),
-        "_is_total_row":                True,
+        "serial_no":                "",
+        "project_number":           "<b>Total</b>",
+        "po_no":                    "",
+        "po_serial_no":             "",
+        "drawing_number":           "",
+        "position_no":              "",
+        "part_no":                  "",
+        "entry_count":              "",
+        "quantity":                 grand_total_qty,
+        "lenght":                   grand_total_length,
+        "width":                    grand_total_width,
+        "single_weight":            "",
+        "total_weight":             grand_total_weight,
+        "single_unit_surface_area": round(grand_single_unit_surface_area, 3),
+        # ✅ raw value se round karo — accurate total
+        "total_surface_area":       round(grand_total_surface_area_raw, 3),
+        "required_qty":             "",
+        "po_existing_qty":          grand_po_existing_qty,
+        "po_required_qty":          grand_po_required_qty,
+        "po_item_total_weight":     round(grand_po_item_total_weight, 3),
+        "_is_total_row":            True,
     })
- 
+
     item_name = frappe.db.get_value("FT Stock RM List", item, "computed_name") or item
     return {"item_name": item_name, "data": rows}
 
