@@ -22,7 +22,7 @@ frappe.query_reports["FT Drawings"] = {
 	// ✅ after_datatable_render — ft_drawing_part.js wala pattern follow kar raha hai
 	after_datatable_render(report) {
 		render_cards_from_api();
-		attach_sticky_total_footer(report);   
+		attach_sticky_total_footer(report);
 	},
 
 	filters: [
@@ -108,9 +108,35 @@ frappe.query_reports["FT Drawings"] = {
 		}
 	],
 
+
+	// ----- if drawing number center 
+	// formatter: function (value, row, column, data, default_formatter) {
+	// 	return default_formatter(value, row, column, data);
+	// }
+
+	// ----- if drawing number have a left site  this code is correct 
 	formatter: function (value, row, column, data, default_formatter) {
-		return default_formatter(value, row, column, data);
-	}
+		let val = default_formatter(value, row, column, data);
+		let left_cols = ["project_name", "drawing_number"];
+		if (left_cols.includes(column.fieldname)) {
+			return `
+		<div style="text-align:left !important; 
+					justify-content:flex-start !important; 
+					padding-left:8px; display:flex; 
+					align-items:center; 
+					width:100%; 
+					height:100%;">${val}
+		</div>`;
+		}
+		return `<div style="text-align:center !important; 
+						justify-content:center !important; 
+						display:flex; 
+						align-items:center; 
+						width:100%; 
+						height:100%;">${val}
+			</div>`;
+	},
+
 };
 
 
@@ -119,19 +145,19 @@ function attach_sticky_total_footer(report) {
 	// Pehle purana footer hata do
 	$(report.wrapper).find("#ft-sticky-total-footer").remove();
 
-	let $wrapper  = $(report.wrapper);
-	let $dt_body  = $wrapper.find(".dt-scrollable");
+	let $wrapper = $(report.wrapper);
+	let $dt_body = $wrapper.find(".dt-scrollable");
 	if (!$dt_body.length) return;
 
 	// ── Data aur columns frappe se lo
-	let data    = frappe.query_report.data    || [];
+	let data = frappe.query_report.data || [];
 	let columns = frappe.query_report.columns || [];
 
 	// ── FT Drawings ke columns ke totals
 	// Sirf numeric columns ka total: unit_weight, quantity, total_weight
 	let totals = {
-		unit_weight:  0,
-		quantity:     0,
+		unit_weight: 0,
+		quantity: 0,
 		total_weight: 0,
 	};
 
@@ -139,9 +165,9 @@ function attach_sticky_total_footer(report) {
 		// TOTAL naam ki row already nahi hai (Python mein nahi daali)
 		// Phir bhi safe raho
 		if (d.project_name === "TOTAL") return;
-		totals.unit_weight  += parseFloat(d.unit_weight  || 0);
-		totals.quantity     += parseFloat(d.quantity      || 0);
-		totals.total_weight += parseFloat(d.total_weight  || 0);
+		totals.unit_weight += parseFloat(d.unit_weight || 0);
+		totals.quantity += parseFloat(d.quantity || 0);
+		totals.total_weight += parseFloat(d.total_weight || 0);
 	});
 
 	// ── Header cells se exact widths lo (ft_drawing_part.js wala same approach)
@@ -181,14 +207,14 @@ function attach_sticky_total_footer(report) {
 
 	// ── Data columns — columns array se iterate karo
 	columns.forEach(function (col, i) {
-		let w  = col_widths[i + 1] || 120;   // i+1 kyunki 0 serial number ka tha
+		let w = col_widths[i + 1] || 120;   // i+1 kyunki 0 serial number ka tha
 		let fn = col.fieldname;
 		let val = "";
 		let align = "center";
 
 		if (fn === "project_name") {
 			// ✅ TOTAL label — left aligned, bold
-			val   = `<span style="font-weight:900; font-size:13px; color:#000;">TOTAL</span>`;
+			val = `<span style="font-weight:900; font-size:13px; color:#000;">TOTAL</span>`;
 			align = "left";
 
 		} else if (fn === "unit_weight") {
@@ -203,7 +229,7 @@ function attach_sticky_total_footer(report) {
 		}
 		// drawing_number, po_serial_no — blank rehenge
 
-		let is_last    = (i === columns.length - 1);
+		let is_last = (i === columns.length - 1);
 		let border_right = is_last ? "none" : "1px solid #d1d8dd";
 
 		cells_html += `
@@ -355,19 +381,25 @@ $(`<style>
 .report-wrapper, .datatable, .datatable-container { width: 100% !important; }
 .datatable table { width: 100% !important; table-layout: auto !important; }
 .datatable .dt-cell { white-space: nowrap !important; }
+
+/*---------// ----- if drawing number have a left site  this code is correct */
 .datatable .dt-cell__content {
-	text-align: center !important;
-	justify-content: center !important;
 	overflow: visible !important;
 	text-overflow: unset !important;
 }
+	
 .datatable .dt-row { width: 100% !important; }
 .datatable .dt-scrollable { overflow-x: auto !important; }
 
 </style>`).appendTo("head");
 
-
-
+// ----- if drawing number center 
+// .datatable .dt-cell__content {
+// 	text-align: center !important;
+// 	justify-content: center !important;
+// 	overflow: visible !important;
+// 	text-overflow: unset !important;
+// }
 
 
 
