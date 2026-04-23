@@ -1,11 +1,568 @@
 //export button added form list view
 // FT Drawing Parts — List View Settings (Export / Import)
 frappe.listview_settings["FT Drawing Parts"] = {
-    onload(listview) {
+    refresh: function (listview) {
 
         // ── Export Button ──────────────────────────────────────
+        // listview.page.add_inner_button("Export", function () {
+        //     window.location.href = '/api/method/fabtrk.fabtrk.doctype.ft_drawing_parts.ft_drawing_parts.export_with_value';
+        // });     
+        
         listview.page.add_inner_button("Export", function () {
-            window.location.href = '/api/method/fabtrk.fabtrk.doctype.ft_drawing_parts.ft_drawing_parts.export_with_value';
+
+            frappe.model.with_doctype('FT Drawing Parts', function () {
+                let meta = frappe.get_meta('FT Drawing Parts');
+                let filterable_fields = meta.fields.filter(function (f) {
+                    return !['Section Break', 'Column Break', 'HTML', 'Heading', 'Button', 'Tab Break'].includes(f.fieldtype);
+                }).map(function (f) {
+                    return { label: f.label || f.fieldname, fieldname: f.fieldname, fieldtype: f.fieldtype, reqd: f.reqd };
+                });
+
+                filterable_fields.unshift({ label: 'ID', fieldname: 'name', fieldtype: 'Data', reqd: 1 });
+
+                let export_dialog = new frappe.ui.Dialog({
+                    title: `
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <div style="width:36px; height:36px; border-radius:8px; background:#ECFDF5; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                            <polyline points="7 10 12 15 17 10"/>
+                            <line x1="12" y1="15" x2="12" y2="3"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <div style="font-weight:500; font-size:15px; color:var(--color-text-primary);">Export Drawing Parts</div>
+                        <!--<div style="font-size:12px; color:var(--color-text-secondary); font-weight:400;">Export data to Excel or CSV file</div>-->
+                    </div>
+                </div>
+            `,
+                    fields: [{
+                        fieldname: 'export_dialog_html',
+                        fieldtype: 'HTML',
+                        options: `
+                <div id="dp-export-root" style="padding:4px 0;">
+
+                    <div style="margin-bottom:14px;">
+                        <label style="font-size:12px; font-weight:600; color:#000; text-transform:capitalize; letter-spacing:0.06em; display:block; margin-bottom:6px;">File Type</label>
+                        <select id="dp-file-type" style="width:100%; padding:6px 12px; border:1px solid #D1D5DB; border-radius:8px; font-size:13px; color:var(--color-text-primary); background:#F3F3F3; cursor:pointer; outline:none;">
+                            <option value="csv">CSV</option>
+                            <option value="xlsx">Excel</option>
+                        </select>
+                    </div>
+
+                    <div style="margin-bottom:14px;">
+                        <label style="font-size:12px; font-weight:600; color:#000; text-transform:capitalize; letter-spacing:0.06em; display:block; margin-bottom:6px;">Export Type</label>
+                        <select id="dp-export-type" style="width:100%; padding:6px 12px; border:1px solid #D1D5DB; border-radius:8px; font-size:13px; color:var(--color-text-primary); background:#F3F3F3; cursor:pointer; outline:none;">
+                            <option value="all">All Records</option>
+                            <option value="filtered">Filtered Records</option>
+                            <option value="5">5 Records</option>
+                            <option value="blank">Blank Template</option>                            
+                        </select>
+                    </div>
+
+                    <!-- FILTER SECTION -->
+                    <div id="dp-filter-section" style="display:none; margin-bottom:14px; border:1px solid #E5E7EB; border-radius:10px; overflow:visible; background:#fff;">
+                        <div id="dp-filter-record-count" style="padding:10px 14px 0 14px; font-size:14px; color:#374151; font-weight:400;"></div>
+                        <div id="dp-filter-rows-container" style="padding:10px 14px 0 14px;"></div>
+                        <div id="dp-no-filters-msg" style="padding:20px 14px; text-align:center; font-size:14px; color:#9CA3AF;">No filters selected</div>
+                        <div style="padding:10px 14px; display:flex; align-items:center; justify-content:space-between; border-top:1px solid #F3F4F6; margin-top:8px;">
+                            <button id="dp-add-filter-btn" style="background:none; border:none; font-size:13px; color:#2563EB; cursor:pointer; padding:0; font-weight:500;">+ Add a Filter</button>
+                            <button id="dp-clear-filters-btn" style="background:#fff; border:1px solid #D1D5DB; border-radius:6px; font-size:13px; color:#374151; cursor:pointer; padding:6px 14px;">Clear Filters</button>
+                        </div>
+                    </div>
+
+                    <div id="dp-export-info" style="border-radius:8px; padding:10px 14px; margin-bottom:16px; background:#ECFDF5;">
+                        <div id="dp-export-info-text" style="font-size:13px; color:#065F46; line-height:1.7;">
+                            <strong>ℹ️</strong> All records from FT Drawing Parts will be exported.
+                        </div>
+                    </div>
+
+                    <!-- SELECT FIELDS -->
+                    <div id="dp-fields-section" style="margin-bottom:16px;">
+                        <div style="font-size:12px; font-weight:600; color:#000; text-transform:uppercase; letter-spacing:0.06em; margin-bottom:10px;">Select Fields to Insert</div>
+                        <div style="display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap;">
+                            <button id="dp-select-all-btn" style="background:#F3F4F6; border:1px solid #E5E7EB; border-radius:6px; padding:6px 16px; font-size:13px; cursor:pointer; color:#374151; font-weight:500; transition:all 0.15s;"
+                                onmouseover="this.style.background='#E5E7EB'; this.style.borderColor='#D1D5DB';"
+                                onmouseout="this.style.background='#F3F4F6'; this.style.borderColor='#E5E7EB';">Select All</button>
+                            <button id="dp-select-mandatory-btn" style="background:#F3F4F6; border:1px solid #E5E7EB; border-radius:6px; padding:6px 16px; font-size:13px; cursor:pointer; color:#374151; font-weight:500; transition:all 0.15s;"
+                                onmouseover="this.style.background='#E5E7EB'; this.style.borderColor='#D1D5DB';"
+                                onmouseout="this.style.background='#F3F4F6'; this.style.borderColor='#E5E7EB';">Select Mandatory</button>
+                            <button id="dp-unselect-all-btn" style="background:#F3F4F6; border:1px solid #E5E7EB; border-radius:6px; padding:6px 16px; font-size:13px; cursor:pointer; color:#374151; font-weight:500; transition:all 0.15s;"
+                                onmouseover="this.style.background='#E5E7EB'; this.style.borderColor='#D1D5DB';"
+                                onmouseout="this.style.background='#F3F4F6'; this.style.borderColor='#E5E7EB';">Unselect All</button>
+                        </div>
+                        <div style="font-size:13px; color:#000; margin-bottom:8px; font-weight:500;">FT Drawing Parts</div>
+                        <div id="dp-fields-checkboxes" style="display:grid; grid-template-columns:1fr 1fr; max-height:200px; overflow-y:auto; padding:2px 0;"></div>
+                    </div>
+
+                    <div style="display:flex; gap:10px;">
+                        <button class="dp-export-cancel-btn" style="flex:1; background:transparent; border:0.5px solid #C0C0B8; border-radius:8px; padding:10px; font-size:14px; cursor:pointer; color:var(--color-text-secondary);">Cancel</button>
+                        <button class="dp-export-confirm-btn" style="flex:2; background:#000; border:none; border-radius:8px; padding:10px; font-size:14px; font-weight:500; cursor:pointer; color:#fff;">Export</button>
+                    </div>
+
+                </div>
+                `
+                    }]
+                });
+
+                export_dialog.$wrapper.find('.modal-footer').hide();
+                export_dialog.$wrapper.find('.modal-dialog').css({ 'width': '680px', 'max-width': '96vw' });
+                export_dialog.show();
+
+                export_dialog.$wrapper.off('shown.bs.modal').on('shown.bs.modal', function () {
+
+                    const $fileType = export_dialog.$wrapper.find('#dp-file-type');
+                    const $exportType = export_dialog.$wrapper.find('#dp-export-type');
+                    const $info = export_dialog.$wrapper.find('#dp-export-info');
+                    const $infoText = export_dialog.$wrapper.find('#dp-export-info-text');
+                    const $filterSec = export_dialog.$wrapper.find('#dp-filter-section');
+
+                    const info_map = {
+                        'all': { bg: '#ECFDF5', color: '#065F46', text: '<strong>ℹ️</strong> All records from FT Drawing Parts will be exported.' },
+                        'filtered': { bg: '#EBF5FF', color: '#1E40AF', text: '<strong>🔽</strong> Only records matching the applied filters will be exported.' },
+                        '5': { bg: '#FEF3C7', color: '#92400E', text: '<strong>🔢</strong> Only the first 5 records will be exported.' },
+                        'blank': { bg: '#F5F3FF', color: '#5B21B6', text: '<strong>📄</strong> No records will be exported — only column headers (blank template).' },
+                    };
+
+                    // ── Operators by fieldtype ──
+                    function get_operators(fieldtype) {
+                        if (['Int', 'Float', 'Currency', 'Percent'].includes(fieldtype)) {
+                            return ['Equals', 'Not Equals', '>', '<', '>=', '<=', 'In', 'Not In', 'Is'];
+                        } else if (fieldtype === 'Check') {
+                            return ['Equals', 'Is'];
+                        } else if (['Date', 'Datetime'].includes(fieldtype)) {
+                            return ['Equals', 'Not Equals', '>', '<', '>=', '<=', 'Between', 'Is'];
+                        } else if (fieldtype === 'Select') {
+                            return ['Equals', 'Not Equals', 'In', 'Not In', 'Is'];
+                        }
+                        return ['Equals', 'Not Equals', 'Like', 'Not Like', 'In', 'Not In', 'Is'];
+                    }
+
+                    // ── Build filter row ──
+                    function build_filter_row(row_id) {
+                        let field_options = filterable_fields.map(function (f) {
+                            return `<option value="${f.fieldname}" data-fieldtype="${f.fieldtype}">${f.label}</option>`;
+                        }).join('');
+                        let op_options = get_operators('Data').map(function (op) {
+                            return `<option value="${op}">${op}</option>`;
+                        }).join('');
+
+                        return `
+                    <div class="dp-filter-row" data-row-id="${row_id}" style="display:flex; align-items:flex-start; gap:8px; margin-bottom:10px; flex-wrap:nowrap;">
+                        <select class="dp-filter-field" style="flex:2; min-width:0; padding:7px 8px; border:1px solid #D1D5DB; border-radius:6px; font-size:13px; background:#F3F3F3; color:var(--color-text-primary); outline:none; cursor:pointer;">
+                            ${field_options}
+                        </select>
+                        <select class="dp-filter-operator" style="flex:1.5; min-width:0; padding:7px 8px; border:1px solid #D1D5DB; border-radius:6px; font-size:13px; background:#F3F3F3; color:var(--color-text-primary); outline:none; cursor:pointer;">
+                            ${op_options}
+                        </select>
+                        <div class="dp-filter-value-wrap" style="flex:2; min-width:0; position:relative;">
+                            <input class="dp-filter-value" type="text" placeholder="Value" autocomplete="off" style="width:100%; padding:7px 8px; border:1px solid #D1D5DB; border-radius:6px; font-size:13px; outline:none; color:var(--color-text-primary); background:#F3F3F3; box-sizing:border-box;" />
+                            <div class="dp-autocomplete-list" style="display:none; position:fixed; z-index:999999; background:#fff; border:1px solid #D1D5DB; border-radius:6px; box-shadow:0 4px 16px rgba(0,0,0,0.13); max-height:200px; overflow-y:auto; min-width:160px;"></div>
+                        </div>
+                        <button class="dp-filter-remove" data-row-id="${row_id}" style="flex-shrink:0; background:none; border:none; cursor:pointer; color:#9CA3AF; padding:7px 4px; font-size:16px; line-height:1; border-radius:4px;" title="Remove">✕</button>
+                    </div>
+                `;
+                    }
+
+                    let filter_row_counter = 0;
+
+                    function sync_empty_state() {
+                        let has_rows = export_dialog.$wrapper.find('.dp-filter-row').length > 0;
+                        export_dialog.$wrapper.find('#dp-no-filters-msg').toggle(!has_rows);
+                    }
+
+                    // ── Autocomplete render ──
+                    function render_autocomplete_list(values, $list, $input) {
+                        $list.empty();
+                        if (!values.length) { $list.hide(); return; }
+                        values.forEach(function (val) {
+                            let $item = $(`<div style="padding:8px 12px; font-size:13px; cursor:pointer; color:var(--color-text-primary); border-bottom:1px solid #F3F4F6;">${val}</div>`);
+                            $item.on('mousedown', function (e) {
+                                e.preventDefault(); e.stopPropagation();
+                                $input.val(val); $list.hide(); update_record_count();
+                            });
+                            $item.on('mouseenter', function () { $(this).css('background', '#F3F4F6'); });
+                            $item.on('mouseleave', function () { $(this).css('background', '#fff'); });
+                            $list.append($item);
+                        });
+                        let rect = $input[0].getBoundingClientRect();
+                        $list.css({ top: (rect.bottom + 2) + 'px', left: rect.left + 'px', width: rect.width + 'px' }).show();
+                    }
+
+                    // ── Fetch suggestions ──
+                    // function fetch_suggestions(fieldname, search_text, $list, $input) {
+                    //     let field_meta = meta.fields.find(function (f) { return f.fieldname === fieldname; });
+
+                    //     if (fieldname === 'name') {
+                    //         frappe.call({
+                    //             method: 'fabtrk.fabtrk.doctype.ft_drawing_parts.ft_drawing_parts.get_field_distinct_values',
+                    //             args: { fieldname: 'name', search_text: search_text || '' },
+                    //             callback: function (r) { render_autocomplete_list(r.message || [], $list, $input); }
+                    //         });
+                    //         return;
+                    //     }
+
+                    //     if (!field_meta) { $list.hide(); return; }
+
+                    //     if (field_meta.fieldtype === 'Select') {
+                    //         let options = (field_meta.options || '').split('\n')
+                    //             .map(function (o) { return o.trim(); })
+                    //             .filter(function (o) { return o !== '' && (!search_text || o.toLowerCase().includes(search_text.toLowerCase())); });
+                    //         render_autocomplete_list(options, $list, $input);
+                    //         return;
+                    //     }
+
+                    //     if (field_meta.fieldtype === 'Link') {
+                    //         frappe.call({
+                    //             method: 'frappe.client.get_list',
+                    //             args: { doctype: field_meta.options, fields: ['name'], filters: search_text ? [['name', 'like', '%' + search_text + '%']] : [], limit: 0, order_by: 'name asc' },
+                    //             callback: function (r) {
+                    //                 render_autocomplete_list((r.message || []).map(function (row) { return row.name; }), $list, $input);
+                    //             }
+                    //         });
+                    //         return;
+                    //     }
+
+                    //     if (['Data', 'Small Text'].includes(field_meta.fieldtype)) {
+                    //         frappe.call({
+                    //             method: 'fabtrk.fabtrk.doctype.ft_drawing_parts.ft_drawing_parts.get_field_distinct_values',
+                    //             args: { fieldname: fieldname, search_text: search_text || '' },
+                    //             callback: function (r) { render_autocomplete_list(r.message || [], $list, $input); }
+                    //         });
+                    //         return;
+                    //     }
+
+                    //     $list.hide();
+                    // }
+                    function fetch_suggestions(fieldname, search_text, $list, $input) {
+                        let field_meta = meta.fields.find(function (f) { return f.fieldname === fieldname; });
+
+                        if (fieldname === 'name') {
+                            frappe.call({
+                                method: 'fabtrk.fabtrk.doctype.ft_drawing_parts.ft_drawing_parts.get_field_distinct_values',
+                                args: { fieldname: 'name', search_text: search_text || '' },
+                                callback: function (r) { render_autocomplete_list(r.message || [], $list, $input); }
+                            });
+                            return;
+                        }
+
+                        if (!field_meta) { $list.hide(); return; }
+
+                        if (field_meta.fieldtype === 'Select') {
+                            let options = (field_meta.options || '').split('\n')
+                                .map(function (o) { return o.trim(); })
+                                .filter(function (o) { return o !== '' && (!search_text || o.toLowerCase().includes(search_text.toLowerCase())); });
+                            render_autocomplete_list(options, $list, $input);
+                            return;
+                        }
+
+                        // ── Item field → FT Stock RM List se computed_name fetch karo ──
+                        if (fieldname === 'item') {
+                            frappe.call({
+                                method: 'frappe.client.get_list',
+                                args: {
+                                    doctype: 'FT Stock RM List',
+                                    fields: ['name', 'computed_name'],
+                                    filters: search_text ? [['computed_name', 'like', '%' + search_text + '%']] : [],
+                                    limit: 20,
+                                    order_by: 'computed_name asc'
+                                },
+                                callback: function (r) {
+                                    let vals = (r.message || []).map(function (row) { return row.computed_name || row.name; });
+                                    render_autocomplete_list(vals, $list, $input);
+                                }
+                            });
+                            return;
+                        }
+
+                        if (field_meta.fieldtype === 'Link') {
+                            frappe.call({
+                                method: 'frappe.client.get_list',
+                                args: {
+                                    doctype: field_meta.options,
+                                    fields: ['name'],
+                                    filters: search_text ? [['name', 'like', '%' + search_text + '%']] : [],
+                                    limit: 0,
+                                    order_by: 'name asc'
+                                },
+                                callback: function (r) {
+                                    render_autocomplete_list((r.message || []).map(function (row) { return row.name; }), $list, $input);
+                                }
+                            });
+                            return;
+                        }
+
+                        if (['Data', 'Small Text'].includes(field_meta.fieldtype)) {
+                            frappe.call({
+                                method: 'fabtrk.fabtrk.doctype.ft_drawing_parts.ft_drawing_parts.get_field_distinct_values',
+                                args: { fieldname: fieldname, search_text: search_text || '' },
+                                callback: function (r) { render_autocomplete_list(r.message || [], $list, $input); }
+                            });
+                            return;
+                        }
+
+                        // ── Float / Int / Currency / Percent → koi dropdown nahi ──
+                        $list.hide();
+                    }
+
+                    // let autocomplete_types = ['Select', 'Link', 'Data', 'Small Text'];
+                    let autocomplete_types = ['Select', 'Link', 'Data', 'Small Text', 'item'];
+
+                    // ── Bind filter row events ──
+                    function bind_filter_row_events(row_id) {
+                        let $row = export_dialog.$wrapper.find(`.dp-filter-row[data-row-id="${row_id}"]`);
+                        let $input = $row.find('.dp-filter-value');
+                        let $list = $row.find('.dp-autocomplete-list');
+                        let $opSel = $row.find('.dp-filter-operator');
+                        let $fieldSel = $row.find('.dp-filter-field');
+
+                        $fieldSel.on('change', function () {
+                            let ft = $(this).find(':selected').data('fieldtype') || 'Data';
+                            let ops = get_operators(ft);
+                            $opSel.empty();
+                            ops.forEach(function (op) { $opSel.append(`<option value="${op}">${op}</option>`); });
+                            $input.val(''); $list.hide(); update_record_count();
+                        });
+
+                        $opSel.on('change', function () {
+                            let op = $(this).val();
+                            $input.attr('placeholder', op === 'Is' ? 'set / not set' : op === 'In' || op === 'Not In' ? 'val1, val2, ...' : 'Value').prop('disabled', false);
+                            $list.hide(); update_record_count();
+                        });
+
+                        let ac_timer = null;
+                        $input.on('input', function () {
+                            let op = $opSel.val();
+                            if (['In', 'Not In', 'Is'].includes(op)) { $list.hide(); return; }
+                            let fieldname = $fieldSel.val();
+                            let fmeta = meta.fields.find(function (f) { return f.fieldname === fieldname; });
+                            if (fieldname !== 'name' && (!fmeta || !autocomplete_types.includes(fmeta.fieldtype))) { $list.hide(); return; }
+                            clearTimeout(ac_timer);
+                            ac_timer = setTimeout(function () { fetch_suggestions(fieldname, $input.val().trim(), $list, $input); }, 250);
+                        });
+
+                        $input.on('focus', function () {
+                            let op = $opSel.val();
+                            if (['In', 'Not In', 'Is'].includes(op)) { $list.hide(); return; }
+                            let fieldname = $fieldSel.val();
+                            let fmeta = meta.fields.find(function (f) { return f.fieldname === fieldname; });
+                            if (fieldname !== 'name' && (!fmeta || !autocomplete_types.includes(fmeta.fieldtype))) { $list.hide(); return; }
+                            clearTimeout(ac_timer);
+                            ac_timer = setTimeout(function () { fetch_suggestions(fieldname, $input.val().trim(), $list, $input); }, 150);
+                        });
+
+                        $input.on('blur', function () { setTimeout(function () { $list.hide(); }, 250); });
+                        $input.on('change', function () { update_record_count(); });
+
+                        $row.find('.dp-filter-remove').on('click', function () {
+                            $list.hide(); $row.remove(); sync_empty_state(); update_record_count();
+                        });
+                    }
+
+                    function add_filter_row() {
+                        filter_row_counter++;
+                        let row_id = 'dpfr_' + filter_row_counter;
+                        export_dialog.$wrapper.find('#dp-filter-rows-container').append(build_filter_row(row_id));
+                        bind_filter_row_events(row_id);
+                        sync_empty_state(); update_record_count();
+                    }
+
+                    // ── Collect filters ──
+                    function collect_filters() {
+                        let filters = [];
+                        let equals_groups = {};
+                        let other_filters_list = [];
+
+                        export_dialog.$wrapper.find('.dp-filter-row').each(function () {
+                            let field = $(this).find('.dp-filter-field').val();
+                            let operator = $(this).find('.dp-filter-operator').val();
+                            let value = $(this).find('.dp-filter-value').val().trim();
+
+                            let op_map = {
+                                'Equals': '=', 'Not Equals': '!=',
+                                'Like': 'like', 'Not Like': 'not like',
+                                '>': '>', '<': '<', '>=': '>=', '<=': '<=',
+                                'Between': 'between', 'In': 'in', 'Not In': 'not in',
+                                'Is': 'is',
+                            };
+                            let frappe_op = op_map[operator] || '=';
+
+                            if (operator === 'Is') {
+                                if (value !== '') other_filters_list.push(['FT Drawing Parts', field, 'is', value]);
+                                return;
+                            }
+
+                            if (!field || value === '') return;
+
+                            if (frappe_op === 'like' || frappe_op === 'not like') {
+                                if (!value.includes('%')) value = '%' + value + '%';
+                                other_filters_list.push(['FT Drawing Parts', field, frappe_op, value]);
+                                return;
+                            }
+
+                            if (frappe_op === 'in' || frappe_op === 'not in') {
+                                value = value.split(',').map(function (v) { return v.trim(); });
+                                other_filters_list.push(['FT Drawing Parts', field, frappe_op, value]);
+                                return;
+                            }
+
+                            if (frappe_op === '=') {
+                                if (!equals_groups[field]) equals_groups[field] = [];
+                                equals_groups[field].push(value);
+                                return;
+                            }
+
+                            other_filters_list.push(['FT Drawing Parts', field, frappe_op, value]);
+                        });
+
+                        // ── Same field multiple Equals → IN ──
+                        for (let field in equals_groups) {
+                            let values = equals_groups[field];
+                            if (values.length === 1) {
+                                filters.push(['FT Drawing Parts', field, '=', values[0]]);
+                            } else {
+                                filters.push(['FT Drawing Parts', field, 'in', values]);
+                            }
+                        }
+
+                        for (let f of other_filters_list) {
+                            filters.push(f);
+                        }
+
+                        return filters;
+                    }
+
+                    // ── Record count ──
+                    let count_debounce_timer = null;
+                    function update_record_count() {
+                        clearTimeout(count_debounce_timer);
+                        count_debounce_timer = setTimeout(function () {
+                            let filters = collect_filters();
+                            frappe.call({
+                                method: 'frappe.client.get_count',
+                                args: { doctype: 'FT Drawing Parts', filters: filters.length > 0 ? filters : [] },
+                                callback: function (r) {
+                                    let count = r.message || 0;
+                                    export_dialog.$wrapper.find('#dp-filter-record-count').html(`<span style="font-size:14px; color:#374151;">${count} records will be exported</span>`);
+                                    update_export_btn_text(count);
+                                }
+                            });
+                        }, 400);
+                    }
+
+                    function update_export_btn_text(count) {
+                        let $btn = export_dialog.$wrapper.find('.dp-export-confirm-btn');
+                        $btn.text($exportType.val() === 'blank' ? 'Export' : 'Export ' + count + ' records');
+                    }
+
+                    // ── Add / Clear filter buttons ──
+                    export_dialog.$wrapper.find('#dp-add-filter-btn').on('click', function () { add_filter_row(); });
+                    export_dialog.$wrapper.find('#dp-clear-filters-btn').on('click', function () {
+                        export_dialog.$wrapper.find('#dp-filter-rows-container').empty();
+                        filter_row_counter = 0; sync_empty_state(); update_record_count();
+                    });
+
+                    // ── Field checkboxes ──
+                    function build_field_checkboxes() {
+                        let $container = export_dialog.$wrapper.find('#dp-fields-checkboxes');
+                        $container.empty();
+                        $container.append(dp_make_checkbox('name', 'ID', true, true));
+                        filterable_fields.forEach(function (f) {
+                            if (f.fieldname === 'name') return;
+                            $container.append(dp_make_checkbox(f.fieldname, f.label, f.reqd ? true : false, f.reqd ? true : false));
+                        });
+                    }
+
+                    function dp_make_checkbox(fieldname, label, checked, is_mandatory) {
+                        let dot = is_mandatory ? `<span style="color:#EF4444; font-size:14px; margin-left:3px;">*</span>` : '';
+                        return `
+                    <label style="display:flex; align-items:center; gap:5px; cursor:pointer; font-size:12px; color:var(--color-text-primary); padding:0; user-select:none;">
+                        <input type="checkbox" class="dp-field-cb" data-fieldname="${fieldname}" data-mandatory="${is_mandatory ? '1' : '0'}"
+                            ${checked ? 'checked' : ''}
+                            style="width:14px; height:14px; accent-color:#2563EB; cursor:pointer; flex-shrink:0;" />
+                        <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${label}${dot}</span>
+                    </label>
+                `;
+                    }
+
+                    build_field_checkboxes();
+
+                    export_dialog.$wrapper.find('#dp-select-all-btn').on('click', function () { export_dialog.$wrapper.find('.dp-field-cb').prop('checked', true); });
+                    export_dialog.$wrapper.find('#dp-select-mandatory-btn').on('click', function () {
+                        export_dialog.$wrapper.find('.dp-field-cb').each(function () { $(this).prop('checked', $(this).data('mandatory') == '1'); });
+                    });
+                    export_dialog.$wrapper.find('#dp-unselect-all-btn').on('click', function () { export_dialog.$wrapper.find('.dp-field-cb').prop('checked', false); });
+
+                    function collect_selected_fields() {
+                        let fields = [];
+                        export_dialog.$wrapper.find('.dp-field-cb:checked').each(function () { fields.push($(this).data('fieldname')); });
+                        return fields;
+                    }
+
+                    // ── Export Type change ──
+                    function update_info() {
+                        let type = $exportType.val();
+                        let info = info_map[type];
+                        $info.css('background', info.bg);
+
+                        if (type === 'blank') {
+                            $infoText.css('color', info.color).html('<strong>📄</strong>No records will be exported.');
+                            $filterSec.slideUp(200); $info.show(); update_export_btn_text(0);
+                        } else if (type === '5') {
+                            $infoText.css('color', info.color).html('<strong>🔢</strong>  5 records will be exported.');
+                            $filterSec.slideUp(200); $info.show(); update_export_btn_text(5);
+                        } else if (type === 'all') {
+                            $infoText.css('color', info.color).html('<strong>ℹ️</strong> Counting...');
+                            $filterSec.slideUp(200); $info.show();
+                            frappe.call({
+                                method: 'frappe.client.get_count',
+                                args: { doctype: 'FT Drawing Parts', filters: [] },
+                                callback: function (r) {
+                                    let count = r.message || 0;
+                                    $infoText.html('<strong>ℹ️</strong> ' + count + ' records will be exported.');
+                                    update_export_btn_text(count);
+                                }
+                            });
+                        } else if (type === 'filtered') {
+                            $filterSec.slideDown(200); $info.hide(); sync_empty_state(); update_record_count();
+                        }
+                    }
+
+                    $exportType.on('change', update_info);
+                    update_info();
+
+                    // ── Cancel ──
+                    export_dialog.$wrapper.find('.dp-export-cancel-btn').on('click', function () { export_dialog.hide(); });
+
+                    // ── Export Confirm ──
+                    export_dialog.$wrapper.find('.dp-export-confirm-btn').on('click', function () {
+                        let file_type = $fileType.val();
+                        let export_type = $exportType.val();
+                        let filters = null;
+
+                        if (export_type === 'filtered') {
+                            let custom_filters = collect_filters();
+                            if (custom_filters.length > 0) filters = JSON.stringify(custom_filters);
+                        }
+
+                        let selected_fields = collect_selected_fields();
+                        if (selected_fields.length === 0) {
+                            frappe.msgprint({ title: 'No Fields Selected', message: 'Please select at least one field to export.', indicator: 'orange' });
+                            return;
+                        }
+
+                        let $btn = export_dialog.$wrapper.find('.dp-export-confirm-btn');
+                        $btn.text('Exporting...').prop('disabled', true);
+
+                        let url = `/api/method/fabtrk.fabtrk.doctype.ft_drawing_parts.ft_drawing_parts.export_with_value?file_type=${file_type}&export_type=${export_type}`;
+                        if (filters) url += `&filters=${encodeURIComponent(filters)}`;
+                        url += `&selected_fields=${encodeURIComponent(JSON.stringify(selected_fields))}`;
+
+                        window.location.href = url;
+                        setTimeout(function () { $btn.text('Export').prop('disabled', false); export_dialog.hide(); }, 1500);
+                    });
+                });
+            });
         });
 
         // ── Import Button ──────────────────────────────────────
@@ -69,19 +626,19 @@ frappe.listview_settings["FT Drawing Parts"] = {
 
                 selected_file_url = null;
 
-                let $dropZone  = d.$wrapper.find('.dp-drop-zone');
-                let $dropText  = d.$wrapper.find('.dp-drop-text');
+                let $dropZone = d.$wrapper.find('.dp-drop-zone');
+                let $dropText = d.$wrapper.find('.dp-drop-text');
                 let $chooseBtn = d.$wrapper.find('.dp-choose-btn');
                 let $fileInput = d.$wrapper.find('.dp-file-input');
 
-                let dropZone  = $dropZone[0];
+                let dropZone = $dropZone[0];
                 let fileInput = $fileInput[0];
 
                 function reset_dropzone() {
                     $dropText.text('Upload Excel or CSV File');
-                    dropZone.style.borderColor  = '#C0C0B8';
-                    dropZone.style.borderStyle  = 'dashed';
-                    dropZone.style.background   = '#F9FAFB';
+                    dropZone.style.borderColor = '#C0C0B8';
+                    dropZone.style.borderStyle = 'dashed';
+                    dropZone.style.background = '#F9FAFB';
                     selected_file_url = null;
                     fileInput.value = '';
                 }
@@ -150,16 +707,16 @@ frappe.listview_settings["FT Drawing Parts"] = {
                 $dropZone.on('dragover', function (e) {
                     e.preventDefault();
                     dropZone.style.borderColor = '#3B82F6';
-                    dropZone.style.background  = '#EBF5FF';
+                    dropZone.style.background = '#EBF5FF';
                 });
                 $dropZone.on('dragleave', function () {
                     dropZone.style.borderColor = '#C0C0B8';
-                    dropZone.style.background  = '#F9FAFB';
+                    dropZone.style.background = '#F9FAFB';
                 });
                 $dropZone.on('drop', function (e) {
                     e.preventDefault();
                     dropZone.style.borderColor = '#C0C0B8';
-                    dropZone.style.background  = '#F9FAFB';
+                    dropZone.style.background = '#F9FAFB';
                     let dt = e.originalEvent.dataTransfer;
                     if (dt && dt.files[0]) handle_file(dt.files[0]);
                 });
@@ -236,10 +793,10 @@ function get_portal() {
             e.stopPropagation();
             if (!dp_active_dd) return;
 
-            let val      = $(this).data('value');
+            let val = $(this).data('value');
             let labelTxt = $(this).find('.dp-opt-label').text();
-            let subTxt   = $(this).find('.dp-opt-sub').text();
-            let hasSub   = ($(this).find('.dp-opt-sub').length > 0 && val !== '');
+            let subTxt = $(this).find('.dp-opt-sub').text();
+            let hasSub = ($(this).find('.dp-opt-sub').length > 0 && val !== '');
 
             let $dd = $(dp_active_dd);
             $dd.data('selected-value', val);
@@ -301,9 +858,9 @@ function open_portal($dd, all_fields) {
     let selectedVal = $dd.data('selected-value') || '';
 
     all_fields.forEach(function (f) {
-        let label     = f.label || f.fieldname;
+        let label = f.label || f.fieldname;
         let fieldname = f.fieldname;
-        let showSub   = (label !== fieldname);
+        let showSub = (label !== fieldname);
         let isSelected = (fieldname === selectedVal);
 
         let subHtml = showSub
@@ -331,17 +888,17 @@ function open_portal($dd, all_fields) {
     });
 
     // Position: Smart dropup/dropdown
-    let trigger     = $dd.find('.dp-dd-trigger')[0];
-    let rect        = trigger.getBoundingClientRect();
-    let portalH     = 280; // estimated max height
-    let spaceBelow  = window.innerHeight - rect.bottom;
-    let spaceAbove  = rect.top;
-    let portalW     = Math.max(rect.width, 240);
+    let trigger = $dd.find('.dp-dd-trigger')[0];
+    let rect = trigger.getBoundingClientRect();
+    let portalH = 280; // estimated max height
+    let spaceBelow = window.innerHeight - rect.bottom;
+    let spaceAbove = rect.top;
+    let portalW = Math.max(rect.width, 240);
 
     portal.css({
-        width:   portalW + 'px',
+        width: portalW + 'px',
         display: 'block',
-        left:    rect.left + 'px',
+        left: rect.left + 'px',
     });
 
     if (spaceBelow >= 220 || spaceBelow >= spaceAbove) {
