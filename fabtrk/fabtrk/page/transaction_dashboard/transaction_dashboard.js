@@ -1,420 +1,622 @@
-frappe.pages['transaction-dashboard'].on_page_load = function (wrapper) {
 
-    var page = frappe.ui.make_app_page({
-        parent: wrapper,
-        title: 'Transaction Dashboard',
-        single_column: true
-    });
+frappe.pages["transaction-dashboard"].on_page_load = function (wrapper) {
+	frappe.ui.make_app_page({
+		parent: wrapper,
+		title: "FabTrk Dashboard",
+		single_column: true,
+	});
 
-    // ── CSS inject ──────────────────────────────────────────────────────────
-    if (!document.getElementById('td-dashboard-style')) {
-        var style = document.createElement('style');
-        style.id = 'td-dashboard-style';
-        style.innerHTML = `
-            .td-wrap { padding: 20px; }
-            .td-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:18px; flex-wrap:wrap; gap:10px; }
-            .td-title  { font-size:20px; font-weight:500; margin:0; color:var(--text-color); }
-            .td-header select { font-size:13px; padding:5px 10px; border-radius:6px; border:1px solid var(--border-color); background:var(--control-bg); color:var(--text-color); }
-
-            .td-metric-grid { display:grid; grid-template-columns:repeat(6,1fr); gap:10px; margin-bottom:20px; }
-            .td-mc       { background:var(--fg-color); border:1px solid var(--border-color); border-radius:8px; padding:14px 12px; }
-            .td-mc-label { font-size:11px; color:var(--text-muted); margin-bottom:6px; text-transform:uppercase; letter-spacing:0.03em; }
-            .td-mc-val   { font-size:24px; font-weight:500; color:var(--text-color); }
-
-            .td-chart-row  { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:20px; }
-            .td-chart-card { background:var(--fg-color); border:1px solid var(--border-color); border-radius:10px; padding:16px; }
-
-            .td-card { background:var(--fg-color); border:1px solid var(--border-color); border-radius:10px; padding:16px; }
-            .td-sec-title { font-size:11px; font-weight:500; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.04em; margin-bottom:10px; }
-
-            .td-legend-row { display:flex; gap:14px; flex-wrap:wrap; margin-top:8px; font-size:12px; color:var(--text-muted); align-items:center; }
-            .td-leg-dot    { width:10px; height:10px; border-radius:2px; display:inline-block; margin-right:3px; vertical-align:middle; }
-
-            .td-proj-card  { background:var(--fg-color); border:1px solid var(--border-color); border-radius:10px; padding:16px; margin-bottom:14px; }
-            .td-proj-head  { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px; flex-wrap:wrap; gap:8px; }
-            .td-proj-title { font-size:15px; font-weight:500; color:var(--text-color); }
-            .td-proj-id    { font-size:12px; font-weight:400; color:var(--text-muted); margin-left:6px; }
-            .td-proj-sub   { font-size:12px; color:var(--text-muted); margin-top:4px; line-height:1.6; }
-            .td-pct-big    { font-size:24px; font-weight:500; margin-top:4px; }
-
-            .td-prog-wrap { background:var(--border-color); border-radius:4px; height:8px; margin:6px 0 3px; overflow:hidden; }
-            .td-prog-bar  { height:8px; border-radius:4px; transition:width 0.5s ease; }
-
-            .td-mini-prog { display:inline-block; width:60px; height:5px; background:var(--border-color); border-radius:3px; vertical-align:middle; margin-left:6px; overflow:hidden; }
-            .td-mini-bar  { display:block; height:5px; border-radius:3px; }
-
-            .td-stage-table    { width:100%; border-collapse:collapse; font-size:13px; margin-top:6px; }
-            .td-stage-table th { text-align:left; padding:7px 8px; border-bottom:1px solid var(--border-color); font-size:11px; color:var(--text-muted); font-weight:500; background:var(--subtle-fg); }
-            .td-stage-table td { padding:7px 8px; border-bottom:1px solid var(--border-color); color:var(--text-color); }
-            .td-stage-table tr:last-child td { border-bottom:none; }
-            .td-stage-table tr:hover td { background:var(--subtle-fg); }
-
-            .td-sum-table    { width:100%; border-collapse:collapse; font-size:13px; }
-            .td-sum-table th { text-align:left; padding:8px 10px; border-bottom:1px solid var(--border-color); font-size:11px; color:var(--text-muted); font-weight:500; background:var(--subtle-fg); white-space:nowrap; }
-            .td-sum-table td { padding:8px 10px; border-bottom:1px solid var(--border-color); color:var(--text-color); }
-            .td-sum-table tr:last-child td { border-bottom:none; }
-
-            .td-badge       { display:inline-block; font-size:11px; font-weight:500; padding:2px 9px; border-radius:4px; }
-            .td-badge-green { background:#EAF3DE; color:#3B6D11; }
-            .td-badge-blue  { background:#E6F1FB; color:#185FA5; }
-            .td-badge-red   { background:#FCEBEB; color:#A32D2D; }
-            .td-badge-amber { background:#FAEEDA; color:#854F0B; }
-            .td-badge-gray  { background:#F1EFE8; color:#5F5E5A; }
-
-            .td-stage-pill { display:inline-block; font-size:11px; padding:2px 9px; border-radius:20px; font-weight:500; }
-            .td-stage-done { background:#EAF3DE; color:#3B6D11; }
-            .td-stage-prog { background:#FAEEDA; color:#854F0B; }
-            .td-stage-pend { background:#F1EFE8; color:#5F5E5A; }
-
-            .td-empty { text-align:center; padding:40px; color:var(--text-muted); font-size:14px; }
-
-            @media (max-width:1100px) { .td-metric-grid { grid-template-columns:repeat(3,1fr); } }
-            @media (max-width:800px)  { .td-chart-row   { grid-template-columns:1fr; } .td-metric-grid { grid-template-columns:repeat(2,1fr); } }
-        `;
-        document.head.appendChild(style);
-    }
-
-    // ── HTML inject ─────────────────────────────────────────────────────────
-    $(wrapper).find('.page-content').html(`
-        <div class="td-wrap">
-
-            <div class="td-header">
-                <h1 class="td-title">Project Tracking Dashboard</h1>
-                <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-                    <select id="td-status-filter">
-                        <option value="all">All Statuses</option>
-                        <option value="Completed">Completed</option>
-                        <option value="On Track">On Track</option>
-                        <option value="Delayed">Delayed</option>
-                        <option value="Not Started">Not Started</option>
-                    </select>
-                    <button class="btn btn-sm btn-default" id="td-refresh-btn">&#8635; Refresh</button>
-                </div>
-            </div>
-
-            <div class="td-metric-grid">
-                <div class="td-mc"><div class="td-mc-label">Total Projects</div><div class="td-mc-val" id="td-m-total">—</div></div>
-                <div class="td-mc"><div class="td-mc-label">Avg Completion</div><div class="td-mc-val" id="td-m-avg">—</div></div>
-                <div class="td-mc"><div class="td-mc-label">Completed</div><div class="td-mc-val" id="td-m-done">—</div></div>
-                <div class="td-mc"><div class="td-mc-label">Total Stages</div><div class="td-mc-val" id="td-m-stages">—</div></div>
-                <div class="td-mc"><div class="td-mc-label">Total Target Units</div><div class="td-mc-val" id="td-m-target">—</div></div>
-                <div class="td-mc"><div class="td-mc-label">Total Completed Units</div><div class="td-mc-val" id="td-m-completed">—</div></div>
-            </div>
-
-            <div class="td-chart-row">
-                <div class="td-chart-card">
-                    <div class="td-sec-title">Project Completion %</div>
-                    <div style="position:relative;height:220px;">
-                        <canvas id="td-bar-chart"></canvas>
-                    </div>
-                </div>
-                <div class="td-chart-card">
-                    <div class="td-sec-title">Projects by Status</div>
-                    <div style="position:relative;height:180px;">
-                        <canvas id="td-donut-chart"></canvas>
-                    </div>
-                    <div class="td-legend-row" id="td-donut-legend"></div>
-                </div>
-            </div>
-
-            <div class="td-sec-title" style="margin:4px 0 10px;">Project Details</div>
-            <div id="td-project-cards"></div>
-
-            <div class="td-card" style="margin-top:16px;">
-                <div class="td-sec-title">All Projects Summary</div>
-                <div style="overflow-x:auto;">
-                    <table class="td-sum-table">
-                        <thead>
-                            <tr>
-                                <th>Project ID</th>
-                                <th>Project Name</th>
-                                <th>Customer</th>
-                                <th>Stages</th>
-                                <th>Target Units</th>
-                                <th>Completed Units</th>
-                                <th>Completion %</th>
-                                <th>Status</th>
-                                <th>Start Date</th>
-                                <th>End Date</th>
-                            </tr>
-                        </thead>
-                        <tbody id="td-summary-tbody"></tbody>
-                    </table>
-                </div>
-            </div>
-
-        </div>
-    `);
-
-    // ── Events ───────────────────────────────────────────────────────────────
-    window._tdData = [];
-
-    $(wrapper).on('click', '#td-refresh-btn', function () {
-        tdLoad();
-    });
-
-    $(wrapper).on('change', '#td-status-filter', function () {
-        tdApplyFilter();
-    });
-
-    // ── Load Chart.js then data ───────────────────────────────────────────────
-    if (typeof Chart !== 'undefined') {
-        tdLoad();
-    } else {
-        frappe.require(
-            'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js',
-            function () { tdLoad(); }
-        );
-    }
+	$(wrapper).find(".page-content").html(`<div id="ft-dashboard-root"></div>`);
+	load_dashboard_css();
+	render_shell();
+	load_projects_filter();
 };
 
+// ─────────────────────────────────────────────
+// SHELL — static HTML structure
+// ─────────────────────────────────────────────
+function render_shell() {
+	document.getElementById("ft-dashboard-root").innerHTML = `
+	<div class="ftd-wrap">
 
-// DATA LOAD
-function tdLoad() {
-    frappe.call({
-        method: 'fabtrk.fabtrk.page.transaction_dashboard.transaction_dashboard.get_dashboard_data',
-        freeze: true,
-        freeze_message: 'Loading dashboard...',
-        callback: function (r) {
-            if (r.message && r.message.length) {
-                window._tdData = r.message;
-                tdRenderAll(r.message);
-            } else {
-                $('#td-project-cards').html(
-                    '<div class="td-empty">No data found. Add transactions in FT Transaction.</div>'
-                );
-                console.warn('Dashboard: empty response', r);
-            }
-        },
-        error: function (r) {
-            frappe.msgprint('Dashboard API error — check F12 Console.');
-            console.error('Dashboard error:', r);
-        }
-    });
+		<!-- HEADER -->
+		<div class="ftd-header">
+			<div class="ftd-header-left">
+				<div class="ftd-logo">FT</div>
+				<div>
+					<h1 class="ftd-title">FabTrk Dashboard</h1>
+					<p class="ftd-subtitle">Project · Drawing · Stage · Transaction Tracker</p>
+				</div>
+			</div>
+			<div class="ftd-header-right">
+				<select id="ftd-project-filter" class="ftd-select">
+					<option value="">All Active Projects</option>
+				</select>
+				<button class="ftd-refresh-btn" onclick="ftd_refresh()">
+					↻ Refresh
+				</button>
+			</div>
+		</div>
+
+		<!-- SUMMARY CARDS -->
+		<div class="ftd-cards-grid" id="ftd-cards">
+			${skeletons(4)}
+		</div>
+
+		<!-- MAIN GRID -->
+		<div class="ftd-main-grid">
+			<div class="ftd-col-left">
+				<div class="ftd-panel">
+					<div class="ftd-panel-header">
+						<span class="ftd-panel-title">Project Status</span>
+						<span class="ftd-panel-badge" id="ftd-proj-badge">—</span>
+					</div>
+					<div id="ftd-pie-area" class="ftd-chart-wrap"></div>
+				</div>
+				<div class="ftd-panel">
+					<div class="ftd-panel-header">
+						<span class="ftd-panel-title">Stage-wise Work %</span>
+					</div>
+					<div id="ftd-stage-bar" class="ftd-chart-wrap"></div>
+				</div>
+			</div>
+			<div class="ftd-col-right">
+				<div class="ftd-panel" style="flex:1;">
+					<div class="ftd-panel-header">
+						<span class="ftd-panel-title">Latest Transactions</span>
+						<span class="ftd-panel-badge" id="ftd-txn-badge">—</span>
+					</div>
+					<div id="ftd-txn-table" class="ftd-table-wrap"></div>
+				</div>
+				<div class="ftd-panel">
+					<div class="ftd-panel-header">
+						<span class="ftd-panel-title">Project Progress</span>
+					</div>
+					<div id="ftd-proj-progress" class="ftd-progress-list"></div>
+				</div>
+			</div>
+		</div>
+
+		<!-- BOTTOM GRID -->
+		<div class="ftd-bottom-grid">
+			<div class="ftd-panel">
+				<div class="ftd-panel-header">
+					<span class="ftd-panel-title">Drawings</span>
+					<span class="ftd-panel-badge" id="ftd-draw-badge">—</span>
+				</div>
+				<div id="ftd-draw-table" class="ftd-table-wrap"></div>
+			</div>
+			<div class="ftd-panel">
+				<div class="ftd-panel-header">
+					<span class="ftd-panel-title">Addition vs Subtraction per Stage</span>
+				</div>
+				<div id="ftd-add-sub" class="ftd-chart-wrap"></div>
+			</div>
+		</div>
+
+	</div>`;
 }
 
-function tdApplyFilter() {
-    var sf = $('#td-status-filter').val() || 'all';
-    var data = window._tdData || [];
-    var filtered = sf === 'all'
-        ? data
-        : data.filter(function (p) {
-            return (p.status || '').toLowerCase() === sf.toLowerCase();
-        });
-    tdRenderAll(filtered);
+// ─────────────────────────────────────────────
+// LOAD PROJECT FILTER
+// ─────────────────────────────────────────────
+function load_projects_filter() {
+	frappe.call({
+		method: "fabtrk.fabtrk.page.transaction_dashboard.transaction_dashboard.get_active_projects",
+		callback: function (r) {
+			let sel = document.getElementById("ftd-project-filter");
+			(r.message || []).forEach(p => {
+				let o = document.createElement("option");
+				o.value = p.name; o.text = p.name;
+				sel.appendChild(o);
+			});
+			sel.addEventListener("change", ftd_refresh);
+			ftd_refresh();
+		}
+	});
 }
 
-function tdRenderAll(data) {
-    tdMetrics(data);
-    tdBarChart(data);
-    tdDonut(data);
-    tdCards(data);
-    tdTable(data);
+// ─────────────────────────────────────────────
+// MAIN REFRESH — single Python API call
+// ─────────────────────────────────────────────
+window.ftd_refresh = function () {
+	let project = document.getElementById("ftd-project-filter")?.value || "";
+
+	// Show skeletons while loading
+	document.getElementById("ftd-cards").innerHTML = skeletons(4);
+
+	frappe.call({
+		method: "fabtrk.fabtrk.page.transaction_dashboard.transaction_dashboard.get_dashboard_data",
+		args: { project: project || null },
+		callback: function (r) {
+			if (!r.message) return;
+			let d = r.message;
+			render_cards(d);
+			render_pie(d);
+			render_stage_bar(d);
+			render_txn_table(d);
+			render_proj_progress(d);
+			render_draw_table(d);
+			render_add_sub(d);
+		}
+	});
+};
+
+// ─────────────────────────────────────────────
+// 1. SUMMARY CARDS
+// ─────────────────────────────────────────────
+function render_cards(d) {
+	let cards = [
+		{ icon: "🏗️", label: "Active Projects",       value: d.total_projects,     color: "#3b82f6" },
+		{ icon: "📐", label: "Total Drawings",          value: d.total_drawings,     color: "#8b5cf6" },
+		{ icon: "⚖️",  label: "Total Project Wt (Kg)", value: fmt(d.total_weight,2), color: "#f59e0b" },
+		{ icon: "🔄", label: "Total Transactions",      value: d.total_transactions, color: "#10b981" },
+	];
+	document.getElementById("ftd-cards").innerHTML = cards.map(c => `
+		<div class="ftd-card" style="--ca:${c.color}">
+			<div class="ftd-card-bar" style="background:${c.color}"></div>
+			<div class="ftd-card-icon">${c.icon}</div>
+			<div class="ftd-card-body">
+				<p class="ftd-card-label">${c.label}</p>
+				<p class="ftd-card-value">${c.value}</p>
+			</div>
+		</div>
+	`).join("");
 }
 
+// ─────────────────────────────────────────────
+// 2. PROJECT STATUS PIE (SVG)
+// ─────────────────────────────────────────────
+function render_pie(d) {
+	let counts = d.status_counts || {};
+	let total  = Object.values(counts).reduce((a, b) => a + b, 0) || 1;
+	document.getElementById("ftd-proj-badge").textContent = total + " projects";
 
+	let colors = {
+		"Order Received":    "#3b82f6",
+		"Material Planning": "#8b5cf6",
+		"WIP":               "#f59e0b",
+		"Completed":         "#10b981",
+		"Cancelled":         "#ef4444",
+		"Unknown":           "#94a3b8",
+	};
+
+	let entries = Object.entries(counts);
+	if (!entries.length) {
+		document.getElementById("ftd-pie-area").innerHTML = empty("No project data");
+		return;
+	}
+
+	// Draw SVG pie
+	let cx = 80, cy = 80, r = 70, angle = -Math.PI / 2, paths = "";
+	entries.forEach(([k, v]) => {
+		let slice = (v / total) * 2 * Math.PI;
+		let x1 = cx + r * Math.cos(angle), y1 = cy + r * Math.sin(angle);
+		angle += slice;
+		let x2 = cx + r * Math.cos(angle), y2 = cy + r * Math.sin(angle);
+		let lg = slice > Math.PI ? 1 : 0;
+		let col = colors[k] || "#94a3b8";
+		paths += `<path d="M${cx},${cy} L${x1.toFixed(2)},${y1.toFixed(2)} A${r},${r} 0 ${lg},1 ${x2.toFixed(2)},${y2.toFixed(2)} Z" fill="${col}" stroke="#fff" stroke-width="2"/>`;
+	});
+
+	let legend = entries.map(([k, v]) => `
+		<div class="ftd-legend-item">
+			<span class="ftd-legend-dot" style="background:${colors[k]||'#94a3b8'}"></span>
+			<span class="ftd-legend-label">${k}</span>
+			<span class="ftd-legend-val">${v}</span>
+		</div>
+	`).join("");
+
+	document.getElementById("ftd-pie-area").innerHTML = `
+		<div class="ftd-pie-wrap">
+			<svg viewBox="0 0 160 160" width="150" height="150">${paths}</svg>
+			<div class="ftd-legend">${legend}</div>
+		</div>`;
+}
+
+// ─────────────────────────────────────────────
+// 3. STAGE BAR
+// ─────────────────────────────────────────────
+function render_stage_bar(d) {
+	let stages = d.stage_summary || [];
+	if (!stages.length) {
+		document.getElementById("ftd-stage-bar").innerHTML = empty("No stage data");
+		return;
+	}
+	let bars = stages.map(s => `
+		<div class="ftd-bar-row">
+			<div class="ftd-bar-label" title="${s.stage}">${s.stage}</div>
+			<div class="ftd-bar-track">
+				<div class="ftd-bar-fill" style="width:${s.avg_pct}%"></div>
+			</div>
+			<div class="ftd-bar-pct">${s.avg_pct}%</div>
+		</div>
+	`).join("");
+	document.getElementById("ftd-stage-bar").innerHTML = `<div class="ftd-bars">${bars}</div>`;
+}
+
+// ─────────────────────────────────────────────
+// 4. TRANSACTION TABLE
+// ─────────────────────────────────────────────
+function render_txn_table(d) {
+	let data = d.transactions || [];
+	document.getElementById("ftd-txn-badge").textContent = d.total_transactions + " total";
+	if (!data.length) {
+		document.getElementById("ftd-txn-table").innerHTML = empty("No transactions");
+		return;
+	}
+	let rows = data.map(t => `
+		<tr>
+			<td><a class="ftd-link" href="/app/ft-project-stages/${t.project_number}">${t.project_number||"—"}</a></td>
+			<td>${t.stages||"—"}</td>
+			<td>${t.date||"—"}</td>
+			<td class="ftd-add">+${t.addition||0}</td>
+			<td class="ftd-sub">-${t.subtraction||0}</td>
+			<td>
+				<div class="ftd-mini-bar-wrap">
+					<div class="ftd-mini-bar" style="width:${t.work_completed||0}%"></div>
+					<span>${t.work_completed||0}%</span>
+				</div>
+			</td>
+		</tr>
+	`).join("");
+	document.getElementById("ftd-txn-table").innerHTML = `
+		<table class="ftd-table">
+			<thead><tr><th>Project</th><th>Stage</th><th>Date</th><th>Add</th><th>Sub</th><th>Done</th></tr></thead>
+			<tbody>${rows}</tbody>
+		</table>`;
+}
+
+// ─────────────────────────────────────────────
+// 5. PROJECT PROGRESS
+// ─────────────────────────────────────────────
+function render_proj_progress(d) {
+	let data = d.projects || [];
+	if (!data.length) {
+		document.getElementById("ftd-proj-progress").innerHTML = empty("No projects");
+		return;
+	}
+	let pc = { "Order Received":"#3b82f6","Material Planning":"#8b5cf6","WIP":"#f59e0b","Completed":"#10b981","Cancelled":"#ef4444" };
+	let pr = { High:"#ef4444", Medium:"#f59e0b", Low:"#10b981" };
+	let html = data.map(p => {
+		let pct   = p.percentage_completed || 0;
+		let color = pc[p.status] || "#3b82f6";
+		let prio  = p.priority || "";
+		return `
+		<div class="ftd-proj-row">
+			<div class="ftd-proj-top">
+				<a class="ftd-link ftd-proj-name" href="/app/ft-project/${p.name}">${p.name}</a>
+				<div style="display:flex;gap:5px;align-items:center">
+					${prio ? `<span class="ftd-badge" style="background:${pr[prio]}20;color:${pr[prio]}">${prio}</span>` : ""}
+					<span class="ftd-badge" style="background:${color}20;color:${color}">${p.status||"—"}</span>
+					<b style="font-size:13px">${pct}%</b>
+				</div>
+			</div>
+			<div class="ftd-proj-track">
+				<div class="ftd-proj-fill" style="width:${pct}%;background:${color}"></div>
+			</div>
+			<div class="ftd-proj-meta">${fmt(p.total_weight||0,2)} Kg</div>
+		</div>`;
+	}).join("");
+	document.getElementById("ftd-proj-progress").innerHTML = html;
+}
+
+// ─────────────────────────────────────────────
+// 6. DRAWING TABLE
+// ─────────────────────────────────────────────
+// function render_draw_table(d) {
+// 	let data = d.drawings || [];
+// 	document.getElementById("ftd-draw-badge").textContent = d.total_drawings + " total";
+// 	if (!data.length) {
+// 		document.getElementById("ftd-draw-table").innerHTML = empty("No drawings");
+// 		return;
+// 	}
+// 	let rows = data.map(dr => `
+// 		<tr>
+// 			<td>${dr.drawing_number||dr.name}</td>
+// 			<td><a class="ftd-link" href="/app/ft-project/${dr.project_number}">${dr.project_number||"—"}</a></td>
+// 			<td>${dr.customer_name||"—"}</td>
+// 			<td class="ftd-num">${fmt(dr.unit_weight||0,3)}</td>
+// 		</tr>
+// 	`).join("");
+// 	document.getElementById("ftd-draw-table").innerHTML = `
+// 		<table class="ftd-table">
+// 			<thead><tr><th>Drawing No</th><th>Project</th><th>Customer</th><th>Unit Wt (Kg)</th></tr></thead>
+// 			<tbody>${rows}</tbody>
+// 		</table>`;
+// }
+function render_draw_table(d) {
+	let data = d.drawings || [];
+	document.getElementById("ftd-draw-badge").textContent = d.total_drawings + " total";
+	if (!data.length) {
+		document.getElementById("ftd-draw-table").innerHTML = empty("No drawings");
+		return;
+	}
+
+	// Store data globally for filtering
+	window._ftd_drawings = data;
+
+	let filter_bar = `
+		<div class="ftd-draw-filter">
+			<input
+				type="text"
+				id="ftd-draw-search"
+				class="ftd-draw-input"
+				placeholder="🔍  Search drawing no, project, customer..."
+				oninput="ftd_filter_drawings()"
+			/>
+		</div>
+	`;
+
+	document.getElementById("ftd-draw-table").innerHTML = filter_bar + `
+		<div id="ftd-draw-table-inner" class="ftd-table-wrap"></div>
+	`;
+
+	ftd_render_draw_rows(data);
+}
+
+function ftd_render_draw_rows(data) {
+	if (!data.length) {
+		document.getElementById("ftd-draw-table-inner").innerHTML = empty("No matching drawings");
+		return;
+	}
+	let rows = data.map(dr => `
+		<tr>
+			<td>${dr.drawing_number || dr.name}</td>
+			<td><a class="ftd-link" href="/app/ft-project/${dr.project_number}">${dr.project_number || "—"}</a></td>
+			<td>${dr.customer_name || "—"}</td>
+			<td class="ftd-num">${fmt(dr.unit_weight || 0, 3)}</td>
+		</tr>
+	`).join("");
+	document.getElementById("ftd-draw-table-inner").innerHTML = `
+		<table class="ftd-table">
+			<thead><tr><th>Drawing No</th><th>Project</th><th>Customer</th><th>Unit Wt (Kg)</th></tr></thead>
+			<tbody>${rows}</tbody>
+		</table>`;
+}
+
+window.ftd_filter_drawings = function () {
+	let txt = (document.getElementById("ftd-draw-search")?.value || "").toLowerCase();
+	let data = window._ftd_drawings || [];
+	let filtered = data.filter(d =>
+		(d.drawing_number || "").toLowerCase().includes(txt) ||
+		(d.project_number || "").toLowerCase().includes(txt) ||
+		(d.customer_name  || "").toLowerCase().includes(txt)
+	);
+	ftd_render_draw_rows(filtered);
+};
+
+// ─────────────────────────────────────────────
+// 7. ADDITION vs SUBTRACTION
+// ─────────────────────────────────────────────
+function render_add_sub(d) {
+	let stages = d.stage_summary || [];
+	if (!stages.length) {
+		document.getElementById("ftd-add-sub").innerHTML = empty("No data");
+		return;
+	}
+	let max_val = Math.max(...stages.map(s => Math.max(s.addition, s.subtraction)), 1);
+	let bars = stages.map(s => `
+		<div class="ftd-as-row">
+			<div class="ftd-as-label" title="${s.stage}">${s.stage}</div>
+			<div class="ftd-as-bars">
+				<div class="ftd-as-bar-wrap">
+					<div class="ftd-as-fill ftd-as-add" style="width:${(s.addition/max_val)*100}%"></div>
+					<span class="ftd-as-num">${s.addition}</span>
+				</div>
+				<div class="ftd-as-bar-wrap">
+					<div class="ftd-as-fill ftd-as-sub" style="width:${(s.subtraction/max_val)*100}%"></div>
+					<span class="ftd-as-num">${s.subtraction}</span>
+				</div>
+			</div>
+		</div>
+	`).join("");
+	document.getElementById("ftd-add-sub").innerHTML = `
+		<div class="ftd-as-legend">
+			<span><span class="ftd-dot" style="background:#10b981"></span> Addition</span>
+			<span><span class="ftd-dot" style="background:#ef4444"></span> Subtraction</span>
+		</div>
+		<div class="ftd-as-list">${bars}</div>`;
+}
+
+// ─────────────────────────────────────────────
 // HELPERS
-function tdColor(pct) {
-    if (pct === 100) return '#639922';
-    if (pct >= 60) return '#378ADD';
-    if (pct > 0) return '#EF9F27';
-    return '#B4B2A9';
+// ─────────────────────────────────────────────
+function fmt(n, dec) {
+	return Number(n || 0).toLocaleString("en-IN", { minimumFractionDigits: dec, maximumFractionDigits: dec });
+}
+function empty(msg) { return `<p class="ftd-empty">${msg}</p>`; }
+function skeletons(n) { return Array(n).fill(`<div class="ftd-card ftd-skeleton"></div>`).join(""); }
+
+// ─────────────────────────────────────────────
+// CSS
+// ─────────────────────────────────────────────
+function load_dashboard_css() {
+	if (document.getElementById("ftd-style")) return;
+	let s = document.createElement("style");
+	s.id = "ftd-style";
+	s.textContent = `
+.ftd-wrap { font-family:'Segoe UI',system-ui,sans-serif; padding:20px; background:#f1f5f9; min-height:100vh; color:#1e293b; }
+
+/* Header */
+.ftd-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; flex-wrap:wrap; gap:12px; }
+.ftd-header-left { display:flex; align-items:center; gap:14px; }
+.ftd-logo { width:48px; height:48px; background:linear-gradient(135deg,#3b82f6,#8b5cf6); border-radius:12px; display:flex; align-items:center; justify-content:center; font-weight:900; font-size:18px; color:#fff; box-shadow:0 4px 14px #3b82f640; }
+.ftd-title { font-size:22px; font-weight:800; margin:0; letter-spacing:-0.5px; }
+.ftd-subtitle { font-size:12px; color:#64748b; margin:0; }
+.ftd-header-right { display:flex; align-items:center; gap:10px; }
+.ftd-select { padding:8px 14px; border-radius:8px; border:1.5px solid #e2e8f0; background:#fff; font-size:13px; color:#334155; cursor:pointer; }
+.ftd-refresh-btn { display:flex; align-items:center; gap:6px; padding:8px 18px; border-radius:8px; background:linear-gradient(135deg,#3b82f6,#6366f1); color:#fff; border:none; cursor:pointer; font-size:13px; font-weight:700; box-shadow:0 2px 8px #3b82f640; }
+.ftd-refresh-btn:hover { opacity:.88; }
+
+/* Cards */
+.ftd-cards-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:20px; }
+@media(max-width:900px){.ftd-cards-grid{grid-template-columns:repeat(2,1fr);}}
+@media(max-width:500px){.ftd-cards-grid{grid-template-columns:1fr;}}
+.ftd-card { background:#fff; border-radius:14px; padding:20px; display:flex; align-items:center; gap:14px; position:relative; overflow:hidden; box-shadow:0 1px 4px #0001; border:1.5px solid #e2e8f0; transition:transform .15s,box-shadow .15s; }
+.ftd-card:hover { transform:translateY(-2px); box-shadow:0 6px 20px #0002; }
+.ftd-card-bar { position:absolute; left:0; top:0; bottom:0; width:4px; border-radius:14px 0 0 14px; }
+.ftd-card-icon { font-size:28px; }
+.ftd-card-body { flex:1; }
+.ftd-card-label { font-size:11px; color:#64748b; margin:0 0 4px; text-transform:uppercase; letter-spacing:.5px; }
+.ftd-card-value { font-size:24px; font-weight:800; margin:0; color:#1e293b; }
+.ftd-skeleton { background:linear-gradient(90deg,#e2e8f0 25%,#f8fafc 50%,#e2e8f0 75%); background-size:200% 100%; animation:ftd-sh 1.4s infinite; height:88px; }
+@keyframes ftd-sh{0%{background-position:200%}100%{background-position:-200%}}
+
+/* Layout grids */
+.ftd-main-grid { display:grid; grid-template-columns:340px 1fr; gap:16px; margin-bottom:16px; }
+@media(max-width:900px){.ftd-main-grid{grid-template-columns:1fr;}}
+.ftd-col-left,.ftd-col-right { display:flex; flex-direction:column; gap:16px; }
+.ftd-bottom-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+@media(max-width:900px){.ftd-bottom-grid{grid-template-columns:1fr;}}
+
+/* Panel */
+.ftd-panel { background:#fff; border-radius:14px; padding:18px; border:1.5px solid #e2e8f0; box-shadow:0 1px 4px #0001; }
+.ftd-panel-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; }
+.ftd-panel-title { font-size:12px; font-weight:700; color:#334155; text-transform:uppercase; letter-spacing:.5px; }
+.ftd-panel-badge { font-size:11px; background:#f1f5f9; color:#64748b; padding:3px 10px; border-radius:20px; border:1px solid #e2e8f0; }
+.ftd-chart-wrap { min-height:80px; }
+
+/* Pie */
+.ftd-pie-wrap { display:flex; align-items:center; gap:20px; flex-wrap:wrap; }
+.ftd-legend { display:flex; flex-direction:column; gap:7px; flex:1; }
+.ftd-legend-item { display:flex; align-items:center; gap:8px; font-size:12px; }
+.ftd-legend-dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+.ftd-legend-label { flex:1; color:#475569; }
+.ftd-legend-val { font-weight:700; color:#1e293b; }
+
+/* Bar */
+.ftd-bars { display:flex; flex-direction:column; gap:10px; }
+.ftd-bar-row { display:flex; align-items:center; gap:10px; }
+.ftd-bar-label { font-size:12px; color:#475569; width:110px; flex-shrink:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.ftd-bar-track { flex:1; height:10px; background:#f1f5f9; border-radius:99px; overflow:hidden; }
+.ftd-bar-fill { height:100%; border-radius:99px; background:linear-gradient(90deg,#3b82f6,#8b5cf6); transition:width .6s ease; }
+.ftd-bar-pct { font-size:12px; font-weight:700; color:#334155; width:36px; text-align:right; }
+
+/* Table */
+
+.ftd-table { width:100%; border-collapse:collapse; font-size:12.5px; }
+.ftd-table thead tr { background:#f8fafc; position:sticky; top:0; }
+.ftd-table th { padding:9px 12px; text-align:left; font-size:11px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:.4px; border-bottom:1.5px solid #e2e8f0; white-space:nowrap; }
+.ftd-table td { padding:8px 12px; border-bottom:1px solid #f1f5f9; color:#334155; white-space:nowrap; }
+.ftd-table tbody tr:hover { background:#f8fafc; }
+.ftd-num { text-align:right; font-variant-numeric:tabular-nums; }
+.ftd-add { color:#10b981; font-weight:700; }
+.ftd-sub { color:#ef4444; font-weight:700; }
+.ftd-mini-bar-wrap { display:flex; align-items:center; gap:8px; min-width:100px; }
+.ftd-mini-bar { height:6px; border-radius:99px; background:linear-gradient(90deg,#3b82f6,#8b5cf6); flex:1; max-width:80px; }
+.ftd-mini-bar-wrap span { font-size:11px; font-weight:700; color:#475569; }
+
+/* Project progress */
+.ftd-progress-list { display:flex; flex-direction:column; gap:12px; }
+.ftd-proj-top { display:flex; justify-content:space-between; align-items:center; margin-bottom:5px; }
+.ftd-proj-name { font-size:13px; font-weight:700; }
+.ftd-proj-track { height:8px; background:#f1f5f9; border-radius:99px; overflow:hidden; margin-bottom:3px; }
+.ftd-proj-fill { height:100%; border-radius:99px; transition:width .6s ease; }
+.ftd-proj-meta { font-size:11px; color:#94a3b8; }
+.ftd-badge { font-size:10px; font-weight:700; padding:2px 8px; border-radius:20px; }
+
+/* Add-Sub */
+.ftd-as-legend { display:flex; gap:16px; font-size:12px; margin-bottom:10px; color:#475569; }
+.ftd-dot { display:inline-block; width:10px; height:10px; border-radius:50%; margin-right:4px; }
+.ftd-as-list { display:flex; flex-direction:column; gap:8px; }
+.ftd-as-row { display:flex; align-items:center; gap:10px; }
+.ftd-as-label { font-size:12px; color:#475569; width:110px; flex-shrink:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.ftd-as-bars { flex:1; display:flex; flex-direction:column; gap:3px; }
+.ftd-as-bar-wrap { display:flex; align-items:center; gap:6px; }
+.ftd-as-fill { height:8px; border-radius:99px; min-width:2px; transition:width .6s; }
+.ftd-as-add { background:#10b981; }
+.ftd-as-sub { background:#ef4444; }
+.ftd-as-num { font-size:11px; font-weight:700; color:#334155; width:32px; }
+
+/* Misc */
+.ftd-link { color:#3b82f6; text-decoration:none; font-weight:600; }
+.ftd-link:hover { text-decoration:underline; }
+.ftd-empty { font-size:13px; color:#94a3b8; text-align:center; padding:20px 0; }
+
+
+
+/* Drawing Filter */
+.ftd-draw-filter {
+	margin-bottom: 10px;
+}
+.ftd-draw-input {
+	width: 100%;
+	padding: 8px 14px;
+	border-radius: 8px;
+	border: 1.5px solid #e2e8f0;
+	font-size: 13px;
+	color: #334155;
+	background: #f8fafc;
+	box-sizing: border-box;
+	outline: none;
+	transition: border-color 0.2s;
+}
+.ftd-draw-input:focus {
+	border-color: #3b82f6;
+	background: #fff;
 }
 
-function tdBadge(status) {
-    var map = {
-        'completed': 'td-badge-green',
-        'on track': 'td-badge-blue',
-        'delayed': 'td-badge-red',
-        'not started': 'td-badge-gray',
-        'open': 'td-badge-blue',
-        'cancelled': 'td-badge-red',
-        'on hold': 'td-badge-amber'
-    };
-    var cls = map[(status || '').toLowerCase()] || 'td-badge-gray';
-    return '<span class="td-badge ' + cls + '">' + (status || '—') + '</span>';
+#ftd-draw-table-inner {
+    max-height: 240px;
+    overflow-y: auto;
+    overflow-x: auto;
+}
+#ftd-draw-table-inner .ftd-table thead tr {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 2;
+    background: #f8fafc !important;
+}
+    .ftd-table-wrap { overflow-x: auto; max-height: 280px; overflow-y: auto; }
+
+#ftd-draw-table { overflow: visible !important; max-height: none !important; }
+
+#ftd-draw-table-inner {
+    max-height: 240px;
+    overflow-y: auto;
+    overflow-x: hidden;
 }
 
-function tdStagePill(pct) {
-    if (pct === 100) return '<span class="td-stage-pill td-stage-done">Done</span>';
-    if (pct > 0) return '<span class="td-stage-pill td-stage-prog">In Progress</span>';
-    return '<span class="td-stage-pill td-stage-pend">Pending</span>';
+#ftd-draw-table-inner .ftd-table { table-layout: fixed; width: 100%; }
+
+#ftd-draw-table-inner .ftd-table thead tr {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 2;
+    background: #f8fafc !important;
+    box-shadow: 0 1px 0 #e2e8f0;
 }
 
-// METRICS
-function tdMetrics(data) {
-    var avg = data.length
-        ? Math.round(data.reduce(function (a, p) { return a + (p.overall_pct || 0); }, 0) / data.length)
-        : 0;
-    var done = data.filter(function (p) { return p.overall_pct === 100; }).length;
-    var totalStages = data.reduce(function (a, p) { return a + (p.total_stages || 0); }, 0);
-    var totalTgt = data.reduce(function (a, p) { return a + (p.total_target || 0); }, 0);
-    var totalComp = data.reduce(function (a, p) { return a + (p.total_completed || 0); }, 0);
+#ftd-draw-table-inner .ftd-table th:nth-child(1),
+#ftd-draw-table-inner .ftd-table td:nth-child(1) { width: 32%; }
 
-    $('#td-m-total').text(data.length);
-    $('#td-m-avg').text(avg + '%');
-    $('#td-m-done').text(done);
-    $('#td-m-stages').text(totalStages);
-    $('#td-m-target').text(totalTgt);
-    $('#td-m-completed').text(totalComp);
+#ftd-draw-table-inner .ftd-table th:nth-child(2),
+#ftd-draw-table-inner .ftd-table td:nth-child(2) { width: 14%; }
+
+#ftd-draw-table-inner .ftd-table th:nth-child(3),
+#ftd-draw-table-inner .ftd-table td:nth-child(3) { width: 36%; }
+
+#ftd-draw-table-inner .ftd-table th:nth-child(4),
+#ftd-draw-table-inner .ftd-table td:nth-child(4) { width: 18%; text-align: right; }
+
+#ftd-draw-table-inner .ftd-table td {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
-
-// BAR CHART
-var _tdBarInst = null;
-function tdBarChart(data) {
-    if (_tdBarInst) { _tdBarInst.destroy(); _tdBarInst = null; }
-    var ctx = document.getElementById('td-bar-chart');
-    if (!ctx || !data.length) return;
-
-    _tdBarInst = new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: data.map(function (p) {
-                return p.name.length > 14 ? p.name.substring(0, 13) + '…' : p.name;
-            }),
-            datasets: [{
-                data: data.map(function (p) { return p.overall_pct || 0; }),
-                backgroundColor: data.map(function (p) { return tdColor(p.overall_pct || 0); }),
-                borderRadius: 4,
-                barThickness: 30
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: { legend: { display: false } },
-            scales: {
-                y: {
-                    min: 0, max: 100,
-                    ticks: { callback: function (v) { return v + '%'; } },
-                    grid: { color: 'rgba(128,128,128,0.1)' }
-                },
-                x: { grid: { display: false } }
-            }
-        }
-    });
+    /* NAYA — add karo */
+#ftd-draw-table-inner {
+    max-height: 240px;
+    overflow-y: auto;
+    overflow-x: auto;
 }
-
-// DONUT CHART
-var _tdDonutInst = null;
-function tdDonut(data) {
-    if (_tdDonutInst) { _tdDonutInst.destroy(); _tdDonutInst = null; }
-    var ctx = document.getElementById('td-donut-chart');
-    if (!ctx || !data.length) return;
-
-    var counts = {};
-    data.forEach(function (p) {
-        var s = p.status || 'Unknown';
-        counts[s] = (counts[s] || 0) + 1;
-    });
-    var colors = ['#378ADD', '#639922', '#EF9F27', '#E24B4A', '#B4B2A9', '#7F77DD'];
-    var labels = Object.keys(counts);
-    var values = Object.values(counts);
-
-    _tdDonutInst = new Chart(ctx, {
-        type: 'doughnut',
-        data: {
-            datasets: [{
-                data: values,
-                backgroundColor: colors.slice(0, labels.length),
-                borderWidth: 0,
-                hoverOffset: 4
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            cutout: '65%',
-            plugins: { legend: { display: false } }
-        }
-    });
-
-    $('#td-donut-legend').html(
-        labels.map(function (l, i) {
-            return '<span><span class="td-leg-dot" style="background:' + colors[i] + ';"></span>' + l + ' (' + values[i] + ')</span>';
-        }).join('')
-    );
+#ftd-draw-table-inner .ftd-table thead tr {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 2;
+    background: #f8fafc !important;
 }
-
-// PROJECT CARDS
-function tdCards(data) {
-    if (!data || !data.length) {
-        $('#td-project-cards').html('<div class="td-empty">No projects found.</div>');
-        return;
-    }
-
-    var html = data.map(function (p) {
-        var pct = p.overall_pct || 0;
-
-        var stageRows = (p.stages || []).map(function (s) {
-            return '<tr>'
-                + '<td>' + (s.key || '') + '</td>'
-                + '<td style="font-weight:500;">' + s.name + '</td>'
-                + '<td>' + s.target + '</td>'
-                + '<td>' + s.completed + '</td>'
-                + '<td>' + s.remaining + '</td>'
-                + '<td>'
-                + '<span style="color:' + tdColor(s.pct) + ';font-weight:500;">' + s.pct + '%</span>'
-                + '<span class="td-mini-prog"><span class="td-mini-bar" style="width:' + s.pct + '%;background:' + tdColor(s.pct) + ';"></span></span>'
-                + '</td>'
-                + '<td>' + tdStagePill(s.pct) + '</td>'
-                + '<td style="color:var(--text-muted);">' + s.tx_count + ' entries</td>'
-                + '</tr>';
-        }).join('');
-
-        return '<div class="td-proj-card">'
-            + '<div class="td-proj-head">'
-            + '<div>'
-            + '<div class="td-proj-title">' + p.name + ' <span class="td-proj-id">' + p.id + '</span></div>'
-            + '<div class="td-proj-sub">'
-            + 'Customer: <strong>' + p.customer + '</strong>'
-            + ' &nbsp;|&nbsp; ' + p.start_date + ' → ' + p.end_date
-            + ' &nbsp;|&nbsp; Target(Addition): <strong>' + p.total_target + '</strong>'
-            + ' &nbsp;|&nbsp; Done: <strong>' + p.total_completed + '</strong>'
-            + '</div>'
-            + '</div>'
-            + '<div style="text-align:right;">'
-            + tdBadge(p.status)
-            + '<div class="td-pct-big" style="color:' + tdColor(pct) + ';">' + pct + '%</div>'
-            + '</div>'
-            + '</div>'
-            + '<div class="td-prog-wrap"><div class="td-prog-bar" style="width:' + pct + '%;background:' + tdColor(pct) + ';"></div></div>'
-            + '<div style="display:flex;justify-content:space-between;font-size:11px;color:#888;margin-bottom:12px;"><span>0%</span><span>100%</span></div>'
-            + '<div class="td-sec-title">Stage Breakdown (' + p.total_stages + ' stages)</div>'
-            + '<div style="overflow-x:auto;">'
-            + '<table class="td-stage-table">'
-            + '<thead><tr><th>Key</th><th>Stage Name</th><th>Target</th><th>Completed</th><th>Remaining</th><th>%</th><th>Status</th><th>Transactions</th></tr></thead>'
-            + '<tbody>' + stageRows + '</tbody>'
-            + '</table>'
-            + '</div>'
-            + '</div>';
-    }).join('');
-
-    $('#td-project-cards').html(html);
+`;
+	document.head.appendChild(s);
 }
-
-// SUMMARY TABLE
-function tdTable(data) {
-    var rows = (data || []).map(function (p) {
-        return '<tr>'
-            + '<td><a href="/app/ft-project/' + p.id + '" target="_blank" style="color:var(--primary);">' + p.id + '</a></td>'
-            + '<td style="font-weight:500;">' + p.name + '</td>'
-            + '<td>' + p.customer + '</td>'
-            + '<td>' + p.total_stages + '</td>'
-            + '<td>' + p.total_target + '</td>'
-            + '<td>' + p.total_completed + '</td>'
-            + '<td style="color:' + tdColor(p.overall_pct) + ';font-weight:500;">'
-            + p.overall_pct + '%'
-            + '<span class="td-mini-prog"><span class="td-mini-bar" style="width:' + p.overall_pct + '%;background:' + tdColor(p.overall_pct) + ';"></span></span>'
-            + '</td>'
-            + '<td>' + tdBadge(p.status) + '</td>'
-            + '<td>' + p.start_date + '</td>'
-            + '<td>' + p.end_date + '</td>'
-            + '</tr>';
-    }).join('');
-
-    $('#td-summary-tbody').html(rows);
-}
-
-
-
