@@ -580,6 +580,160 @@ def compute_name_python(d, grade_doc=None):
 
 
 # IMPORT — Dynamic with mapping support
+# @frappe.whitelist()
+# def import_with_value(file_url, custom_mapping=None):
+
+#     try:
+#         file_doc  = frappe.get_doc("File", {"file_url": file_url})
+#         file_path = file_doc.get_full_path()
+#     except Exception as e:
+#         frappe.throw(f"File nahi mili: {str(e)}")
+
+#     rows     = []
+#     file_ext = os.path.splitext(file_url)[1].lower()
+
+#     if file_ext == ".xlsx":
+#         try:
+#             wb   = openpyxl.load_workbook(file_path)
+#             ws   = wb.active
+#             rows = list(ws.iter_rows(values_only=True))
+#         except Exception as e:
+#             frappe.throw(f"Excel open nahi hui: {str(e)}")
+#     elif file_ext == ".csv":
+#         try:
+#             with open(file_path, "r", encoding="utf-8-sig") as f:
+#                 rows = list(csv.reader(f))
+#         except Exception as e:
+#             frappe.throw(f"CSV open nahi hui: {str(e)}")
+#     else:
+#         frappe.throw("Only .xlsx or .csv format ki file upload karo.")
+
+#     if not rows:
+#         frappe.throw("File mein koi data nahi hai.")
+
+#     meta = frappe.get_meta("FT Stock RM List", cached=False)
+
+#     label_to_field = {}
+#     for f in meta.fields:
+#         if f.label:
+#             label_to_field[f.label.strip()] = f.fieldname
+#         label_to_field[f.fieldname.strip()]  = f.fieldname
+
+#     if custom_mapping:
+#         extra = json.loads(custom_mapping) if isinstance(custom_mapping, str) else custom_mapping
+#         label_to_field.update(extra)
+
+#     float_fields  = ["thickness_mm", "kg__sqm", "kg__meter",
+#                      "surface_area_sqm__mtr", "surface_area_sqm__ton"]
+#     check_fields  = ["thk"]
+#     string_fields = ["name1", "stock_rm_type", "section_type"]
+
+#     excel_headers = [str(h).strip() if h is not None else "" for h in rows[0]]
+
+#     matched   = [h for h in excel_headers if h and label_to_field.get(h)]
+#     unmatched = [h for h in excel_headers if h and not label_to_field.get(h)]
+
+#     success = 0
+#     errors  = []
+
+#     for i, row in enumerate(rows[1:], start=2):
+#         try:
+#             d = {}
+
+#             if not row or all(cell is None or str(cell).strip() == "" for cell in row):
+#                 continue
+
+#             for idx, excel_label in enumerate(excel_headers):
+#                 if not excel_label:
+#                     continue
+#                 fieldname = label_to_field.get(excel_label.strip())
+#                 if not fieldname:
+#                     continue
+
+#                 val = row[idx] if idx < len(row) else None
+
+#                 if fieldname in float_fields:
+#                     try:
+#                         val = float(val) if val not in [None, ""] else None
+#                     except:
+#                         val = None
+
+#                 elif fieldname in check_fields:
+#                     # ✅ FIX: THK / Thk / thk — teeno accept karo (case-insensitive)
+#                     val_str = str(val).strip().lower() if val not in [None, ""] else ""
+#                     val = 1 if val_str in ["1", "true", "thk"] else 0
+
+#                 elif fieldname in string_fields:
+#                     val = str(val).strip() if val not in [None, ""] else None
+
+#                 if val == "" or str(val) == "None":
+#                     val = None
+
+#                 d[fieldname] = val
+
+#             if not any(v is not None for v in d.values()):
+#                 continue
+
+#             # Grade lookup
+#             grade_doc = None
+#             if d.get("grade"):
+#                 grade_id = frappe.db.get_value(
+#                     "FT Material Grade Catalogues",
+#                     {"grade": str(d["grade"]).strip()},
+#                     "name"
+#                 )
+#                 if grade_id:
+#                     grade_doc = frappe.db.get_value(
+#                         "FT Material Grade Catalogues",
+#                         grade_id,
+#                         ["grade", "bis", "bis_section", "bis_plate"],
+#                         as_dict=True
+#                     )
+#                     d["grade"] = grade_id
+#                 else:
+#                     errors.append(f"⚠️ Row {i}: Grade '{d['grade']}' nahi mila — skipped")
+#                     continue
+
+#             # Computed name
+#             d["computed_name"] = compute_name_python(d, grade_doc)
+
+#             # Duplicate check
+#             existing = frappe.db.get_value(
+#                 "FT Stock RM List",
+#                 {"computed_name": d["computed_name"]},
+#                 "name"
+#             )
+#             if existing:
+#                 errors.append(f"⚠️ Row {i}: '{d['computed_name']}' already exists — skipped")
+#                 continue
+
+#             d.pop("name", None)
+#             d.pop("naming_series", None)
+
+#             doc = frappe.new_doc("FT Stock RM List")
+#             doc.update(d)
+#             doc.insert(ignore_permissions=True)
+#             success += 1
+
+#         except Exception as e:
+#             errors.append(f"❌ Row {i}: {str(e)}")
+#             frappe.log_error(
+#                 title=f"Import Error Row {i}",
+#                 message=f"Row: {row}\nError: {str(e)}"
+#             )
+
+#     frappe.db.commit()
+
+#     msg = f"✅ {success} records import ho gaye."
+#     msg += f"\n\n📋 Matched fields ({len(matched)}): {', '.join(matched)}"
+#     if unmatched:
+#         msg += f"\n⚠️ Skip hue fields ({len(unmatched)}): {', '.join(unmatched)}"
+#     if errors:
+#         msg += f"\n\n❌/⚠️ {len(errors)} rows mein issue:\n" + "\n".join(errors)
+
+#     return msg
+
+
 @frappe.whitelist()
 def import_with_value(file_url, custom_mapping=None):
 
@@ -617,7 +771,7 @@ def import_with_value(file_url, custom_mapping=None):
     for f in meta.fields:
         if f.label:
             label_to_field[f.label.strip()] = f.fieldname
-        label_to_field[f.fieldname.strip()]  = f.fieldname
+        label_to_field[f.fieldname.strip()] = f.fieldname
 
     if custom_mapping:
         extra = json.loads(custom_mapping) if isinstance(custom_mapping, str) else custom_mapping
@@ -633,8 +787,83 @@ def import_with_value(file_url, custom_mapping=None):
     matched   = [h for h in excel_headers if h and label_to_field.get(h)]
     unmatched = [h for h in excel_headers if h and not label_to_field.get(h)]
 
-    success = 0
-    errors  = []
+    success      = 0
+    skipped      = 0
+    errors       = []
+    skipped_list = []
+
+    # ── Helper: computed_name se BIS section extract karo ──
+    def extract_bis_from_computed_name(computed_name_str):
+        """
+        Format: 'Angle 50*50*6 THK IS808 IS2062 E250A'
+        THK ke baad pehla IS-word = bis_section
+        """
+        if not computed_name_str:
+            return None
+        parts = str(computed_name_str).strip().split()
+        try:
+            thk_idx = next(
+                (i for i, p in enumerate(parts) if p.upper() == "THK"), None
+            )
+            if thk_idx is not None and thk_idx + 1 < len(parts):
+                candidate = parts[thk_idx + 1]
+                if candidate.upper().startswith("IS") or candidate.upper() == "HARDOX":
+                    return candidate
+        except Exception:
+            pass
+        return None
+
+    # ── Helper: sahi grade dhundo — bis_section se match karke ──
+    def find_grade_id(raw_grade, bis_section_hint=None):
+        """
+        1. Grade name + bis_section dono se match karo (most accurate)
+        2. Grade name se match karo (pehla result)
+        3. Case-insensitive fallback
+        """
+        raw_grade = str(raw_grade).strip()
+
+        # Step 1: grade + bis_section dono match
+        if bis_section_hint:
+            result = frappe.db.sql("""
+                SELECT name FROM `tabFT Material Grade Catalogues`
+                WHERE grade = %s
+                AND (
+                    LOWER(TRIM(bis_section)) = LOWER(TRIM(%s))
+                    OR LOWER(TRIM(bis_plate)) = LOWER(TRIM(%s))
+                )
+                LIMIT 1
+            """, (raw_grade, bis_section_hint, bis_section_hint))
+            if result:
+                return result[0][0]
+
+        # Step 2: sirf grade name se (pehla match)
+        grade_id = frappe.db.get_value(
+            "FT Material Grade Catalogues",
+            {"grade": raw_grade},
+            "name"
+        )
+        if grade_id:
+            return grade_id
+
+        # Step 3: grade name se ID match
+        grade_id = frappe.db.get_value(
+            "FT Material Grade Catalogues",
+            {"name": raw_grade},
+            "name"
+        )
+        if grade_id:
+            return grade_id
+
+        # Step 4: case-insensitive fallback
+        result = frappe.db.sql("""
+            SELECT name FROM `tabFT Material Grade Catalogues`
+            WHERE LOWER(TRIM(grade)) = LOWER(TRIM(%s))
+            LIMIT 1
+        """, (raw_grade,))
+        if result:
+            return result[0][0]
+
+        return None
 
     for i, row in enumerate(rows[1:], start=2):
         try:
@@ -659,7 +888,6 @@ def import_with_value(file_url, custom_mapping=None):
                         val = None
 
                 elif fieldname in check_fields:
-                    # ✅ FIX: THK / Thk / thk — teeno accept karo (case-insensitive)
                     val_str = str(val).strip().lower() if val not in [None, ""] else ""
                     val = 1 if val_str in ["1", "true", "thk"] else 0
 
@@ -674,14 +902,30 @@ def import_with_value(file_url, custom_mapping=None):
             if not any(v is not None for v in d.values()):
                 continue
 
-            # Grade lookup
-            grade_doc = None
+            # ── Grade lookup — bis_section hint use karo ──
+            grade_doc     = None
+            grade_display = ""
+
             if d.get("grade"):
-                grade_id = frappe.db.get_value(
-                    "FT Material Grade Catalogues",
-                    {"grade": str(d["grade"]).strip()},
-                    "name"
-                )
+                raw_grade = str(d["grade"]).strip()
+
+                # Excel mein computed_name column hai to usse BIS hint lo
+                bis_hint = None
+                computed_name_col = label_to_field.get("Computed Name") or label_to_field.get("computed_name")
+                if computed_name_col:
+                    # computed_name ki value row mein dhundo
+                    cn_idx = next(
+                        (idx for idx, h in enumerate(excel_headers)
+                         if label_to_field.get(h) == "computed_name"),
+                        None
+                    )
+                    if cn_idx is not None and cn_idx < len(row):
+                        cn_val = row[cn_idx]
+                        if cn_val:
+                            bis_hint = extract_bis_from_computed_name(str(cn_val))
+
+                grade_id = find_grade_id(raw_grade, bis_hint)
+
                 if grade_id:
                     grade_doc = frappe.db.get_value(
                         "FT Material Grade Catalogues",
@@ -689,22 +933,34 @@ def import_with_value(file_url, custom_mapping=None):
                         ["grade", "bis", "bis_section", "bis_plate"],
                         as_dict=True
                     )
+                    grade_display = grade_doc.get("grade") or raw_grade
                     d["grade"] = grade_id
                 else:
-                    errors.append(f"⚠️ Row {i}: Grade '{d['grade']}' nahi mila — skipped")
+                    errors.append(
+                        f"⚠️ Row {i}: Grade '{raw_grade}' FT Material Grade Catalogues mein nahi mila — skipped"
+                    )
                     continue
 
-            # Computed name
+            # ── Computed name ──
             d["computed_name"] = compute_name_python(d, grade_doc)
 
-            # Duplicate check
+            # ── Duplicate check — computed_name + grade dono ──
+            duplicate_filters = {"computed_name": d["computed_name"]}
+            if d.get("grade"):
+                duplicate_filters["grade"] = d["grade"]
+
             existing = frappe.db.get_value(
                 "FT Stock RM List",
-                {"computed_name": d["computed_name"]},
+                duplicate_filters,
                 "name"
             )
             if existing:
-                errors.append(f"⚠️ Row {i}: '{d['computed_name']}' already exists — skipped")
+                skipped += 1
+                skipped_list.append(
+                    f"⚠️ Row {i}: '{d['computed_name']}'"
+                    + (f" | Grade: {grade_display}" if grade_display else "")
+                    + f" — already exists ({existing})"
+                )
                 continue
 
             d.pop("name", None)
@@ -724,12 +980,24 @@ def import_with_value(file_url, custom_mapping=None):
 
     frappe.db.commit()
 
-    msg = f"✅ {success} records import ho gaye."
+    # ── Summary ──
+    msg = f"✅ {success} records successfully imported."
+
+    if skipped > 0:
+        msg += f"\n\n⚠️ {skipped} records already exist (skipped):"
+        msg += "\n" + "\n".join(skipped_list[:20])
+        if skipped > 20:
+            msg += f"\n... aur {skipped - 20} more skipped"
+
     msg += f"\n\n📋 Matched fields ({len(matched)}): {', '.join(matched)}"
+
     if unmatched:
-        msg += f"\n⚠️ Skip hue fields ({len(unmatched)}): {', '.join(unmatched)}"
+        msg += f"\n⚠️ Unmatched fields ({len(unmatched)}): {', '.join(unmatched)}"
+
     if errors:
-        msg += f"\n\n❌/⚠️ {len(errors)} rows mein issue:\n" + "\n".join(errors)
+        msg += f"\n\n❌ Errors ({len(errors)}):\n" + "\n".join(errors[:15])
+        if len(errors) > 15:
+            msg += f"\n... aur {len(errors) - 15} errors"
 
     return msg
 
