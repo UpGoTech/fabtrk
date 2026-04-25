@@ -155,7 +155,7 @@ frappe.query_reports["FT Drawing Part"] = {
 				let field_labels = {
 					"total_entries": "Total Entries", "total_qty": "Total Qty",
 					"total_length": "Total Length", "total_width": "Total Width",
-					"total_weight": "Total Weight", "po_required_qty": "PO Required Qty",
+					"total_weight": "Total Weight", "po_required_qty": "Total PO Required Qty",
 					"po_total_weight": "PO Total Weight",
 				};
 				let fields = ["total_entries", "total_qty", "total_length", "total_width", "total_weight", "po_required_qty", "po_total_weight"];
@@ -612,8 +612,8 @@ frappe.query_reports["FT Drawing Part"] = {
                                 <td style="text-align:center;">${d.serial_no || ""}</td>
                                 <td>${d.project_number || ""}</td>
                                 <td style="text-align:center; white-space:nowrap;">${po_no}</td>
-                                <td style="white-space:nowrap;">${d.po_serial_no || ""}</td>
-                                <td>${d.drawing_number || ""}</td>
+                                <td style="text-align:center; white-space:nowrap;">${d.po_serial_no || ""}</td>
+                                <td >${d.drawing_number || ""}</td>
                                 <td style="text-align:center;">${d.position_no || ""}</td>
                                 <td style="text-align:center;">${d.part_no || ""}</td>
                                 <td style="text-align:center;">${d.entry_count || ""}</td>
@@ -674,7 +674,7 @@ frappe.query_reports["FT Drawing Part"] = {
                             <col style="width:52px;">
                             <col style="width:95px;">
                             <col style="width:95px;">
-                            <col style="width:115px;">
+                            <col style="width:80px;">
                             <col style="width:115px;">
                             <col style="width:105px;">
                             <col style="width:100px;">
@@ -686,7 +686,7 @@ frappe.query_reports["FT Drawing Part"] = {
                             <th>Project No</th>
                             <th style="text-align:center; white-space:nowrap;">PO No</th>
                             <th style="white-space:nowrap;">Po Serial No</th>
-                            <th>Drawing</th>
+                            <th style="text-align:center;">Drawing</th>
                             <th style="text-align:center;">Item No / Position No</th>
                             <th style="text-align:center;">Mark No</th>
                             <th style="text-align:center;">Entry Count</th>
@@ -696,7 +696,7 @@ frappe.query_reports["FT Drawing Part"] = {
                             <th style="text-align:center;">Single Weight</th>
                             <th style="text-align:center;">Total Weight</th>
                             <th style="text-align:center; color:#ffd700;">Required Qty</th>
-                            <th style="text-align:center; color:#ffd700;">PO Required Qty</th>
+                            <th style="text-align:center; color:#ffd700;">Total PO Required Qty</th>
                             <th style="text-align:center; color:#7ec8e3;">PO Total Weight</th>
                             <th style="text-align:center; color:#98fb98;">Total Surface Area</th>
                         </tr>`;
