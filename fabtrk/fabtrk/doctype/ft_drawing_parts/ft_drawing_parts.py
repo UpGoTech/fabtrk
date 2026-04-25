@@ -336,7 +336,7 @@ class FTDrawingParts(Document):
 #     frappe.local.response.filecontent = output.getvalue()
 #     frappe.local.response.type        = "binary"
 
-
+# iss code mai sab thik hai bas jab excel download karneke bad use edit nahi kar pa rahe hai..
 @frappe.whitelist()
 def export_with_value(file_type="xlsx", export_type="all", filters=None, selected_fields=None):
     import io
