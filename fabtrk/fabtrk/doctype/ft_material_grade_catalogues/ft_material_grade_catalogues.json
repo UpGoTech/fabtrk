@@ -45,6 +45,7 @@
    "fieldname": "bis_section",
    "fieldtype": "Data",
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "BIS Section"
   },
   {
@@ -58,12 +59,13 @@
    "fieldname": "bis_plate",
    "fieldtype": "Data",
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "BIS Plate "
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-04-21 17:32:06.121321",
+ "modified": "2026-04-25 16:29:22.835950",
  "modified_by": "Administrator",
  "module": "Fabtrk",
  "name": "FT Material Grade Catalogues",
