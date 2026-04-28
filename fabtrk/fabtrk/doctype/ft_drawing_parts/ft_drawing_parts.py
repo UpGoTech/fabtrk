@@ -75,91 +75,6 @@ class FTDrawingParts(Document):
         
   
 # ------------- EXPORT -----------------
-# @frappe.whitelist()
-# def export_with_value():
-#     import io
-#     from openpyxl import Workbook
-#     from openpyxl.styles import PatternFill, Font, Alignment, Border, Side
-#     from openpyxl.utils import get_column_letter
-
-#     # ✅ cached=False — naya field automatically export mein aayega
-#     meta       = frappe.get_meta("FT Drawing Parts", cached=False)
-#     fieldnames = [f.fieldname for f in meta.fields]
-#     records    = frappe.get_all("FT Drawing Parts", fields=fieldnames)
-
-#     headers = [(f.label or f.fieldname).upper() for f in meta.fields]
-
-#     data = []
-#     for d in records:
-#         row = []
-#         for field in fieldnames:
-#             value = d.get(field)
-#             if field == "item" and value:
-#                 value = frappe.db.get_value("FT Stock RM List", value, "computed_name") or value
-#             if field == "drawing_number" and value:
-#                 value = frappe.db.get_value("FT Add Drawing", value, "name") or value
-#             if field == "project_number" and value:
-#                 value = frappe.db.get_value("FT Project", value, "name") or value
-#             row.append(value if value is not None else "")
-#         data.append(row)
-
-#     wb = Workbook()
-#     ws = wb.active
-#     ws.title = "FT Drawing Parts"
-
-#     header_fill  = PatternFill("solid", fgColor="BDD7EE")
-#     header_font  = Font(bold=True, size=10, color="000000")
-#     data_font    = Font(size=10)
-#     center_align = Alignment(horizontal="center", vertical="center", wrap_text=True)
-#     left_align   = Alignment(horizontal="left",   vertical="center", wrap_text=True)
-#     thin         = Side(style="thin", color="000000")
-#     border       = Border(left=thin, right=thin, top=thin, bottom=thin)
-
-#     ws.append(headers)
-#     for cell in ws[1]:
-#         cell.fill      = header_fill
-#         cell.font      = header_font
-#         cell.alignment = center_align
-#         cell.border    = border
-
-#     ws.row_dimensions[1].height = 30
-#     ws.auto_filter.ref = f"A1:{get_column_letter(len(headers))}1"
-#     ws.freeze_panes   = "A2"
-
-#     for row_idx, row in enumerate(data, start=2):
-#         ws.append(row)
-#         fill_color = (
-#             PatternFill("solid", fgColor="FFFFFF")
-#             if row_idx % 2 == 0
-#             else PatternFill("solid", fgColor="F2F2F2")
-#         )
-#         for cell in ws[row_idx]:
-#             cell.fill      = fill_color
-#             cell.font      = data_font
-#             cell.border    = border
-#             cell.alignment = (
-#                 center_align if isinstance(cell.value, (int, float)) else left_align
-#             )
-
-#     for col_idx, col_cells in enumerate(ws.columns, start=1):
-#         max_len = 0
-#         for cell in col_cells:
-#             try:
-#                 if cell.value:
-#                     max_len = max(max_len, len(str(cell.value)))
-#             except:
-#                 pass
-#         ws.column_dimensions[get_column_letter(col_idx)].width = min(max(max_len + 4, 12), 35)
-
-#     output = io.BytesIO()
-#     wb.save(output)
-#     output.seek(0)
-
-#     frappe.local.response.filename    = "FT_Drawing_Parts.xlsx"
-#     frappe.local.response.filecontent = output.getvalue()
-#     frappe.local.response.type        = "binary"
-
-
 # # ye all working code hai bas iss mai filtered mai jab item select karne ke bad uski value nahi id aa rahi hai..
 # @frappe.whitelist()
 # def export_with_value(file_type="xlsx", export_type="all", filters=None, selected_fields=None):
@@ -336,7 +251,7 @@ class FTDrawingParts(Document):
 #     frappe.local.response.filecontent = output.getvalue()
 #     frappe.local.response.type        = "binary"
 
-# iss code mai sab thik hai bas jab excel download karneke bad use edit nahi kar pa rahe hai..
+
 @frappe.whitelist()
 def export_with_value(file_type="xlsx", export_type="all", filters=None, selected_fields=None):
     import io

@@ -3,11 +3,7 @@
 frappe.listview_settings["FT Drawing Parts"] = {
     refresh: function (listview) {
 
-        // ── Export Button ──────────────────────────────────────
-        // listview.page.add_inner_button("Export", function () {
-        //     window.location.href = '/api/method/fabtrk.fabtrk.doctype.ft_drawing_parts.ft_drawing_parts.export_with_value';
-        // });     
-        
+        // ── Export Button            
         listview.page.add_inner_button("Export", function () {
 
             frappe.model.with_doctype('FT Drawing Parts', function () {

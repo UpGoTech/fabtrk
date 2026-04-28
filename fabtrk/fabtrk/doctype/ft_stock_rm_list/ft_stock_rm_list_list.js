@@ -636,7 +636,6 @@ frappe.listview_settings['FT Stock RM List'] = {
             });
         });
 
-
         // ── Import Button ──────────────────────────────────────
         listview.page.add_inner_button('Import', function () {
 
