@@ -358,7 +358,6 @@ def get_po_numbers(txt="", drawings=None, projects=None, is_active=0):
     return [str(r[0]) for r in rows if r[0]]
  
  
-# ----------------- Details button ──────────────────────────────────────────────────────────
 # rounded value show hora hai Total Surface Area
 # @frappe.whitelist()
 # def get_item_details(project, item, drawing_numbers=None, project_numbers=None,po_numbers=None):
