@@ -75,91 +75,6 @@ class FTDrawingParts(Document):
         
   
 # ------------- EXPORT -----------------
-# @frappe.whitelist()
-# def export_with_value():
-#     import io
-#     from openpyxl import Workbook
-#     from openpyxl.styles import PatternFill, Font, Alignment, Border, Side
-#     from openpyxl.utils import get_column_letter
-
-#     # ✅ cached=False — naya field automatically export mein aayega
-#     meta       = frappe.get_meta("FT Drawing Parts", cached=False)
-#     fieldnames = [f.fieldname for f in meta.fields]
-#     records    = frappe.get_all("FT Drawing Parts", fields=fieldnames)
-
-#     headers = [(f.label or f.fieldname).upper() for f in meta.fields]
-
-#     data = []
-#     for d in records:
-#         row = []
-#         for field in fieldnames:
-#             value = d.get(field)
-#             if field == "item" and value:
-#                 value = frappe.db.get_value("FT Stock RM List", value, "computed_name") or value
-#             if field == "drawing_number" and value:
-#                 value = frappe.db.get_value("FT Add Drawing", value, "name") or value
-#             if field == "project_number" and value:
-#                 value = frappe.db.get_value("FT Project", value, "name") or value
-#             row.append(value if value is not None else "")
-#         data.append(row)
-
-#     wb = Workbook()
-#     ws = wb.active
-#     ws.title = "FT Drawing Parts"
-
-#     header_fill  = PatternFill("solid", fgColor="BDD7EE")
-#     header_font  = Font(bold=True, size=10, color="000000")
-#     data_font    = Font(size=10)
-#     center_align = Alignment(horizontal="center", vertical="center", wrap_text=True)
-#     left_align   = Alignment(horizontal="left",   vertical="center", wrap_text=True)
-#     thin         = Side(style="thin", color="000000")
-#     border       = Border(left=thin, right=thin, top=thin, bottom=thin)
-
-#     ws.append(headers)
-#     for cell in ws[1]:
-#         cell.fill      = header_fill
-#         cell.font      = header_font
-#         cell.alignment = center_align
-#         cell.border    = border
-
-#     ws.row_dimensions[1].height = 30
-#     ws.auto_filter.ref = f"A1:{get_column_letter(len(headers))}1"
-#     ws.freeze_panes   = "A2"
-
-#     for row_idx, row in enumerate(data, start=2):
-#         ws.append(row)
-#         fill_color = (
-#             PatternFill("solid", fgColor="FFFFFF")
-#             if row_idx % 2 == 0
-#             else PatternFill("solid", fgColor="F2F2F2")
-#         )
-#         for cell in ws[row_idx]:
-#             cell.fill      = fill_color
-#             cell.font      = data_font
-#             cell.border    = border
-#             cell.alignment = (
-#                 center_align if isinstance(cell.value, (int, float)) else left_align
-#             )
-
-#     for col_idx, col_cells in enumerate(ws.columns, start=1):
-#         max_len = 0
-#         for cell in col_cells:
-#             try:
-#                 if cell.value:
-#                     max_len = max(max_len, len(str(cell.value)))
-#             except:
-#                 pass
-#         ws.column_dimensions[get_column_letter(col_idx)].width = min(max(max_len + 4, 12), 35)
-
-#     output = io.BytesIO()
-#     wb.save(output)
-#     output.seek(0)
-
-#     frappe.local.response.filename    = "FT_Drawing_Parts.xlsx"
-#     frappe.local.response.filecontent = output.getvalue()
-#     frappe.local.response.type        = "binary"
-
-
 # # ye all working code hai bas iss mai filtered mai jab item select karne ke bad uski value nahi id aa rahi hai..
 # @frappe.whitelist()
 # def export_with_value(file_type="xlsx", export_type="all", filters=None, selected_fields=None):
@@ -336,7 +251,7 @@ class FTDrawingParts(Document):
 #     frappe.local.response.filecontent = output.getvalue()
 #     frappe.local.response.type        = "binary"
 
-# iss code mai sab thik hai bas jab excel download karneke bad use edit nahi kar pa rahe hai..
+
 @frappe.whitelist()
 def export_with_value(file_type="xlsx", export_type="all", filters=None, selected_fields=None):
     import io
@@ -620,7 +535,181 @@ def get_file_headers(file_url):
     }
 
 
-# IMPORT — 100% DYNAMIC — zero hardcoded lists
+#-------------- IMPORT ---------------------
+# @frappe.whitelist()
+# def import_with_value(file_url, custom_mapping=None):
+
+#     try:
+#         file_doc  = frappe.get_doc("File", {"file_url": file_url})
+#         file_path = file_doc.get_full_path()
+#     except Exception as e:
+#         frappe.throw(f"File not found: {str(e)}")
+
+#     rows     = []
+#     file_ext = os.path.splitext(file_url)[1].lower()
+
+#     if file_ext == ".xlsx":
+#         try:
+#             wb   = openpyxl.load_workbook(file_path)
+#             ws   = wb.active
+#             rows = list(ws.iter_rows(values_only=True))
+#         except Exception as e:
+#             frappe.throw(f"Excel open nahi hui: {str(e)}")
+#     elif file_ext == ".csv":
+#         try:
+#             with open(file_path, "r", encoding="utf-8-sig") as f:
+#                 rows = list(csv.reader(f))
+#         except Exception as e:
+#             frappe.throw(f"CSV open nahi hui: {str(e)}")
+#     else:
+#         frappe.throw("Only .xlsx or .csv format ki file upload karo.")
+
+#     if not rows:
+#         frappe.throw("File mein koi data nahi hai.")
+
+#     # ✅ cached=False — fresh meta
+#     meta = frappe.get_meta("FT Drawing Parts", cached=False)
+
+#     # ✅ DYNAMIC: label → fieldname map
+#     label_to_field = {}
+#     for f in meta.fields:
+#         if f.label:
+#             label_to_field[f.label.strip()] = f.fieldname
+#         label_to_field[f.fieldname.strip()]  = f.fieldname
+
+#     # ✅ DYNAMIC: custom mapping merge
+#     if custom_mapping:
+#         extra = json.loads(custom_mapping) if isinstance(custom_mapping, str) else custom_mapping
+#         label_to_field.update(extra)
+
+#     # ✅ DYNAMIC: fieldname → fieldtype map (hardcoded list ki jagah)
+#     field_type_map = {}
+#     for f in meta.fields:
+#         field_type_map[f.fieldname] = f.fieldtype
+
+#     # ✅ DYNAMIC: fieldname → Link options map (hardcoded item/drawing/project ki jagah)
+#     link_options_map = {}
+#     for f in meta.fields:
+#         if f.fieldtype == "Link" and f.options:
+#             link_options_map[f.fieldname] = f.options.strip()
+
+#     # ✅ DYNAMIC: konse fieldtypes float accept karte hain
+#     numeric_types = ("Float", "Currency", "Percent", "Int")
+
+#     excel_headers = [str(h).strip() if h is not None else "" for h in rows[0]]
+
+#     matched   = [h for h in excel_headers if h and label_to_field.get(h)]
+#     unmatched = [h for h in excel_headers if h and not label_to_field.get(h)]
+
+#     success = 0
+#     errors  = []
+
+#     for i, row in enumerate(rows[1:], start=2):
+#         try:
+#             d = {}
+
+#             if not row or all(cell is None or str(cell).strip() == "" for cell in row):
+#                 continue
+
+#             for idx, excel_label in enumerate(excel_headers):
+#                 if not excel_label:
+#                     continue
+
+#                 fieldname = label_to_field.get(excel_label.strip())
+#                 if not fieldname:
+#                     continue
+
+#                 val = row[idx] if idx < len(row) else None
+
+#                 if val is None or str(val).strip() == "":
+#                     continue
+
+#                 # ✅ DYNAMIC: numeric conversion — fieldtype se detect
+#                 ftype = field_type_map.get(fieldname, "")
+#                 if ftype in numeric_types:
+#                     try:
+#                         val = float(val)
+#                         if ftype == "Int":
+#                             val = int(val)
+#                     except (ValueError, TypeError):
+#                         errors.append(f"⚠️ Row {i}: {excel_label} '{val}' is not a valid number, skipped")
+#                         continue
+
+#                 # ✅ DYNAMIC: Link field lookup — options se detect
+#                 elif ftype == "Link":
+#                     link_doctype = link_options_map.get(fieldname, "")
+#                     text_val = str(val).strip()
+
+#                     if link_doctype == "FT Stock RM List":
+#                         # Try computed_name first, then name
+#                         item_id = frappe.db.get_value("FT Stock RM List", {"computed_name": text_val}, "name")
+#                         if not item_id:
+#                             item_id = frappe.db.get_value("FT Stock RM List", {"name": text_val}, "name")
+#                         if item_id:
+#                             val = item_id
+#                         else:
+#                             errors.append(f"❌ Row {i}: {excel_label} '{text_val}' not found in {link_doctype} — row skipped")
+#                             continue
+
+#                     elif link_doctype == "FT Add Drawing":
+#                         doc_id = frappe.db.get_value("FT Add Drawing", {"name": text_val}, "name")
+#                         if doc_id:
+#                             val = doc_id
+#                         else:
+#                             errors.append(f"❌ Row {i}: {excel_label} '{text_val}' not found in {link_doctype} — row skipped")
+#                             continue
+
+#                     elif link_doctype == "FT Project":
+#                         doc_id = frappe.db.get_value("FT Project", {"name": text_val}, "name")
+#                         if doc_id:
+#                             val = doc_id
+#                         else:
+#                             errors.append(f"❌ Row {i}: {excel_label} '{text_val}' not found in {link_doctype} — row skipped")
+#                             continue
+
+#                     else:
+#                         # ✅ DYNAMIC: koi bhi nayi Link field — generic lookup
+#                         doc_id = frappe.db.get_value(link_doctype, {"name": text_val}, "name")
+#                         if doc_id:
+#                             val = doc_id
+#                         else:
+#                             errors.append(f"❌ Row {i}: {excel_label} '{text_val}' not found in {link_doctype} — row skipped")
+#                             continue
+
+#                 else:
+#                     # ✅ Data, Small Text, Text etc — string
+#                     val = str(val).strip() if val else None
+
+#                 d[fieldname] = val
+
+#             if not d:
+#                 continue
+
+#             d.pop("name", None)
+
+#             doc = frappe.new_doc("FT Drawing Parts")
+#             doc.update(d)
+#             doc.insert(ignore_permissions=True)
+#             success += 1
+
+#         except Exception as e:
+#             errors.append(f"❌ Row {i}: {str(e)}")
+#             frappe.log_error(title=f"FT Drawing Parts Import Error Row {i}", message=f"Row: {row}\nError: {str(e)}")
+
+#     frappe.db.commit()
+
+#     msg = f"✅ {success} records successfully import.\n"
+#     msg += f"\n📋 Matched fields ({len(matched)}): {', '.join(matched)}\n"
+#     if unmatched:
+#         msg += f"\n⚠️ Skip hue fields ({len(unmatched)}): {', '.join(unmatched)}\n"
+#     if errors:
+#         msg += f"\n❌ Errors ({len(errors)}):\n" + "\n".join(errors[:10])
+#         if len(errors) > 10:
+#             msg += f"\n... aur {len(errors) - 10} errors"
+
+#     return msg
+
+
 @frappe.whitelist()
 def import_with_value(file_url, custom_mapping=None):
 
@@ -635,7 +724,8 @@ def import_with_value(file_url, custom_mapping=None):
 
     if file_ext == ".xlsx":
         try:
-            wb   = openpyxl.load_workbook(file_path)
+            # ✅ data_only=True — formulas ki jagah calculated values padhega
+            wb   = openpyxl.load_workbook(file_path, data_only=True)
             ws   = wb.active
             rows = list(ws.iter_rows(values_only=True))
         except Exception as e:
@@ -652,33 +742,27 @@ def import_with_value(file_url, custom_mapping=None):
     if not rows:
         frappe.throw("File mein koi data nahi hai.")
 
-    # ✅ cached=False — fresh meta
     meta = frappe.get_meta("FT Drawing Parts", cached=False)
 
-    # ✅ DYNAMIC: label → fieldname map
     label_to_field = {}
     for f in meta.fields:
         if f.label:
             label_to_field[f.label.strip()] = f.fieldname
         label_to_field[f.fieldname.strip()]  = f.fieldname
 
-    # ✅ DYNAMIC: custom mapping merge
     if custom_mapping:
         extra = json.loads(custom_mapping) if isinstance(custom_mapping, str) else custom_mapping
         label_to_field.update(extra)
 
-    # ✅ DYNAMIC: fieldname → fieldtype map (hardcoded list ki jagah)
     field_type_map = {}
     for f in meta.fields:
         field_type_map[f.fieldname] = f.fieldtype
 
-    # ✅ DYNAMIC: fieldname → Link options map (hardcoded item/drawing/project ki jagah)
     link_options_map = {}
     for f in meta.fields:
         if f.fieldtype == "Link" and f.options:
             link_options_map[f.fieldname] = f.options.strip()
 
-    # ✅ DYNAMIC: konse fieldtypes float accept karte hain
     numeric_types = ("Float", "Currency", "Percent", "Int")
 
     excel_headers = [str(h).strip() if h is not None else "" for h in rows[0]]
@@ -709,60 +793,88 @@ def import_with_value(file_url, custom_mapping=None):
                 if val is None or str(val).strip() == "":
                     continue
 
-                # ✅ DYNAMIC: numeric conversion — fieldtype se detect
                 ftype = field_type_map.get(fieldname, "")
+
                 if ftype in numeric_types:
+                    # ✅ Formula string check — data_only=True ke baad bhi safety net
+                    str_val = str(val).strip()
+                    if str_val.startswith("="):
+                        errors.append(
+                            f"⚠️ Row {i}: {excel_label} mein formula hai '{str_val}' "
+                            f"— Excel mein file save karke dubara try karo"
+                        )
+                        continue
                     try:
                         val = float(val)
                         if ftype == "Int":
                             val = int(val)
                     except (ValueError, TypeError):
-                        errors.append(f"⚠️ Row {i}: {excel_label} '{val}' is not a valid number, skipped")
+                        errors.append(
+                            f"⚠️ Row {i}: {excel_label} '{val}' is not a valid number, skipped"
+                        )
                         continue
 
-                # ✅ DYNAMIC: Link field lookup — options se detect
                 elif ftype == "Link":
                     link_doctype = link_options_map.get(fieldname, "")
                     text_val = str(val).strip()
 
                     if link_doctype == "FT Stock RM List":
-                        # Try computed_name first, then name
-                        item_id = frappe.db.get_value("FT Stock RM List", {"computed_name": text_val}, "name")
+                        item_id = frappe.db.get_value(
+                            "FT Stock RM List", {"computed_name": text_val}, "name"
+                        )
                         if not item_id:
-                            item_id = frappe.db.get_value("FT Stock RM List", {"name": text_val}, "name")
+                            item_id = frappe.db.get_value(
+                                "FT Stock RM List", {"name": text_val}, "name"
+                            )
                         if item_id:
                             val = item_id
                         else:
-                            errors.append(f"❌ Row {i}: {excel_label} '{text_val}' not found in {link_doctype} — row skipped")
+                            errors.append(
+                                f"❌ Row {i}: {excel_label} '{text_val}' "
+                                f"not found in {link_doctype} — row skipped"
+                            )
                             continue
 
                     elif link_doctype == "FT Add Drawing":
-                        doc_id = frappe.db.get_value("FT Add Drawing", {"name": text_val}, "name")
+                        doc_id = frappe.db.get_value(
+                            "FT Add Drawing", {"name": text_val}, "name"
+                        )
                         if doc_id:
                             val = doc_id
                         else:
-                            errors.append(f"❌ Row {i}: {excel_label} '{text_val}' not found in {link_doctype} — row skipped")
+                            errors.append(
+                                f"❌ Row {i}: {excel_label} '{text_val}' "
+                                f"not found in {link_doctype} — row skipped"
+                            )
                             continue
 
                     elif link_doctype == "FT Project":
-                        doc_id = frappe.db.get_value("FT Project", {"name": text_val}, "name")
+                        doc_id = frappe.db.get_value(
+                            "FT Project", {"name": text_val}, "name"
+                        )
                         if doc_id:
                             val = doc_id
                         else:
-                            errors.append(f"❌ Row {i}: {excel_label} '{text_val}' not found in {link_doctype} — row skipped")
+                            errors.append(
+                                f"❌ Row {i}: {excel_label} '{text_val}' "
+                                f"not found in {link_doctype} — row skipped"
+                            )
                             continue
 
                     else:
-                        # ✅ DYNAMIC: koi bhi nayi Link field — generic lookup
-                        doc_id = frappe.db.get_value(link_doctype, {"name": text_val}, "name")
+                        doc_id = frappe.db.get_value(
+                            link_doctype, {"name": text_val}, "name"
+                        )
                         if doc_id:
                             val = doc_id
                         else:
-                            errors.append(f"❌ Row {i}: {excel_label} '{text_val}' not found in {link_doctype} — row skipped")
+                            errors.append(
+                                f"❌ Row {i}: {excel_label} '{text_val}' "
+                                f"not found in {link_doctype} — row skipped"
+                            )
                             continue
 
                 else:
-                    # ✅ Data, Small Text, Text etc — string
                     val = str(val).strip() if val else None
 
                 d[fieldname] = val
@@ -779,7 +891,10 @@ def import_with_value(file_url, custom_mapping=None):
 
         except Exception as e:
             errors.append(f"❌ Row {i}: {str(e)}")
-            frappe.log_error(title=f"FT Drawing Parts Import Error Row {i}", message=f"Row: {row}\nError: {str(e)}")
+            frappe.log_error(
+                title=f"FT Drawing Parts Import Error Row {i}",
+                message=f"Row: {row}\nError: {str(e)}"
+            )
 
     frappe.db.commit()
 
@@ -793,4 +908,6 @@ def import_with_value(file_url, custom_mapping=None):
             msg += f"\n... aur {len(errors) - 10} errors"
 
     return msg
+
+
 
