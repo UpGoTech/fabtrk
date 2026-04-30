@@ -1,16 +1,25 @@
-
 import frappe
 
 
 @frappe.whitelist()
-def get_dashboard_data(project=None):
-    """Single API call — returns all dashboard data"""
+def get_dashboard_data(project=None, projects=None):
+    import json
+
+    # Multiple projects support
+    project_list = []
+    if projects:
+        project_list = json.loads(projects) if isinstance(projects, str) else projects
 
     proj_filter = {}
-    if project:
+    if project_list and len(project_list) > 0:
+        proj_filter["name"] = ["in", project_list]
+    elif project:
         proj_filter["name"] = project
     else:
         proj_filter["is_active"] = 1
+        
+        
+        
 
     # ── 1. Projects
     projects = frappe.db.get_all(
@@ -29,9 +38,11 @@ def get_dashboard_data(project=None):
         s = p.get("status") or "Unknown"
         status_counts[s] = status_counts.get(s, 0) + 1
 
-    # ── 2. Drawings
+    # # ── 2. Drawings
     draw_filter = {}
-    if project:
+    if project_list:
+        draw_filter["project_number"] = ["in", project_list]
+    elif project:
         draw_filter["project_number"] = project
 
     drawings = frappe.db.get_all(
@@ -45,9 +56,12 @@ def get_dashboard_data(project=None):
 
     # ── 3. PO Drawings total weight
     po_filter = {}
-    if project:
+    if project_list:
+        po_filter["project_number"] = ["in", project_list]
+    elif project:
         po_filter["project_number"] = project
-
+        
+        
     po_rows = frappe.db.get_all(
         "FT Po Drawing",
         filters=po_filter,
@@ -59,7 +73,9 @@ def get_dashboard_data(project=None):
 
     # ── 4. Transactions
     txn_filter = {}
-    if project:
+    if project_list:
+        txn_filter["project_number"] = ["in", project_list]
+    elif project:
         txn_filter["project_number"] = project
 
     transactions = frappe.db.get_all(
@@ -103,9 +119,13 @@ def get_dashboard_data(project=None):
 
     # ── 6. Project Stages list
     ps_filter = {}
-    if project:
+    if project_list:
+        ps_filter["project_number"] = ["in", project_list]
+    elif project:
         ps_filter["project_number"] = project
-
+        
+        
+        
     project_stages = frappe.db.get_all(
         "FT Project Stages",
         filters=ps_filter,

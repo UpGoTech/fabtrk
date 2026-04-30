@@ -190,50 +190,6 @@ frappe.listview_settings["FT Drawing Parts"] = {
                     }
 
                     // ── Fetch suggestions ──
-                    // function fetch_suggestions(fieldname, search_text, $list, $input) {
-                    //     let field_meta = meta.fields.find(function (f) { return f.fieldname === fieldname; });
-
-                    //     if (fieldname === 'name') {
-                    //         frappe.call({
-                    //             method: 'fabtrk.fabtrk.doctype.ft_drawing_parts.ft_drawing_parts.get_field_distinct_values',
-                    //             args: { fieldname: 'name', search_text: search_text || '' },
-                    //             callback: function (r) { render_autocomplete_list(r.message || [], $list, $input); }
-                    //         });
-                    //         return;
-                    //     }
-
-                    //     if (!field_meta) { $list.hide(); return; }
-
-                    //     if (field_meta.fieldtype === 'Select') {
-                    //         let options = (field_meta.options || '').split('\n')
-                    //             .map(function (o) { return o.trim(); })
-                    //             .filter(function (o) { return o !== '' && (!search_text || o.toLowerCase().includes(search_text.toLowerCase())); });
-                    //         render_autocomplete_list(options, $list, $input);
-                    //         return;
-                    //     }
-
-                    //     if (field_meta.fieldtype === 'Link') {
-                    //         frappe.call({
-                    //             method: 'frappe.client.get_list',
-                    //             args: { doctype: field_meta.options, fields: ['name'], filters: search_text ? [['name', 'like', '%' + search_text + '%']] : [], limit: 0, order_by: 'name asc' },
-                    //             callback: function (r) {
-                    //                 render_autocomplete_list((r.message || []).map(function (row) { return row.name; }), $list, $input);
-                    //             }
-                    //         });
-                    //         return;
-                    //     }
-
-                    //     if (['Data', 'Small Text'].includes(field_meta.fieldtype)) {
-                    //         frappe.call({
-                    //             method: 'fabtrk.fabtrk.doctype.ft_drawing_parts.ft_drawing_parts.get_field_distinct_values',
-                    //             args: { fieldname: fieldname, search_text: search_text || '' },
-                    //             callback: function (r) { render_autocomplete_list(r.message || [], $list, $input); }
-                    //         });
-                    //         return;
-                    //     }
-
-                    //     $list.hide();
-                    // }
                     function fetch_suggestions(fieldname, search_text, $list, $input) {
                         let field_meta = meta.fields.find(function (f) { return f.fieldname === fieldname; });
 

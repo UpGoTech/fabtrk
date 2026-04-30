@@ -12,9 +12,7 @@ frappe.pages["transaction-dashboard"].on_page_load = function (wrapper) {
 	load_projects_filter();
 };
 
-// ─────────────────────────────────────────────
 // SHELL — static HTML structure
-// ─────────────────────────────────────────────
 function render_shell() {
 	document.getElementById("ft-dashboard-root").innerHTML = `
 	<div class="ftd-wrap">
@@ -29,9 +27,22 @@ function render_shell() {
 				</div>
 			</div>
 			<div class="ftd-header-right">
-				<select id="ftd-project-filter" class="ftd-select">
-					<option value="">All Active Projects</option>
-				</select>
+				<div class="ftd-multi-wrap" id="ftd-multi-wrap">
+					<div class="ftd-multi-box" id="ftd-multi-box" onclick="ftd_toggle_dropdown()">
+						<span id="ftd-multi-label">All Active Projects</span>
+						<span class="ftd-multi-arrow">▾</span>
+					</div>
+					<div class="ftd-multi-dropdown" id="ftd-multi-dropdown" style="display:none;">
+						<div class="ftd-multi-search-wrap">
+							<input type="text" id="ftd-multi-search" class="ftd-multi-search" placeholder="Search project..." oninput="ftd_filter_options()"/>
+						</div>
+						<div id="ftd-multi-options"></div>
+						<div class="ftd-multi-footer">
+							<button class="ftd-multi-clear" onclick="ftd_clear_selection()">Clear All</button>
+							<button class="ftd-multi-apply" onclick="ftd_apply_selection()">Apply</button>
+						</div>
+					</div>
+				</div>
 				<button class="ftd-refresh-btn" onclick="ftd_refresh()">
 					↻ Refresh
 				</button>
@@ -97,37 +108,96 @@ function render_shell() {
 	</div>`;
 }
 
-// ─────────────────────────────────────────────
 // LOAD PROJECT FILTER
-// ─────────────────────────────────────────────
 function load_projects_filter() {
 	frappe.call({
 		method: "fabtrk.fabtrk.page.transaction_dashboard.transaction_dashboard.get_active_projects",
 		callback: function (r) {
-			let sel = document.getElementById("ftd-project-filter");
-			(r.message || []).forEach(p => {
-				let o = document.createElement("option");
-				o.value = p.name; o.text = p.name;
-				sel.appendChild(o);
+			window._ftd_all_projects = (r.message || []).map(p => p.name);
+			window._ftd_selected_projects = [];
+			ftd_render_options(window._ftd_all_projects);
+
+			// Close dropdown on outside click
+			document.addEventListener("click", function (e) {
+				if (!document.getElementById("ftd-multi-wrap")?.contains(e.target)) {
+					document.getElementById("ftd-multi-dropdown").style.display = "none";
+				}
 			});
-			sel.addEventListener("change", ftd_refresh);
+
 			ftd_refresh();
 		}
 	});
 }
 
-// ─────────────────────────────────────────────
-// MAIN REFRESH — single Python API call
-// ─────────────────────────────────────────────
-window.ftd_refresh = function () {
-	let project = document.getElementById("ftd-project-filter")?.value || "";
+window.ftd_toggle_dropdown = function () {
+	let dd = document.getElementById("ftd-multi-dropdown");
+	dd.style.display = dd.style.display === "none" ? "block" : "none";
+};
 
-	// Show skeletons while loading
+window.ftd_filter_options = function () {
+	let txt = (document.getElementById("ftd-multi-search")?.value || "").toLowerCase();
+	let filtered = (window._ftd_all_projects || []).filter(p => p.toLowerCase().includes(txt));
+	ftd_render_options(filtered);
+};
+
+function ftd_render_options(projects) {
+	let selected = window._ftd_selected_projects || [];
+	document.getElementById("ftd-multi-options").innerHTML = projects.map(p => `
+        <label class="ftd-multi-option ${selected.includes(p) ? 'ftd-opt-checked' : ''}">
+            <input type="checkbox" value="${p}" ${selected.includes(p) ? 'checked' : ''}
+                onchange="ftd_on_check(this)"/>
+            ${p}
+        </label>
+    `).join("");
+}
+
+window.ftd_on_check = function (el) {
+	let selected = window._ftd_selected_projects || [];
+	if (el.checked) {
+		if (!selected.includes(el.value)) selected.push(el.value);
+	} else {
+		selected = selected.filter(v => v !== el.value);
+	}
+	window._ftd_selected_projects = selected;
+	el.closest("label").classList.toggle("ftd-opt-checked", el.checked);
+	ftd_update_label();
+};
+
+window.ftd_clear_selection = function () {
+	window._ftd_selected_projects = [];
+	ftd_render_options(window._ftd_all_projects || []);
+	ftd_update_label();
+};
+
+window.ftd_apply_selection = function () {
+	document.getElementById("ftd-multi-dropdown").style.display = "none";
+	ftd_refresh();
+};
+
+function ftd_update_label() {
+	let sel = window._ftd_selected_projects || [];
+	let label = document.getElementById("ftd-multi-label");
+	if (!sel.length) {
+		label.textContent = "All Active Projects";
+	} else if (sel.length === 1) {
+		label.textContent = sel[0];
+	} else {
+		label.textContent = sel.length + " Projects Selected";
+	}
+}
+
+// MAIN REFRESH — single Python API call
+window.ftd_refresh = function () {
+	let selected = window._ftd_selected_projects || [];
+
 	document.getElementById("ftd-cards").innerHTML = skeletons(4);
 
 	frappe.call({
 		method: "fabtrk.fabtrk.page.transaction_dashboard.transaction_dashboard.get_dashboard_data",
-		args: { project: project || null },
+		args: {
+			project: selected.length === 1 ? selected[0] : null,
+			projects: selected.length > 1 ? JSON.stringify(selected) : null
+		},
 		callback: function (r) {
 			if (!r.message) return;
 			let d = r.message;
@@ -142,15 +212,13 @@ window.ftd_refresh = function () {
 	});
 };
 
-// ─────────────────────────────────────────────
 // 1. SUMMARY CARDS
-// ─────────────────────────────────────────────
 function render_cards(d) {
 	let cards = [
-		{ icon: "🏗️", label: "Active Projects",       value: d.total_projects,     color: "#3b82f6" },
-		{ icon: "📐", label: "Total Drawings",          value: d.total_drawings,     color: "#8b5cf6" },
-		{ icon: "⚖️",  label: "Total Project Wt (Kg)", value: fmt(d.total_weight,2), color: "#f59e0b" },
-		{ icon: "🔄", label: "Total Transactions",      value: d.total_transactions, color: "#10b981" },
+		{ icon: "🏗️", label: "Active Projects", value: d.total_projects, color: "#3b82f6" },
+		{ icon: "📐", label: "Total Drawings", value: d.total_drawings, color: "#8b5cf6" },
+		{ icon: "⚖️", label: "Total Project Wt (Kg)", value: fmt(d.total_weight, 2), color: "#f59e0b" },
+		{ icon: "🔄", label: "Total Transactions", value: d.total_transactions, color: "#10b981" },
 	];
 	document.getElementById("ftd-cards").innerHTML = cards.map(c => `
 		<div class="ftd-card" style="--ca:${c.color}">
@@ -164,21 +232,19 @@ function render_cards(d) {
 	`).join("");
 }
 
-// ─────────────────────────────────────────────
 // 2. PROJECT STATUS PIE (SVG)
-// ─────────────────────────────────────────────
 function render_pie(d) {
 	let counts = d.status_counts || {};
-	let total  = Object.values(counts).reduce((a, b) => a + b, 0) || 1;
+	let total = Object.values(counts).reduce((a, b) => a + b, 0) || 1;
 	document.getElementById("ftd-proj-badge").textContent = total + " projects";
 
 	let colors = {
-		"Order Received":    "#3b82f6",
+		"Order Received": "#3b82f6",
 		"Material Planning": "#8b5cf6",
-		"WIP":               "#f59e0b",
-		"Completed":         "#10b981",
-		"Cancelled":         "#ef4444",
-		"Unknown":           "#94a3b8",
+		"WIP": "#f59e0b",
+		"Completed": "#10b981",
+		"Cancelled": "#ef4444",
+		"Unknown": "#94a3b8",
 	};
 
 	let entries = Object.entries(counts);
@@ -201,7 +267,7 @@ function render_pie(d) {
 
 	let legend = entries.map(([k, v]) => `
 		<div class="ftd-legend-item">
-			<span class="ftd-legend-dot" style="background:${colors[k]||'#94a3b8'}"></span>
+			<span class="ftd-legend-dot" style="background:${colors[k] || '#94a3b8'}"></span>
 			<span class="ftd-legend-label">${k}</span>
 			<span class="ftd-legend-val">${v}</span>
 		</div>
@@ -214,9 +280,7 @@ function render_pie(d) {
 		</div>`;
 }
 
-// ─────────────────────────────────────────────
 // 3. STAGE BAR
-// ─────────────────────────────────────────────
 function render_stage_bar(d) {
 	let stages = d.stage_summary || [];
 	if (!stages.length) {
@@ -235,9 +299,7 @@ function render_stage_bar(d) {
 	document.getElementById("ftd-stage-bar").innerHTML = `<div class="ftd-bars">${bars}</div>`;
 }
 
-// ─────────────────────────────────────────────
 // 4. TRANSACTION TABLE
-// ─────────────────────────────────────────────
 function render_txn_table(d) {
 	let data = d.transactions || [];
 	document.getElementById("ftd-txn-badge").textContent = d.total_transactions + " total";
@@ -247,15 +309,15 @@ function render_txn_table(d) {
 	}
 	let rows = data.map(t => `
 		<tr>
-			<td><a class="ftd-link" href="/app/ft-project-stages/${t.project_number}">${t.project_number||"—"}</a></td>
-			<td>${t.stages||"—"}</td>
-			<td>${t.date||"—"}</td>
-			<td class="ftd-add">+${t.addition||0}</td>
-			<td class="ftd-sub">-${t.subtraction||0}</td>
+			<td><a class="ftd-link" href="/app/ft-project-stages/${t.project_number}">${t.project_number || "—"}</a></td>
+			<td>${t.stages || "—"}</td>
+			<td>${t.date || "—"}</td>
+			<td class="ftd-add">+${t.addition || 0}</td>
+			<td class="ftd-sub">-${t.subtraction || 0}</td>
 			<td>
 				<div class="ftd-mini-bar-wrap">
-					<div class="ftd-mini-bar" style="width:${t.work_completed||0}%"></div>
-					<span>${t.work_completed||0}%</span>
+					<div class="ftd-mini-bar" style="width:${t.work_completed || 0}%"></div>
+					<span>${t.work_completed || 0}%</span>
 				</div>
 			</td>
 		</tr>
@@ -267,64 +329,39 @@ function render_txn_table(d) {
 		</table>`;
 }
 
-// ─────────────────────────────────────────────
 // 5. PROJECT PROGRESS
-// ─────────────────────────────────────────────
 function render_proj_progress(d) {
 	let data = d.projects || [];
 	if (!data.length) {
 		document.getElementById("ftd-proj-progress").innerHTML = empty("No projects");
 		return;
 	}
-	let pc = { "Order Received":"#3b82f6","Material Planning":"#8b5cf6","WIP":"#f59e0b","Completed":"#10b981","Cancelled":"#ef4444" };
-	let pr = { High:"#ef4444", Medium:"#f59e0b", Low:"#10b981" };
+	let pc = { "Order Received": "#3b82f6", "Material Planning": "#8b5cf6", "WIP": "#f59e0b", "Completed": "#10b981", "Cancelled": "#ef4444" };
+	let pr = { High: "#ef4444", Medium: "#f59e0b", Low: "#10b981" };
 	let html = data.map(p => {
-		let pct   = p.percentage_completed || 0;
+		let pct = p.percentage_completed || 0;
 		let color = pc[p.status] || "#3b82f6";
-		let prio  = p.priority || "";
+		let prio = p.priority || "";
 		return `
 		<div class="ftd-proj-row">
 			<div class="ftd-proj-top">
 				<a class="ftd-link ftd-proj-name" href="/app/ft-project/${p.name}">${p.name}</a>
 				<div style="display:flex;gap:5px;align-items:center">
 					${prio ? `<span class="ftd-badge" style="background:${pr[prio]}20;color:${pr[prio]}">${prio}</span>` : ""}
-					<span class="ftd-badge" style="background:${color}20;color:${color}">${p.status||"—"}</span>
+					<span class="ftd-badge" style="background:${color}20;color:${color}">${p.status || "—"}</span>
 					<b style="font-size:13px">${pct}%</b>
 				</div>
 			</div>
 			<div class="ftd-proj-track">
 				<div class="ftd-proj-fill" style="width:${pct}%;background:${color}"></div>
 			</div>
-			<div class="ftd-proj-meta">${fmt(p.total_weight||0,2)} Kg</div>
+			<div class="ftd-proj-meta">${fmt(p.total_weight || 0, 2)} Kg</div>
 		</div>`;
 	}).join("");
 	document.getElementById("ftd-proj-progress").innerHTML = html;
 }
 
-// ─────────────────────────────────────────────
 // 6. DRAWING TABLE
-// ─────────────────────────────────────────────
-// function render_draw_table(d) {
-// 	let data = d.drawings || [];
-// 	document.getElementById("ftd-draw-badge").textContent = d.total_drawings + " total";
-// 	if (!data.length) {
-// 		document.getElementById("ftd-draw-table").innerHTML = empty("No drawings");
-// 		return;
-// 	}
-// 	let rows = data.map(dr => `
-// 		<tr>
-// 			<td>${dr.drawing_number||dr.name}</td>
-// 			<td><a class="ftd-link" href="/app/ft-project/${dr.project_number}">${dr.project_number||"—"}</a></td>
-// 			<td>${dr.customer_name||"—"}</td>
-// 			<td class="ftd-num">${fmt(dr.unit_weight||0,3)}</td>
-// 		</tr>
-// 	`).join("");
-// 	document.getElementById("ftd-draw-table").innerHTML = `
-// 		<table class="ftd-table">
-// 			<thead><tr><th>Drawing No</th><th>Project</th><th>Customer</th><th>Unit Wt (Kg)</th></tr></thead>
-// 			<tbody>${rows}</tbody>
-// 		</table>`;
-// }
 function render_draw_table(d) {
 	let data = d.drawings || [];
 	document.getElementById("ftd-draw-badge").textContent = d.total_drawings + " total";
@@ -370,7 +407,14 @@ function ftd_render_draw_rows(data) {
 	`).join("");
 	document.getElementById("ftd-draw-table-inner").innerHTML = `
 		<table class="ftd-table">
-			<thead><tr><th>Drawing No</th><th>Project</th><th>Customer</th><th>Unit Wt (Kg)</th></tr></thead>
+			<thead>
+				<tr>
+					<th>Drawing No</th>
+					<th>Project</th>
+					<th>Customer</th>
+					<th>Unit Wt (Kg)</th>
+				</tr>
+			</thead>
 			<tbody>${rows}</tbody>
 		</table>`;
 }
@@ -381,14 +425,12 @@ window.ftd_filter_drawings = function () {
 	let filtered = data.filter(d =>
 		(d.drawing_number || "").toLowerCase().includes(txt) ||
 		(d.project_number || "").toLowerCase().includes(txt) ||
-		(d.customer_name  || "").toLowerCase().includes(txt)
+		(d.customer_name || "").toLowerCase().includes(txt)
 	);
 	ftd_render_draw_rows(filtered);
 };
 
-// ─────────────────────────────────────────────
 // 7. ADDITION vs SUBTRACTION
-// ─────────────────────────────────────────────
 function render_add_sub(d) {
 	let stages = d.stage_summary || [];
 	if (!stages.length) {
@@ -401,11 +443,11 @@ function render_add_sub(d) {
 			<div class="ftd-as-label" title="${s.stage}">${s.stage}</div>
 			<div class="ftd-as-bars">
 				<div class="ftd-as-bar-wrap">
-					<div class="ftd-as-fill ftd-as-add" style="width:${(s.addition/max_val)*100}%"></div>
+					<div class="ftd-as-fill ftd-as-add" style="width:${(s.addition / max_val) * 100}%"></div>
 					<span class="ftd-as-num">${s.addition}</span>
 				</div>
 				<div class="ftd-as-bar-wrap">
-					<div class="ftd-as-fill ftd-as-sub" style="width:${(s.subtraction/max_val)*100}%"></div>
+					<div class="ftd-as-fill ftd-as-sub" style="width:${(s.subtraction / max_val) * 100}%"></div>
 					<span class="ftd-as-num">${s.subtraction}</span>
 				</div>
 			</div>
@@ -419,24 +461,41 @@ function render_add_sub(d) {
 		<div class="ftd-as-list">${bars}</div>`;
 }
 
-// ─────────────────────────────────────────────
 // HELPERS
-// ─────────────────────────────────────────────
 function fmt(n, dec) {
 	return Number(n || 0).toLocaleString("en-IN", { minimumFractionDigits: dec, maximumFractionDigits: dec });
 }
 function empty(msg) { return `<p class="ftd-empty">${msg}</p>`; }
 function skeletons(n) { return Array(n).fill(`<div class="ftd-card ftd-skeleton"></div>`).join(""); }
 
-// ─────────────────────────────────────────────
 // CSS
-// ─────────────────────────────────────────────
 function load_dashboard_css() {
 	if (document.getElementById("ftd-style")) return;
 	let s = document.createElement("style");
 	s.id = "ftd-style";
 	s.textContent = `
 .ftd-wrap { font-family:'Segoe UI',system-ui,sans-serif; padding:20px; background:#f1f5f9; min-height:100vh; color:#1e293b; }
+
+/* Multi Select */
+.ftd-multi-wrap { position:relative; min-width:200px; }
+.ftd-multi-box { display:flex; align-items:center; justify-content:space-between; padding:8px 14px; border-radius:8px; border:1.5px solid #e2e8f0; background:#fff; font-size:13px; color:#334155; cursor:pointer; gap:8px; min-width:180px; }
+.ftd-multi-box:hover { border-color:#3b82f6; }
+.ftd-multi-arrow { font-size:11px; color:#94a3b8; }
+.ftd-multi-dropdown { position:absolute; right:0; top:calc(100% + 6px); background:#fff; border:1.5px solid #e2e8f0; border-radius:10px; box-shadow:0 8px 24px #0002; z-index:999; min-width:220px; max-width:280px; }
+.ftd-multi-search-wrap { padding:10px 10px 6px; }
+.ftd-multi-search { width:100%; padding:7px 12px; border-radius:7px; border:1.5px solid #e2e8f0; font-size:12px; color:#334155; box-sizing:border-box; outline:none; }
+.ftd-multi-search:focus { border-color:#3b82f6; }
+#ftd-multi-options { max-height:200px; overflow-y:auto; padding:4px 6px; }
+.ftd-multi-option { display:flex; align-items:center; gap:8px; padding:7px 10px; border-radius:7px; font-size:13px; color:#334155; cursor:pointer; }
+.ftd-multi-option:hover { background:#f1f5f9; }
+.ftd-multi-option input { accent-color:#3b82f6; width:15px; height:15px; cursor:pointer; }
+.ftd-opt-checked { background:#eff6ff; color:#3b82f6; font-weight:600; }
+.ftd-multi-footer { display:flex; justify-content:space-between; padding:8px 10px; border-top:1px solid #f1f5f9; gap:8px; }
+.ftd-multi-clear { flex:1; padding:6px; border-radius:7px; border:1.5px solid #e2e8f0; background:#fff; font-size:12px; color:#64748b; cursor:pointer; }
+.ftd-multi-clear:hover { background:#f1f5f9; }
+.ftd-multi-apply { flex:1; padding:6px; border-radius:7px; border:none; background:linear-gradient(135deg,#3b82f6,#6366f1); color:#fff; font-size:12px; font-weight:700; cursor:pointer; }
+.ftd-multi-apply:hover { opacity:.88; }
+
 
 /* Header */
 .ftd-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; flex-wrap:wrap; gap:12px; }
@@ -589,16 +648,16 @@ function load_dashboard_css() {
 }
 
 #ftd-draw-table-inner .ftd-table th:nth-child(1),
-#ftd-draw-table-inner .ftd-table td:nth-child(1) { width: 32%; }
+#ftd-draw-table-inner .ftd-table td:nth-child(1) { width: 20%; }
 
 #ftd-draw-table-inner .ftd-table th:nth-child(2),
-#ftd-draw-table-inner .ftd-table td:nth-child(2) { width: 14%; }
+#ftd-draw-table-inner .ftd-table td:nth-child(2) { width: 18%; }
 
 #ftd-draw-table-inner .ftd-table th:nth-child(3),
-#ftd-draw-table-inner .ftd-table td:nth-child(3) { width: 36%; }
+#ftd-draw-table-inner .ftd-table td:nth-child(3) { width: 40%; }
 
 #ftd-draw-table-inner .ftd-table th:nth-child(4),
-#ftd-draw-table-inner .ftd-table td:nth-child(4) { width: 18%; text-align: right; }
+#ftd-draw-table-inner .ftd-table td:nth-child(4) { width: 20%; text-align: right; }
 
 #ftd-draw-table-inner .ftd-table td {
     overflow: hidden;
