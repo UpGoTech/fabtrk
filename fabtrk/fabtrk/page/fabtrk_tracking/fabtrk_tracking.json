@@ -1,0 +1,13 @@
+{
+    "creation": "2026-05-04 10:00:00.000000",
+    "docstatus": 0,
+    "doctype": "Page",
+    "icon": "tracking",
+    "idx": 0,
+    "is_published": 1,
+    "module": "Fabtrk",
+    "name": "fabtrk-tracking",
+    "public": 1,
+    "standard": 1,
+    "title": "FabTrk Tracking"
+}
