@@ -129,7 +129,12 @@ before_uninstall = "fabtrk.install.remove_roles"
 # permission_query_conditions = {
 # 	"Event": "frappe.desk.doctype.event.event.get_permission_query_conditions",
 # }
-#
+# Add dashboard page for workspace
+app_name = "fabtrk"
+
+# page_js = {
+# 	"overview_dashboard": "fabtrk/page/overview_dashboard/overview_dashboard.js"
+# }
 # has_permission = {
 # 	"Event": "frappe.desk.doctype.event.event.has_permission",
 # }
