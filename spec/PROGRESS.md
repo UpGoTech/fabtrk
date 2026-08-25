@@ -79,5 +79,5 @@ Listed in the spec under **Explicitly out of v1** (shop floor, CSV/Tekla, packin
 - [x] Payment Terms: Advance, RM, Black Inspection, Final Invoice (Percent)
 - [x] Form JS + validate for Order Value; Address queries by Customer
 - [x] Child DocType Project Ship To; fixtures + `project_form_setup.sync`
-- [ ] User review on Desk
-- [ ] Commit (when asked)
+- [x] User review on Desk
+- [x] Commit + merge to `develop` (local; no git remote / gh auth yet)
