@@ -1,0 +1,234 @@
+{
+ "actions": [],
+ "allow_import": 1,
+ "autoname": "format:{project}-{drawing_no}",
+ "creation": "2026-08-24 10:00:00",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "project",
+  "drawing_no",
+  "description",
+  "column_break_main",
+  "status",
+  "qty",
+  "priority",
+  "section_dates_po",
+  "drawing_date",
+  "received_on",
+  "column_break_po",
+  "customer_po_no",
+  "po_line_no",
+  "po_weight",
+  "section_udf",
+  "udf_1",
+  "udf_2",
+  "udf_3",
+  "column_break_udf",
+  "udf_4",
+  "udf_5",
+  "section_revisions",
+  "current_revision",
+  "revisions"
+ ],
+ "fields": [
+  {
+   "fieldname": "project",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Project",
+   "options": "Project",
+   "reqd": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "drawing_no",
+   "fieldtype": "Data",
+   "in_global_search": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Drawing No",
+   "reqd": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "description",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Description"
+  },
+  {
+   "fieldname": "column_break_main",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "Draft",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Status",
+   "options": "Draft\nIssued\nOn Hold\nSuperseded"
+  },
+  {
+   "default": "1",
+   "fieldname": "qty",
+   "fieldtype": "Int",
+   "label": "Qty",
+   "non_negative": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "priority",
+   "fieldtype": "Select",
+   "in_standard_filter": 1,
+   "label": "Priority",
+   "options": "\nLow\nMedium\nHigh\nUrgent"
+  },
+  {
+   "fieldname": "section_dates_po",
+   "fieldtype": "Section Break",
+   "label": "Dates and Customer PO"
+  },
+  {
+   "fieldname": "drawing_date",
+   "fieldtype": "Date",
+   "label": "Drawing Date"
+  },
+  {
+   "fieldname": "received_on",
+   "fieldtype": "Date",
+   "label": "Received On"
+  },
+  {
+   "fieldname": "column_break_po",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "customer_po_no",
+   "fieldtype": "Data",
+   "in_standard_filter": 1,
+   "label": "Customer PO No"
+  },
+  {
+   "fieldname": "po_line_no",
+   "fieldtype": "Data",
+   "label": "PO Line No"
+  },
+  {
+   "fieldname": "po_weight",
+   "fieldtype": "Float",
+   "label": "PO Weight (kg)",
+   "non_negative": 1
+  },
+  {
+   "fieldname": "section_udf",
+   "fieldtype": "Section Break",
+   "label": "UDF"
+  },
+  {
+   "fieldname": "udf_1",
+   "fieldtype": "Data",
+   "in_standard_filter": 1,
+   "label": "UDF 1"
+  },
+  {
+   "fieldname": "udf_2",
+   "fieldtype": "Data",
+   "in_standard_filter": 1,
+   "label": "UDF 2"
+  },
+  {
+   "fieldname": "udf_3",
+   "fieldtype": "Data",
+   "in_standard_filter": 1,
+   "label": "UDF 3"
+  },
+  {
+   "fieldname": "column_break_udf",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "udf_4",
+   "fieldtype": "Data",
+   "in_standard_filter": 1,
+   "label": "UDF 4"
+  },
+  {
+   "fieldname": "udf_5",
+   "fieldtype": "Data",
+   "in_standard_filter": 1,
+   "label": "UDF 5"
+  },
+  {
+   "fieldname": "section_revisions",
+   "fieldtype": "Section Break",
+   "label": "Revisions"
+  },
+  {
+   "fieldname": "current_revision",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Current Revision",
+   "read_only": 1
+  },
+  {
+   "fieldname": "revisions",
+   "fieldtype": "Table",
+   "label": "Revisions",
+   "options": "Drawing Revision"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [
+  {
+   "group": "Parts",
+   "link_doctype": "Fabrication Part",
+   "link_fieldname": "drawing"
+  }
+ ],
+ "modified": "2026-08-24 12:30:00",
+ "modified_by": "Administrator",
+ "module": "Fabtrk",
+ "name": "Fabrication Drawing",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "import": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "import": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Projects User",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "search_fields": "drawing_no,description,project",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "timeline_field": "project",
+ "title_field": "drawing_no",
+ "track_changes": 1
+}

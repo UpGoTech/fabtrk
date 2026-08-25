@@ -1,0 +1,242 @@
+{
+ "actions": [],
+ "allow_import": 1,
+ "autoname": "format:{project}-{drawing_no}-{piece_mark}",
+ "creation": "2026-08-24 10:00:00",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "drawing",
+  "drawing_no",
+  "project",
+  "column_break_id",
+  "piece_mark",
+  "line_no",
+  "section_qty",
+  "source",
+  "qty",
+  "item",
+  "section_dims",
+  "dimension_type",
+  "length_uom",
+  "length",
+  "width",
+  "diameter",
+  "weight",
+  "section_hold",
+  "revised_in",
+  "on_hold",
+  "hold_reason",
+  "section_history",
+  "history"
+ ],
+ "fields": [
+  {
+   "fieldname": "drawing",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Drawing",
+   "options": "Fabrication Drawing",
+   "reqd": 1,
+   "search_index": 1,
+   "set_only_once": 1
+  },
+  {
+   "fetch_from": "drawing.drawing_no",
+   "fieldname": "drawing_no",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Drawing No",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "drawing.project",
+   "fieldname": "project",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Project",
+   "options": "Project",
+   "read_only": 1,
+   "reqd": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "column_break_id",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "piece_mark",
+   "fieldtype": "Data",
+   "in_global_search": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Piece Mark",
+   "reqd": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "line_no",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Line No",
+   "reqd": 1
+  },
+  {
+   "fieldname": "section_qty",
+   "fieldtype": "Section Break",
+   "label": "Quantity and Item"
+  },
+  {
+   "default": "Fabricate",
+   "fieldname": "source",
+   "fieldtype": "Select",
+   "in_standard_filter": 1,
+   "label": "Source",
+   "options": "Fabricate\nClient Supplied\nBought Out",
+   "reqd": 1
+  },
+  {
+   "default": "1",
+   "fieldname": "qty",
+   "fieldtype": "Float",
+   "label": "Qty",
+   "non_negative": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "item",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Item",
+   "options": "Item"
+  },
+  {
+   "fieldname": "section_dims",
+   "fieldtype": "Section Break",
+   "label": "Dimensions"
+  },
+  {
+   "default": "1D",
+   "fieldname": "dimension_type",
+   "fieldtype": "Select",
+   "label": "Dimension Type",
+   "options": "1D\n2D\nDisc",
+   "reqd": 1
+  },
+  {
+   "fieldname": "length_uom",
+   "fieldtype": "Link",
+   "label": "Length UOM",
+   "options": "UOM"
+  },
+  {
+   "depends_on": "eval:doc.dimension_type==\"1D\" || doc.dimension_type==\"2D\"",
+   "fieldname": "length",
+   "fieldtype": "Float",
+   "label": "Length",
+   "non_negative": 1
+  },
+  {
+   "depends_on": "eval:doc.dimension_type==\"2D\"",
+   "fieldname": "width",
+   "fieldtype": "Float",
+   "label": "Width",
+   "non_negative": 1
+  },
+  {
+   "depends_on": "eval:doc.dimension_type==\"Disc\"",
+   "fieldname": "diameter",
+   "fieldtype": "Float",
+   "label": "Diameter",
+   "non_negative": 1
+  },
+  {
+   "fieldname": "weight",
+   "fieldtype": "Float",
+   "label": "Weight",
+   "non_negative": 1
+  },
+  {
+   "fieldname": "section_hold",
+   "fieldtype": "Section Break",
+   "label": "Revision and Hold"
+  },
+  {
+   "fieldname": "revised_in",
+   "fieldtype": "Data",
+   "label": "Revised In",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "on_hold",
+   "fieldtype": "Check",
+   "label": "On Hold"
+  },
+  {
+   "depends_on": "on_hold",
+   "fieldname": "hold_reason",
+   "fieldtype": "Small Text",
+   "label": "Hold Reason"
+  },
+  {
+   "fieldname": "section_history",
+   "fieldtype": "Section Break",
+   "label": "History"
+  },
+  {
+   "fieldname": "history",
+   "fieldtype": "Table",
+   "label": "History",
+   "options": "Fabrication Part History",
+   "read_only": 1
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-08-24 10:00:00",
+ "modified_by": "Administrator",
+ "module": "Fabtrk",
+ "name": "Fabrication Part",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "import": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "import": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Projects User",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "search_fields": "piece_mark,drawing,project",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "timeline_field": "project",
+ "title_field": "piece_mark",
+ "track_changes": 1
+}

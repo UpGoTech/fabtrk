@@ -8,7 +8,18 @@ app_license = "mit"
 # Apps
 # ------------------
 
-# required_apps = []
+required_apps = ["erpnext"]
+
+fixtures = [
+	{
+		"dt": "Custom Field",
+		"filters": [["dt", "=", "Project"], ["module", "=", "Fabtrk"]],
+	},
+	{
+		"dt": "Property Setter",
+		"filters": [["doc_type", "=", "Project"], ["module", "=", "Fabtrk"]],
+	},
+]
 
 # Each item in the list will be shown as an app in the apps page
 # add_to_apps_screen = [
@@ -43,7 +54,7 @@ app_license = "mit"
 # page_js = {"page" : "public/js/file.js"}
 
 # include js in doctype views
-# doctype_js = {"doctype" : "public/js/doctype.js"}
+doctype_js = {"Project": "public/js/project.js"}
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
 # doctype_calendar_js = {"doctype" : "public/js/doctype_calendar.js"}
@@ -138,13 +149,11 @@ app_license = "mit"
 # ---------------
 # Hook on document methods and events
 
-# doc_events = {
-# 	"*": {
-# 		"on_update": "method",
-# 		"on_cancel": "method",
-# 		"on_trash": "method"
-# 	}
-# }
+doc_events = {
+	"Project": {
+		"validate": "fabtrk.project_events.calculate_order_value",
+	}
+}
 
 # Scheduled Tasks
 # ---------------
@@ -190,9 +199,9 @@ app_license = "mit"
 # each overriding function accepts a `data` argument;
 # generated from the base implementation of the doctype dashboard,
 # along with any modifications made in other Frappe apps
-# override_doctype_dashboards = {
-# 	"Task": "fabtrk.task.get_dashboard_data"
-# }
+override_doctype_dashboards = {
+	"Project": "fabtrk.project_dashboard.get_dashboard_data"
+}
 
 # exempt linked doctypes from being automatically cancelled
 #
