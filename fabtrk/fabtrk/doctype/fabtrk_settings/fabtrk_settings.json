@@ -1,0 +1,102 @@
+{
+ "actions": [],
+ "creation": "2026-09-27 00:00:00",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "default_density_kg_m3",
+  "weight_deviation_warn_pct",
+  "weight_deviation_block_pct",
+  "allow_negative_stock",
+  "consume_policy",
+  "scrap_min_length_mm",
+  "scrap_min_width_mm",
+  "enforce_offcut_creation"
+ ],
+ "fields": [
+  {
+   "default": "7850",
+   "fieldname": "default_density_kg_m3",
+   "fieldtype": "Float",
+   "label": "Default Density (kg/m3)",
+   "non_negative": 1
+  },
+  {
+   "default": "5",
+   "fieldname": "weight_deviation_warn_pct",
+   "fieldtype": "Float",
+   "label": "Weight Deviation Warn %",
+   "non_negative": 1
+  },
+  {
+   "default": "10",
+   "fieldname": "weight_deviation_block_pct",
+   "fieldtype": "Float",
+   "label": "Weight Deviation Block %",
+   "non_negative": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "allow_negative_stock",
+   "fieldtype": "Check",
+   "label": "Allow Negative Stock"
+  },
+  {
+   "default": "Offcut First then FIFO",
+   "fieldname": "consume_policy",
+   "fieldtype": "Select",
+   "label": "Consume Policy",
+   "options": "Offcut First then FIFO\nFIFO\nExplicit Only"
+  },
+  {
+   "default": "0",
+   "fieldname": "scrap_min_length_mm",
+   "fieldtype": "Float",
+   "label": "Scrap Min Length (mm)"
+  },
+  {
+   "default": "0",
+   "fieldname": "scrap_min_width_mm",
+   "fieldtype": "Float",
+   "label": "Scrap Min Width (mm)"
+  },
+  {
+   "default": "1",
+   "fieldname": "enforce_offcut_creation",
+   "fieldtype": "Check",
+   "label": "Enforce Offcut Creation"
+  }
+ ],
+ "issingle": 1,
+ "links": [],
+ "modified": "2026-09-27 00:00:00",
+ "modified_by": "Administrator",
+ "module": "Fabtrk",
+ "name": "Fabtrk Settings",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "read": 1,
+   "role": "System Manager",
+   "write": 1
+  },
+  {
+   "read": 1,
+   "role": "Fabtrk Stock Owner",
+   "write": 1
+  },
+  {
+   "read": 1,
+   "role": "Fabtrk Stock Storekeeper"
+  },
+  {
+   "read": 1,
+   "role": "Fabtrk Stock Viewer"
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

@@ -10,6 +10,7 @@ After each implementation phase, tick the matching items here and note the date.
 | --- | --- | --- | --- |
 | 00 | [00-fabrication-drawings.md](00-fabrication-drawings.md) | Fabrication drawings on ERPNext Project | Phase 1 (register) — 2026-08-24 |
 | 01 | [01-project-form.md](01-project-form.md) | ERPNext Project form customization | Full form layout on site for review — 2026-08-25 |
+| 02 | [02-geometry-lots.md](02-geometry-lots.md) | Geometry lots (metal stock) | API and vouchers on site — 2026-09-27. Q1–Q10 still open |
 
 ## 00 — Fabrication drawings
 
@@ -81,3 +82,32 @@ Listed in the spec under **Explicitly out of v1** (shop floor, CSV/Tekla, packin
 - [x] Child DocType Project Ship To; fixtures + `project_form_setup.sync`
 - [x] User review on Desk
 - [x] Commit + merge to `develop` (local; no git remote / gh auth yet)
+
+## 02 — Geometry lots
+
+Q1–Q10 are unanswered. Do not create warehouses, items, or opening stock until Q1 and Q5 are answered.
+
+### Pure rules (no Frappe)
+
+- [x] `fabtrk/geometry.py` — signed length, density and kg/m weight, deviation, conservation, over-issue, lot grouping
+- [x] `fabtrk/test_geometry_logic.py` — 17 tests, including AC-3 (`SUM(length_mm * qty_pieces)` vs bare `SUM(length_mm)`)
+- [x] Verified with `python -m unittest fabtrk.test_geometry_logic` on 2026-09-27
+
+### On `fxl.localhost` (2026-09-27)
+
+- [x] Item geometry fields; batch/serial blocked when geometry tracked
+- [x] Fabtrk Lot, Fabtrk Lot Movement, Fabtrk Settings, posting-key duplicate guard
+- [x] Lot detail child table on Stock Entry and Purchase Receipt; submit/cancel hooks
+- [x] API: receipt, issue, transfer, adjustment, opening lots, search, trace, reconcile, `dry_run`
+- [x] Reports: Stock by Geometry, Stock Availability, Offcut Search, SKU Ledger, Stock Drift
+- [x] Roles; `valuation_rate` at permlevel 1
+- [x] Warehouses `Main - FXL`, `Offcuts - FXL`, `Scrap - FXL` (Q1 assumed: one plant, Butibori)
+- [x] Plate SKUs created or updated; round bar / pipe / tube not created (Q4)
+- [x] Integration tests in `fabtrk/tests/test_geometry_stock.py` — 11 passed (`bench --site fxl.localhost run-tests --app fabtrk --module fabtrk.tests.test_geometry_stock`)
+
+### Still open
+
+- [ ] Opening-stock load of the 22-row prototype (blocked on Q5, and Q1 if the plant assumption is wrong)
+- [ ] Desk lot-picker polish (Q6: API first)
+- [ ] AC-8 exercised as the storekeeper user on a real voucher, not only `has_permission`
+- [ ] AC-9 row-for-row migration

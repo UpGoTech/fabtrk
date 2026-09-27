@@ -1,0 +1,184 @@
+{
+ "actions": [],
+ "autoname": "naming_series:",
+ "creation": "2026-09-27 00:00:00",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "naming_series",
+  "lot",
+  "posting_date",
+  "voucher_type",
+  "voucher_no",
+  "item_code",
+  "warehouse",
+  "from_warehouse",
+  "qty_pieces",
+  "length_mm",
+  "width_mm",
+  "weight_kg",
+  "resulting_qty_pieces",
+  "resulting_weight_kg",
+  "reference",
+  "reason",
+  "actor",
+  "remarks"
+ ],
+ "fields": [
+  {
+   "default": "FABTRK-MOV-.YYYY.-.#####",
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "label": "Series",
+   "options": "FABTRK-MOV-.YYYY.-.#####",
+   "reqd": 1
+  },
+  {
+   "fieldname": "lot",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Lot",
+   "options": "Fabtrk Lot",
+   "reqd": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "posting_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Posting Date",
+   "reqd": 1
+  },
+  {
+   "fieldname": "voucher_type",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Voucher Type",
+   "reqd": 1
+  },
+  {
+   "fieldname": "voucher_no",
+   "fieldtype": "Dynamic Link",
+   "in_list_view": 1,
+   "label": "Voucher No",
+   "options": "voucher_type",
+   "reqd": 1
+  },
+  {
+   "fieldname": "item_code",
+   "fieldtype": "Link",
+   "label": "Item",
+   "options": "Item"
+  },
+  {
+   "fieldname": "warehouse",
+   "fieldtype": "Link",
+   "label": "Warehouse",
+   "options": "Warehouse"
+  },
+  {
+   "fieldname": "from_warehouse",
+   "fieldtype": "Link",
+   "label": "From Warehouse",
+   "options": "Warehouse"
+  },
+  {
+   "fieldname": "qty_pieces",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Pieces (signed)"
+  },
+  {
+   "fieldname": "length_mm",
+   "fieldtype": "Float",
+   "label": "Length (mm)"
+  },
+  {
+   "fieldname": "width_mm",
+   "fieldtype": "Float",
+   "label": "Width (mm)"
+  },
+  {
+   "fieldname": "weight_kg",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Weight kg (signed)"
+  },
+  {
+   "fieldname": "resulting_qty_pieces",
+   "fieldtype": "Float",
+   "label": "Resulting Pieces"
+  },
+  {
+   "fieldname": "resulting_weight_kg",
+   "fieldtype": "Float",
+   "label": "Resulting Weight (kg)"
+  },
+  {
+   "fieldname": "reference",
+   "fieldtype": "Data",
+   "in_standard_filter": 1,
+   "label": "Reference",
+   "reqd": 1
+  },
+  {
+   "fieldname": "reason",
+   "fieldtype": "Data",
+   "label": "Reason"
+  },
+  {
+   "fieldname": "actor",
+   "fieldtype": "Link",
+   "label": "Actor",
+   "options": "User"
+  },
+  {
+   "fieldname": "remarks",
+   "fieldtype": "Small Text",
+   "label": "Remarks"
+  }
+ ],
+ "in_create": 1,
+ "links": [],
+ "modified": "2026-09-27 00:00:00",
+ "modified_by": "Administrator",
+ "module": "Fabtrk",
+ "name": "Fabtrk Lot Movement",
+ "naming_rule": "By \"Naming Series\" field",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager"
+  },
+  {
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Fabtrk Stock Owner"
+  },
+  {
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Fabtrk Stock Storekeeper"
+  },
+  {
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Fabtrk Stock Viewer"
+  }
+ ],
+ "sort_field": "creation",
+ "sort_order": "ASC",
+ "states": [],
+ "track_changes": 1
+}

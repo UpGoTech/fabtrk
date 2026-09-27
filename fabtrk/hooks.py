@@ -149,22 +149,40 @@ doctype_js = {"Project": "public/js/project.js"}
 # ---------------
 # Hook on document methods and events
 
+before_migrate = ["fabtrk.stock_setup.before_migrate"]
+
+after_migrate = ["fabtrk.stock_setup.after_migrate"]
+
 doc_events = {
 	"Project": {
 		"validate": "fabtrk.project_events.calculate_order_value",
-	}
+	},
+	"Item": {
+		"validate": "fabtrk.item_events.validate_item",
+	},
+	"Stock Entry": {
+		"before_submit": "fabtrk.lots.before_submit",
+		"on_submit": "fabtrk.lots.on_submit",
+		"on_cancel": "fabtrk.lots.on_cancel",
+	},
+	"Purchase Receipt": {
+		"before_submit": "fabtrk.lots.before_submit",
+		"on_submit": "fabtrk.lots.on_submit",
+		"on_cancel": "fabtrk.lots.on_cancel",
+	},
+	"Stock Reconciliation": {
+		"on_cancel": "fabtrk.lots.on_cancel",
+	},
 }
 
 # Scheduled Tasks
 # ---------------
 
-# scheduler_events = {
-# 	"all": [
-# 		"fabtrk.tasks.all"
-# 	],
-# 	"daily": [
-# 		"fabtrk.tasks.daily"
-# 	],
+scheduler_events = {
+	"daily": [
+		"fabtrk.lots.alert_drift",
+	],
+}
 # 	"hourly": [
 # 		"fabtrk.tasks.hourly"
 # 	],

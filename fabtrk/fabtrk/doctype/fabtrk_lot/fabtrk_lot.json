@@ -1,0 +1,309 @@
+{
+ "actions": [],
+ "autoname": "naming_series:",
+ "creation": "2026-09-27 00:00:00",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "naming_series",
+  "item_code",
+  "item_name",
+  "stock_uom",
+  "fabtrk_grade",
+  "fabtrk_shape",
+  "fabtrk_thickness_mm",
+  "warehouse",
+  "division",
+  "stock_group",
+  "column_break_geom",
+  "length_mm",
+  "width_mm",
+  "qty_pieces",
+  "weight_kg",
+  "kg_per_piece",
+  "weight_basis",
+  "weight_basis_source",
+  "density_kg_m3",
+  "lot_type",
+  "status",
+  "section_source",
+  "parent_lot",
+  "source_doctype",
+  "source_document",
+  "source_reference",
+  "origin_job",
+  "received_on",
+  "valuation_rate"
+ ],
+ "fields": [
+  {
+   "default": "FABTRK-LOT-.YYYY.-.#####",
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "label": "Series",
+   "options": "FABTRK-LOT-.YYYY.-.#####",
+   "reqd": 1,
+   "set_only_once": 1
+  },
+  {
+   "fieldname": "item_code",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Item",
+   "options": "Item",
+   "reqd": 1,
+   "search_index": 1
+  },
+  {
+   "fetch_from": "item_code.item_name",
+   "fieldname": "item_name",
+   "fieldtype": "Data",
+   "label": "Item Name",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "item_code.stock_uom",
+   "fieldname": "stock_uom",
+   "fieldtype": "Data",
+   "label": "Stock UOM",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "item_code.fabtrk_grade",
+   "fieldname": "fabtrk_grade",
+   "fieldtype": "Data",
+   "in_standard_filter": 1,
+   "label": "Grade",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "item_code.fabtrk_shape",
+   "fieldname": "fabtrk_shape",
+   "fieldtype": "Data",
+   "label": "Shape",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "item_code.fabtrk_thickness_mm",
+   "fieldname": "fabtrk_thickness_mm",
+   "fieldtype": "Float",
+   "label": "Thickness (mm)",
+   "read_only": 1
+  },
+  {
+   "fieldname": "warehouse",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Warehouse",
+   "options": "Warehouse",
+   "reqd": 1
+  },
+  {
+   "default": "Butibori",
+   "fieldname": "division",
+   "fieldtype": "Data",
+   "in_standard_filter": 1,
+   "label": "Division"
+  },
+  {
+   "fieldname": "stock_group",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Stock Group",
+   "options": "Full Stock\nOffcut Stock\nScrap",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_geom",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "length_mm",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Length (mm)",
+   "reqd": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "width_mm",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Width (mm)"
+  },
+  {
+   "fieldname": "qty_pieces",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Pieces",
+   "read_only": 1
+  },
+  {
+   "fieldname": "weight_kg",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Weight (kg)",
+   "read_only": 1
+  },
+  {
+   "fieldname": "kg_per_piece",
+   "fieldtype": "Float",
+   "label": "Avg Kg per Piece",
+   "read_only": 1
+  },
+  {
+   "fieldname": "weight_basis",
+   "fieldtype": "Select",
+   "label": "Weight Basis",
+   "options": "Kg Per Metre\nDensity\nWeighment",
+   "reqd": 1
+  },
+  {
+   "fieldname": "weight_basis_source",
+   "fieldtype": "Data",
+   "label": "Weight Basis Source"
+  },
+  {
+   "fieldname": "density_kg_m3",
+   "fieldtype": "Float",
+   "label": "Density (kg/m3)"
+  },
+  {
+   "default": "Parent",
+   "fieldname": "lot_type",
+   "fieldtype": "Select",
+   "in_standard_filter": 1,
+   "label": "Lot Type",
+   "options": "Parent\nOffcut\nScrap"
+  },
+  {
+   "default": "In Stock",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Status",
+   "options": "In Stock\nConsumed\nScrapped\nTransferred Out",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_source",
+   "fieldtype": "Section Break",
+   "label": "Source"
+  },
+  {
+   "fieldname": "parent_lot",
+   "fieldtype": "Link",
+   "label": "Parent Lot",
+   "options": "Fabtrk Lot"
+  },
+  {
+   "fieldname": "source_doctype",
+   "fieldtype": "Data",
+   "label": "Source DocType"
+  },
+  {
+   "fieldname": "source_document",
+   "fieldtype": "Dynamic Link",
+   "label": "Source Document",
+   "options": "source_doctype"
+  },
+  {
+   "fieldname": "source_reference",
+   "fieldtype": "Data",
+   "in_standard_filter": 1,
+   "label": "Source Reference"
+  },
+  {
+   "fieldname": "origin_job",
+   "fieldtype": "Data",
+   "label": "Origin Job"
+  },
+  {
+   "fieldname": "received_on",
+   "fieldtype": "Date",
+   "label": "Received On"
+  },
+  {
+   "fieldname": "valuation_rate",
+   "fieldtype": "Currency",
+   "label": "Valuation Rate",
+   "permlevel": 1,
+   "read_only": 1
+  }
+ ],
+ "links": [],
+ "modified": "2026-09-27 00:00:00",
+ "modified_by": "Administrator",
+ "module": "Fabtrk",
+ "name": "Fabtrk Lot",
+ "naming_rule": "By \"Naming Series\" field",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "permlevel": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Fabtrk Stock Owner",
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "permlevel": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Fabtrk Stock Owner",
+   "write": 1
+  },
+  {
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Fabtrk Stock Storekeeper"
+  },
+  {
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Fabtrk Stock Viewer"
+  }
+ ],
+ "search_fields": "item_code,warehouse,status",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "item_code",
+ "track_changes": 1
+}
