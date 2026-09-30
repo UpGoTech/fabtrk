@@ -12,6 +12,7 @@ Re-apply on a site after pull: `bench --site <site> migrate` then `bench --site 
 
 | Field | Type | Notes |
 |-------|------|--------|
+| Series | Select (Naming Series) | stock `naming_series`, **visible**, first field on Details |
 | Project Name | Data | stock `project_name` |
 | Customer Name | Link → Customer | stock `customer`, **required**, relabeled |
 | Customer PO | Data | `custom_customer_po` |
@@ -26,7 +27,7 @@ Re-apply on a site after pull: `bench --site <site> migrate` then `bench --site 
 | GST Rate | Percent | `custom_gst_rate` |
 | Assembly Percentage | Data | `custom_assembly_percentage` |
 
-All other stock Details / Costing / Progress / More Info fields are **hidden**. Series is hidden. **Connections** tab kept (Fabrication Drawing / Part).
+All other stock Details / Costing / Progress / More Info fields are **hidden**. **Connections** tab kept (Fabrication Drawing / Part).
 
 ### Billing and Shipping
 
