@@ -267,7 +267,7 @@ PROPERTY_SETTERS = [
 	("customer", "label", "Customer Name", "Data"),
 	("expected_start_date", "label", "Start Date", "Data"),
 	("expected_end_date", "label", "End Date", "Data"),
-	("naming_series", "hidden", "1", "Check"),
+	("naming_series", "hidden", "0", "Check"),
 ]
 
 
@@ -275,11 +275,19 @@ def _upsert_custom_field(spec: dict) -> None:
 	name = f"Project-{spec['fieldname']}"
 	if frappe.db.exists("Custom Field", name):
 		doc = frappe.get_doc("Custom Field", name)
+		changed = False
 		for key, value in spec.items():
-			doc.set(key, value)
-		doc.dt = "Project"
-		doc.module = MODULE
-		doc.save()
+			if doc.get(key) != value:
+				doc.set(key, value)
+				changed = True
+		if doc.dt != "Project":
+			doc.dt = "Project"
+			changed = True
+		if doc.module != MODULE:
+			doc.module = MODULE
+			changed = True
+		if changed:
+			doc.save()
 	else:
 		doc = frappe.get_doc(
 			{
@@ -340,11 +348,14 @@ def _hide_field(fieldname: str) -> None:
 
 def sync() -> None:
 	"""Create/update Project form customization for FabTrk."""
-	for spec in CUSTOM_FIELDS:
-		_upsert_custom_field(spec)
-
+	# Unhide naming_series before Custom Field saves — meta validation rejects
+	# hidden + mandatory fields without a default.
 	for fieldname, prop, value, ptype in PROPERTY_SETTERS:
 		_upsert_property_setter(fieldname, prop, value, ptype)
+	frappe.clear_cache(doctype="Project")
+
+	for spec in CUSTOM_FIELDS:
+		_upsert_custom_field(spec)
 
 	for fieldname in HIDE_FIELDS:
 		_hide_field(fieldname)

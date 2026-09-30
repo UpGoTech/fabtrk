@@ -9,7 +9,7 @@ After each implementation phase, tick the matching items here and note the date.
 | No | File | Title | Status |
 | --- | --- | --- | --- |
 | 00 | [00-fabrication-drawings.md](00-fabrication-drawings.md) | Fabrication drawings on ERPNext Project | Phase 1 (register) — 2026-08-24 |
-| 01 | [01-project-form.md](01-project-form.md) | ERPNext Project form customization | Naming Series visible on Details — in progress |
+| 01 | [01-project-form.md](01-project-form.md) | ERPNext Project form customization | Naming Series visible on Details — 2026-09-30 |
 
 ## 00 — Fabrication drawings
 
@@ -81,4 +81,4 @@ Listed in the spec under **Explicitly out of v1** (shop floor, CSV/Tekla, packin
 - [x] Child DocType Project Ship To; fixtures + `project_form_setup.sync`
 - [x] User review on Desk
 - [x] Commit + merge to `develop` (local; no git remote / gh auth yet)
-- [ ] Details: show stock Series (`naming_series`) as first field (was hidden)
+- [x] Details: show stock Series (`naming_series`) as first field (was hidden)
