@@ -10,6 +10,9 @@ app_license = "mit"
 
 required_apps = ["erpnext"]
 
+app_logo_url = "/assets/fabtrk/images/fabtrk-logo.svg"
+app_home = "/desk/fabtrk"
+
 fixtures = [
 	{
 		"dt": "Custom Field",
@@ -21,16 +24,16 @@ fixtures = [
 	},
 ]
 
-# Each item in the list will be shown as an app in the apps page
-# add_to_apps_screen = [
-# 	{
-# 		"name": "fabtrk",
-# 		"logo": "/assets/fabtrk/logo.png",
-# 		"title": "Fabtrk",
-# 		"route": "/fabtrk",
-# 		"has_permission": "fabtrk.api.permission.has_app_permission"
-# 	}
-# ]
+# Apps screen tile (Frappe v16+). Desktop Icon fixtures only apply to the retired icon grid.
+add_to_apps_screen = [
+	{
+		"name": "fabtrk",
+		"logo": app_logo_url,
+		"title": "Fabtrk",
+		"route": app_home,
+		"has_permission": "fabtrk.check_app_permission",
+	}
+]
 
 # Includes in <head>
 # ------------------

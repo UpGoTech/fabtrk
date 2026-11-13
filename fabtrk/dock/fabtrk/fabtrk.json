@@ -1,0 +1,23 @@
+{
+ "app": "fabtrk",
+ "creation": "2026-03-13 12:00:00.000000",
+ "docstatus": 0,
+ "doctype": "Dock",
+ "idx": 0,
+ "items": [
+  {
+   "added": 0,
+   "hidden": 0,
+   "icon": "tool",
+   "link_to": "Fabtrk",
+   "link_type": "Sidebar",
+   "title": "Fabtrk"
+  }
+ ],
+ "modified": "2026-03-13 12:00:00.000000",
+ "modified_by": "Administrator",
+ "name": "fabtrk",
+ "owner": "Administrator",
+ "standard": 1,
+ "user": ""
+}
